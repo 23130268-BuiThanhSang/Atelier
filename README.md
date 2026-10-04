@@ -31,6 +31,7 @@ Phiên bản Spring Boot và danh sách thư viện đầy đủ xem trong `back
 | react-router-dom | Chuyển trang (đăng nhập, giỏ hàng, ...) |
 | @tanstack/react-query | Lấy và lưu tạm dữ liệu từ server (tự xử lý đang tải, lỗi) |
 | zustand | Lưu trạng thái giao diện (ví dụ các lớp trong Design Studio) |
+| Tailwind CSS | Viết giao diện bằng class, không viết CSS riêng |
 | ESLint | Kiểm tra lỗi và chuẩn code JavaScript |
 
 Danh sách đầy đủ và phiên bản xem trong `frontend/package.json`.
@@ -43,7 +44,6 @@ Danh sách đầy đủ và phiên bản xem trong `frontend/package.json`.
 | Spring Security (+ JWT) | Đăng ký, đăng nhập, phân quyền | Khi làm chức năng tài khoản |
 | three, @react-three/fiber, @react-three/drei | Xem trước áo 3D | Khi làm Design Studio |
 | fabric | Canvas chỉnh sửa thiết kế 2D | Khi làm Design Studio |
-| tailwindcss | Viết giao diện nhanh | Khi bắt đầu làm giao diện |
 
 > **Lưu ý:** không tự ý thêm Spring Data JPA hoặc MySQL Driver vào `pom.xml` khi chưa có cấu hình database, vì backend sẽ **không khởi động được**.
 
@@ -351,6 +351,8 @@ public class DesignController {
 - Không viết cứng địa chỉ backend. Chỉ gọi đường dẫn bắt đầu bằng `/api/v1/...` (đã có proxy).
 - Component dài quá khoảng 200 dòng thì tách nhỏ.
 - Chạy `npm run lint` trước khi commit, không để lại cảnh báo.
+- **Viết giao diện bằng Tailwind** (class như `flex`, `p-4`, `border`), không tạo file CSS riêng cho từng trang.
+- `main.jsx` đã bọc sẵn `QueryClientProvider` và `BrowserRouter`, `AppRoutes.jsx` đã khai báo đường dẫn cho các trang. Chỉ sửa các file này khi thêm trang mới và báo nhóm.
 
 ### 6.3. Đặt tên
 
@@ -400,7 +402,7 @@ export default function MyDesigns() {
 }
 ```
 
-> Dùng react-query cần bọc ứng dụng bằng `QueryClientProvider` trong `main.jsx`. Việc này làm một lần khi bắt đầu dùng.
+> `QueryClientProvider` đã được bọc sẵn trong `main.jsx`, không cần thêm lại.
 
 ---
 
@@ -443,3 +445,188 @@ export default function MyDesigns() {
 | Giỏ hàng, đơn hàng | `cart/`, `order/` | `pages/Cart`, `pages/Checkout`, `pages/MyOrders` |
 
 File dùng chung (`pom.xml`, `package.json`, `App.jsx`, `vite.config.js`) chỉ sửa khi cần và báo cho nhóm.
+
+### Phân công Frontend (điền tên thành viên)
+
+| Người phụ trách | Phạm vi |
+|---|---|
+| ........ | `pages/Login`, `pages/Register`, `components/layout/MainLayout.jsx`, `api/authApi.js` |
+| ........ | `pages/Home`, `pages/Catalog`, `pages/ProductDetail`, `api/productApi.js` |
+| ........ | `features/design-studio/`, `pages/DesignStudio`, `api/designApi.js` |
+| ........ | `pages/Cart`, `pages/Checkout`, `pages/MyOrders`, `pages/MyDesigns`, `api/cartApi.js`, `api/orderApi.js` |
+
+Mỗi người chỉ sửa các thư mục của mình. Cần sửa file của người khác thì nhắn người đó trước.
+
+---
+
+## 10. Thống nhất dữ liệu API (hợp đồng giữa Frontend và Backend)
+
+> **Đây là bản nháp để cả nhóm chốt.** Sau khi chốt, hai bên cùng làm theo. Muốn đổi tên trường hoặc kiểu dữ liệu thì phải báo nhóm và **sửa mục này trong cùng Pull Request**.
+
+### 10.1. Quy tắc chung
+
+- Đường dẫn bắt đầu bằng `/api/v1`. Tên trường JSON dùng **camelCase**.
+- **Thành công:** trả thẳng dữ liệu (không bọc thêm lớp ngoài).
+- **Tiền:** số nguyên, đơn vị VND (ví dụ `150000`). Không dùng số thập phân.
+- **Thời gian:** chuỗi ISO-8601, ví dụ `"2026-10-04T08:30:00Z"`.
+- **Lỗi:** trả mã HTTP phù hợp (400, 401, 403, 404, 409) kèm nội dung:
+
+```json
+{ "code": "DESIGN_NOT_FOUND", "message": "Không tìm thấy thiết kế" }
+```
+
+Lỗi nhập sai dữ liệu (mã 400) có thêm danh sách `errors`:
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "Dữ liệu không hợp lệ",
+  "errors": [ { "field": "email", "message": "Email không đúng định dạng" } ]
+}
+```
+
+- Các API cần đăng nhập gửi kèm header `Authorization: Bearer <accessToken>`.
+
+### 10.2. Tài khoản
+
+| API | Gửi lên | Trả về |
+|---|---|---|
+| `POST /api/v1/auth/register` | `{ "fullName", "email", "password" }` | 201: `{ "id", "fullName", "email" }` |
+| `POST /api/v1/auth/login` | `{ "email", "password" }` | 200: `{ "accessToken", "user": { "id", "fullName", "email", "role" } }` |
+
+`role` nhận một trong các giá trị: `USER`, `ADMIN`.
+
+### 10.3. Sản phẩm
+
+`GET /api/v1/products` trả về danh sách:
+
+```json
+[
+  { "id": 1, "name": "Áo thun basic", "price": 150000, "imageUrl": "https://..." }
+]
+```
+
+`GET /api/v1/products/{id}` trả về chi tiết:
+
+```json
+{
+  "id": 1,
+  "name": "Áo thun basic",
+  "description": "Áo thun cotton 100%",
+  "price": 150000,
+  "imageUrl": "https://...",
+  "modelUrl": "/models/tshirt.glb",
+  "colors": [ { "name": "Trắng", "hex": "#FFFFFF" } ],
+  "sizes": ["S", "M", "L", "XL"]
+}
+```
+
+### 10.4. Thiết kế
+
+| API | Gửi lên | Trả về |
+|---|---|---|
+| `GET /api/v1/designs` | (không) | Danh sách `[ { "id", "name", "productId", "previewUrl", "createdAt" } ]` |
+| `GET /api/v1/designs/{id}` | (không) | `{ "id", "name", "productId", "previewUrl", "designJson", "createdAt" }` |
+| `POST /api/v1/designs` | `{ "name", "productId", "designJson", "previewUrl" }` | 201: như `GET /designs/{id}` |
+| `PUT /api/v1/designs/{id}` | Như `POST` | 200: như `GET /designs/{id}` |
+| `DELETE /api/v1/designs/{id}` | (không) | 204 |
+
+`designJson` là một **chuỗi JSON** mô tả thiết kế. Backend lưu nguyên khối, không cần hiểu bên trong. Cấu trúc do nhóm Design Studio quyết định, ví dụ bản 1:
+
+```json
+{
+  "version": 1,
+  "variantId": 34,
+  "baseColor": "#FFFFFF",
+  "layers": [
+    { "id": "layer-1", "type": "text", "content": "Atelier",
+      "x": 120, "y": 80, "rotation": 0,
+      "fontFamily": "Arial", "fontSize": 32, "color": "#111111" },
+    { "id": "layer-2", "type": "image", "assetId": 55,
+      "x": 200, "y": 160, "width": 180, "height": 180, "rotation": 15 }
+  ]
+}
+```
+
+Muốn đổi cấu trúc này thì **tăng `version`** và báo cả nhóm.
+
+### 10.5. Giỏ hàng và đơn hàng
+
+| API | Gửi lên | Trả về |
+|---|---|---|
+| `GET /api/v1/cart` | (không) | `{ "items": [ { "id", "designId", "productName", "previewUrl", "size", "quantity", "unitPrice" } ], "totalPrice" }` |
+| `POST /api/v1/cart/items` | `{ "designId", "size", "quantity" }` | 201: giỏ hàng mới (như `GET /cart`) |
+| `DELETE /api/v1/cart/items/{id}` | (không) | 204 |
+| `POST /api/v1/orders` | `{ "receiverName", "phone", "address", "note", "paymentMethod" }` | 201: `{ "id", "status", "totalPrice", "createdAt" }` |
+| `GET /api/v1/orders` | (không) | Danh sách `[ { "id", "status", "totalPrice", "createdAt" } ]` |
+| `PATCH /api/v1/orders/{id}/cancel` | (không) | 200: đơn hàng sau khi hủy |
+
+- `paymentMethod`: tạm thời chỉ có `COD` (thanh toán khi nhận hàng).
+- `status` nhận một trong các giá trị: `PENDING`, `CONFIRMED`, `IN_PRODUCTION`, `SHIPPING`, `COMPLETED`, `CANCELLED`.
+
+---
+
+## 11. Giao diện chung (Frontend)
+
+> **Bản nháp để nhóm chốt.** Chốt xong thì mọi người dùng đúng các giá trị dưới đây, không tự chọn màu và kiểu riêng.
+
+### 11.1. Bảng màu và kiểu dáng (Tailwind)
+
+| Thành phần | Class Tailwind | Ghi chú |
+|---|---|---|
+| Màu chính (nút, link nổi bật) | `bg-indigo-600`, `text-indigo-600` | Đổi ở đây nếu nhóm chọn màu khác |
+| Chữ thường | `text-slate-900` | |
+| Chữ phụ | `text-slate-500` | |
+| Nền trang | `bg-white`, nền khối phụ `bg-slate-50` | |
+| Viền | `border border-slate-200` | |
+| Bo góc | `rounded-lg` | |
+| Khoảng cách trong khối | `p-4` | |
+| Responsive | `md:`, `lg:` | Thiết kế cho điện thoại trước, rồi mở rộng |
+
+### 11.2. Component nền dùng chung
+
+Các component trong `src/components/ui/`: `Button`, `Input`, `Modal`, `ProductCard`, `Spinner`. **Cần nút hay ô nhập thì dùng lại các component này, không tự viết lại trong trang của mình.** Chưa có component nào thì nhờ người phụ trách `MainLayout` tạo trước, ví dụ:
+
+```jsx
+// src/components/ui/Button.jsx
+export default function Button({ children, className = '', ...props }) {
+  return (
+    <button
+      className={`rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+}
+```
+
+### 11.3. Quy tắc
+
+- Chữ trên giao diện viết bằng **tiếng Việt**, có dấu.
+- Không dùng chỉ định kích thước cố định theo điểm ảnh cho khối chính; dùng `w-full`, `max-w-*` để hiển thị tốt trên cả điện thoại.
+- Mọi nút bấm phải có trạng thái `hover`; nút đang xử lý nên bị vô hiệu (`disabled`).
+
+---
+
+## 12. Làm việc với dữ liệu giả (khi backend chưa xong)
+
+Trong lúc backend chưa có API thật, mỗi file trong `src/api/` trả **dữ liệu giả đúng dạng ở mục 10**. Hook và trang không cần biết dữ liệu giả hay thật.
+
+```js
+// src/api/productApi.js
+const mockProducts = [
+  { id: 1, name: 'Áo thun basic', price: 150000, imageUrl: '' },
+  { id: 2, name: 'Hoodie', price: 350000, imageUrl: '' },
+]
+
+export const productApi = {
+  getAll: () => Promise.resolve(mockProducts),
+  // Khi backend xong, đổi thành:
+  // getAll: () => axios.get('/api/v1/products').then((res) => res.data),
+}
+```
+
+- Dữ liệu giả **phải đúng tên trường và kiểu** như mục 10. Sai tên trường thì lúc ghép với backend sẽ phải sửa trang.
+- Khi backend xong API nào, **chỉ sửa file trong `src/api/`** để gọi thật, các trang giữ nguyên.
+- Đổi sang API thật xong thì xóa dữ liệu giả của API đó.
