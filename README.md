@@ -63,42 +63,116 @@ Không cần cài Maven, vì đã có sẵn `mvnw` trong thư mục `backend`.
 
 ---
 
-## 3. Cấu trúc thư mục
+## 3. Cấu trúc thư mục (cả nhóm thống nhất theo sơ đồ này)
+
+### 3.1. Sơ đồ đầy đủ
 
 ```
-atelier/
-├── backend/                         # Spring Boot
-│   ├── pom.xml
-│   ├── mvnw, mvnw.cmd
-│   └── src/main/
-│       ├── java/com/atelier/
-│       │   ├── BackendApplication.java
-│       │   ├── common/              # Dùng chung: cấu hình, xử lý lỗi, response
-│       │   ├── auth/                # Đăng ký, đăng nhập
-│       │   ├── user/                # Người dùng
-│       │   ├── catalog/             # Sản phẩm nền (áo, màu, size)
-│       │   ├── design/              # Thiết kế của người dùng
-│       │   ├── cart/                # Giỏ hàng
-│       │   ├── order/               # Đơn hàng
-│       │   └── ...                  # Tạo thêm theo tính năng
-│       └── resources/
-│           └── application.yaml     # Cấu hình
-├── frontend/                        # React
-│   ├── package.json
-│   ├── vite.config.js
+Project_Ecormerce_Atrlier/
+├── backend/                                   # Spring Boot
+│   ├── pom.xml                                # Khai báo thư viện backend
+│   ├── mvnw, mvnw.cmd, .mvn/                  # Maven Wrapper (khỏi cài Maven)
 │   └── src/
-│       ├── api/                     # Nơi DUY NHẤT gọi backend
-│       ├── pages/                   # Mỗi trang một thư mục
-│       ├── components/              # Thành phần dùng lại nhiều nơi
-│       ├── features/                # Logic phức tạp theo tính năng (design-studio)
-│       ├── hooks/                   # Custom hook dùng chung
-│       ├── utils/                   # Hàm tiện ích
-│       └── constants/               # Hằng số
-├── .gitignore
-└── README.md
+│       ├── main/
+│       │   ├── java/com/atelier/
+│       │   │   ├── BackendApplication.java    # Điểm chạy của backend
+│       │   │   ├── common/                    # Dùng chung cho mọi tính năng
+│       │   │   │   ├── PingController.java    # API thử kết nối
+│       │   │   │   ├── config/                # Cấu hình (CORS, Security...)
+│       │   │   │   ├── exception/             # Xử lý lỗi chung
+│       │   │   │   └── response/              # Khuôn phản hồi chung
+│       │   │   ├── auth/dto/                  # Đăng ký, đăng nhập
+│       │   │   ├── user/dto/                  # Người dùng
+│       │   │   ├── catalog/dto/               # Sản phẩm nền (áo, màu, size)
+│       │   │   ├── design/dto/                # Thiết kế của người dùng
+│       │   │   ├── cart/dto/                  # Giỏ hàng
+│       │   │   ├── order/dto/                 # Đơn hàng
+│       │   │   ├── payment/dto/               # Thanh toán
+│       │   │   ├── production/dto/            # Sản xuất, tiến độ xưởng
+│       │   │   ├── file/                      # Upload ảnh
+│       │   │   └── admin/                     # Quản trị, thống kê
+│       │   └── resources/
+│       │       └── application.yaml           # Cấu hình ứng dụng
+│       └── test/java/com/atelier/             # Test (cấu trúc package giống main)
+│
+├── frontend/                                  # React (Vite)
+│   ├── package.json, package-lock.json        # Khai báo thư viện frontend
+│   ├── vite.config.js                         # Cấu hình Vite và proxy sang backend
+│   ├── index.html
+│   ├── public/
+│   │   └── models/                            # Mô hình áo 3D (.glb)
+│   └── src/
+│       ├── main.jsx, App.jsx                  # Điểm vào của ứng dụng
+│       ├── api/                               # Nơi DUY NHẤT gọi backend
+│       ├── routes/                            # Khai báo đường dẫn trang
+│       ├── hooks/                             # Custom hook dùng chung
+│       ├── context/                           # Context dùng chung (đăng nhập)
+│       ├── utils/                             # Hàm tiện ích
+│       ├── constants/                         # Hằng số
+│       ├── components/
+│       │   ├── layout/                        # Bố cục: Navbar, Footer...
+│       │   └── ui/                            # Nút, modal, thẻ sản phẩm...
+│       ├── features/
+│       │   └── design-studio/                 # Tính năng thiết kế áo
+│       │       ├── components/                # Canvas 2D, xem 3D, thanh công cụ
+│       │       ├── hooks/
+│       │       └── store/                     # Trạng thái thiết kế (zustand)
+│       └── pages/                             # Mỗi trang một thư mục
+│           ├── Home/  Catalog/  ProductDetail/
+│           ├── DesignStudio/  MyDesigns/
+│           ├── Cart/  Checkout/  MyOrders/
+│           ├── Login/  Register/
+│           └── admin/
+│
+├── .gitignore                                 # Danh sách không đẩy lên Git
+├── .gitattributes, .editorconfig              # Thống nhất xuống dòng, thụt lề
+└── README.md                                  # File này
 ```
 
-Thư mục nào chưa có thì tạo khi bắt đầu viết tính năng đó.
+Thư mục nào đang rỗng sẽ có file `.gitkeep` bên trong để Git lưu được. Khi thư mục đã có file thật, có thể xóa `.gitkeep`.
+
+### 3.2. Ý nghĩa các thư mục Backend
+
+| Thư mục | Chứa gì | Ví dụ |
+|---|---|---|
+| `common/config` | Cấu hình dùng chung | `SecurityConfig`, `CorsConfig` |
+| `common/exception` | Class lỗi và bộ xử lý lỗi chung | `BusinessException`, `GlobalExceptionHandler` |
+| `common/response` | Khuôn dữ liệu trả về chung | `ApiResponse` |
+| `auth` | Đăng ký, đăng nhập | `AuthController`, `AuthService` |
+| `user` | Thông tin người dùng | `UserController`, `UserService` |
+| `catalog` | Sản phẩm nền để thiết kế | `ProductController`, `ProductService` |
+| `design` | Thiết kế người dùng tạo ra | `DesignController`, `DesignService` |
+| `cart`, `order`, `payment` | Giỏ hàng, đơn hàng, thanh toán | `OrderService` |
+| `production` | Theo dõi tiến độ sản xuất | `ProductionService` |
+| `file` | Upload và lưu ảnh | `FileController` |
+| `admin` | Chức năng quản trị | `AdminController` |
+| `<tính năng>/dto` | Class dữ liệu vào/ra của API | `CreateDesignRequest`, `DesignResponse` |
+
+### 3.3. Ý nghĩa các thư mục Frontend
+
+| Thư mục | Chứa gì | Ví dụ |
+|---|---|---|
+| `api` | Các hàm gọi backend, mỗi tính năng một file | `authApi.js`, `designApi.js` |
+| `routes` | Danh sách đường dẫn và route cần đăng nhập | `AppRoutes.jsx`, `ProtectedRoute.jsx` |
+| `hooks` | Hook dùng ở nhiều nơi | `useAuth.js`, `useDebounce.js` |
+| `context` | Dữ liệu chia sẻ toàn ứng dụng | `AuthContext.jsx` |
+| `utils` | Hàm thuần, không liên quan giao diện | `formatCurrency.js` |
+| `constants` | Hằng số | `orderStatus.js` |
+| `components/layout` | Bố cục chung của trang | `Navbar.jsx`, `Footer.jsx` |
+| `components/ui` | Thành phần nhỏ dùng lại nhiều nơi | `Button.jsx`, `Modal.jsx` |
+| `features/design-studio` | Toàn bộ phần thiết kế áo (canvas 2D, xem 3D) | `CanvasEditor.jsx`, `Viewer3D.jsx`, `designStore.js` |
+| `pages/<Tên>` | Mỗi trang một thư mục | `pages/Cart/Cart.jsx` |
+| `public/models` | Mô hình 3D | `tshirt.glb` |
+
+### 3.4. Quy tắc thống nhất
+
+1. **Không tạo thêm thư mục cấp cao** (cạnh `backend`, `frontend`) khi chưa thống nhất với nhóm.
+2. **Backend theo tính năng:** code của một tính năng nằm trong package của tính năng đó. Các file như Controller, Service, Repository, Entity đặt **trực tiếp** trong package (ví dụ `design/DesignService.java`), còn DTO đặt trong `dto/`.
+3. **Cần thêm package mới** (ví dụ `common/security`, `common/util`) thì tạo trong `com.atelier` theo đúng mẫu trên và báo nhóm.
+4. **Frontend:** mỗi trang là một thư mục trong `pages/`, file chính trùng tên thư mục (`pages/Cart/Cart.jsx`). Phần chỉ dùng cho một tính năng lớn thì đặt trong `features/`; dùng ở nhiều nơi thì đặt trong `components/`.
+5. **Gọi backend chỉ qua `src/api/`**, không gọi trực tiếp trong component.
+6. **Tên thư mục và file** theo bảng quy ước ở mục 5.3 và 6.3.
+7. Muốn đổi cấu trúc thư mục thì **sửa sơ đồ ở mục này trong cùng Pull Request**, để README luôn đúng với thực tế.
 
 ---
 
