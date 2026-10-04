@@ -6,6 +6,30 @@ Nền tảng thiết kế trang phục, xem trước 3D và đặt may theo yêu
 - **Frontend:** React (Vite, JavaScript)
 - **Phạm vi:** chạy trên máy cá nhân (local). Hiện **chưa kết nối database**.
 
+## Bắt đầu từ đâu?
+
+| Bạn là | Đọc các mục |
+|---|---|
+| Thành viên mới (ai cũng đọc trước) | Hiện trạng dự án, mục 2 (cài đặt), mục 4 (chạy dự án), mục 8 (làm việc nhóm) |
+| Làm Backend | Mục 3 (cây thư mục), mục 5 (quy ước Backend), mục 10 (dữ liệu API) |
+| Làm Frontend | Mục 3 (cây thư mục), mục 6 (quy ước Frontend), mục 10, 11, 12 |
+
+---
+
+## Hiện trạng dự án (cập nhật 04/10/2026)
+
+| Phần | Đã xong | Chưa có |
+|---|---|---|
+| Backend | Dự án chạy được trên cổng 8080, có API thử `/api/v1/ping` | Database, đăng nhập (Spring Security/JWT), các API ở mục 10, xử lý lỗi chung |
+| Frontend | Khung dự án (Router, React Query, Tailwind), menu, 10 trang còn trống, proxy sang backend | Gọi API thật, giao diện từng trang, Design Studio, đăng nhập |
+
+**Các việc cần cả nhóm thống nhất trước khi code sâu:**
+
+1. **Khi nào nối database?** Trong lúc chưa có, đề xuất Backend lưu dữ liệu tạm trong bộ nhớ (`List`/`Map` trong Service) để Frontend gọi được API thật. Khi nối database thì thay phần lưu trữ, API giữ nguyên.
+2. **Khi nào làm đăng nhập?** Trước đó, Frontend dùng dữ liệu giả cho các API cần đăng nhập (giỏ hàng, thiết kế, đơn hàng).
+3. **Chốt dữ liệu API (mục 10) và giao diện chung (mục 11).** Hiện đang là bản nháp.
+4. **Điền tên người phụ trách** ở mục 9.
+
 ---
 
 ## 1. Công nghệ và thư viện đang dùng
@@ -65,120 +89,171 @@ Không cần cài Maven, vì đã có sẵn `mvnw` trong thư mục `backend`.
 
 ## 3. Cấu trúc thư mục (cả nhóm thống nhất theo sơ đồ này)
 
-### 3.1. Sơ đồ đầy đủ
+Quy ước đọc sơ đồ: **(có sẵn)** là file đã có trong dự án, **(trống)** là thư mục đã tạo nhưng chưa có code, tạo file khi bắt đầu làm tính năng đó. Thư mục trống có file `.gitkeep` để Git lưu được, có file thật rồi thì xóa `.gitkeep` đi.
+
+### 3.1. Tổng quan
 
 ```
 Project_Ecormerce_Atrlier/
-├── backend/                                   # Spring Boot
-│   ├── pom.xml                                # Khai báo thư viện backend
-│   ├── mvnw, mvnw.cmd, .mvn/                  # Maven Wrapper (khỏi cài Maven)
-│   └── src/
-│       ├── main/
-│       │   ├── java/com/atelier/
-│       │   │   ├── BackendApplication.java    # Điểm chạy của backend
-│       │   │   ├── common/                    # Dùng chung cho mọi tính năng
-│       │   │   │   ├── PingController.java    # API thử kết nối
-│       │   │   │   ├── config/                # Cấu hình (CORS, Security...)
-│       │   │   │   ├── exception/             # Xử lý lỗi chung
-│       │   │   │   └── response/              # Khuôn phản hồi chung
-│       │   │   ├── auth/dto/                  # Đăng ký, đăng nhập
-│       │   │   ├── user/dto/                  # Người dùng
-│       │   │   ├── catalog/dto/               # Sản phẩm nền (áo, màu, size)
-│       │   │   ├── design/dto/                # Thiết kế của người dùng
-│       │   │   ├── cart/dto/                  # Giỏ hàng
-│       │   │   ├── order/dto/                 # Đơn hàng
-│       │   │   ├── payment/dto/               # Thanh toán
-│       │   │   ├── production/dto/            # Sản xuất, tiến độ xưởng
-│       │   │   ├── file/                      # Upload ảnh
-│       │   │   └── admin/                     # Quản trị, thống kê
-│       │   └── resources/
-│       │       └── application.yaml           # Cấu hình ứng dụng
-│       └── test/java/com/atelier/             # Test (cấu trúc package giống main)
-│
-├── frontend/                                  # React (Vite)
-│   ├── package.json, package-lock.json        # Khai báo thư viện frontend
-│   ├── vite.config.js                         # Cấu hình Vite và proxy sang backend
-│   ├── index.html
-│   ├── public/
-│   │   └── models/                            # Mô hình áo 3D (.glb)
-│   └── src/
-│       ├── main.jsx, App.jsx                  # Điểm vào của ứng dụng
-│       ├── api/                               # Nơi DUY NHẤT gọi backend
-│       ├── routes/                            # Khai báo đường dẫn trang
-│       ├── hooks/                             # Custom hook dùng chung
-│       ├── context/                           # Context dùng chung (đăng nhập)
-│       ├── utils/                             # Hàm tiện ích
-│       ├── constants/                         # Hằng số
-│       ├── components/
-│       │   ├── layout/                        # Bố cục: Navbar, Footer...
-│       │   └── ui/                            # Nút, modal, thẻ sản phẩm...
-│       ├── features/
-│       │   └── design-studio/                 # Tính năng thiết kế áo
-│       │       ├── components/                # Canvas 2D, xem 3D, thanh công cụ
-│       │       ├── hooks/
-│       │       └── store/                     # Trạng thái thiết kế (zustand)
-│       └── pages/                             # Mỗi trang một thư mục
-│           ├── Home/  Catalog/  ProductDetail/
-│           ├── DesignStudio/  MyDesigns/
-│           ├── Cart/  Checkout/  MyOrders/
-│           ├── Login/  Register/
-│           └── admin/
-│
-├── .gitignore                                 # Danh sách không đẩy lên Git
-├── .gitattributes, .editorconfig              # Thống nhất xuống dòng, thụt lề
-└── README.md                                  # File này
+├── backend/        # Spring Boot (Java)   → xem 3.2
+├── frontend/       # React (JavaScript)   → xem 3.3
+├── .gitignore      # Danh sách không đẩy lên Git
+├── .gitattributes  # Thống nhất kiểu xuống dòng
+├── .editorconfig   # Thống nhất thụt lề
+└── README.md       # File này
 ```
 
-Thư mục nào đang rỗng sẽ có file `.gitkeep` bên trong để Git lưu được. Khi thư mục đã có file thật, có thể xóa `.gitkeep`.
+### 3.2. Backend
 
-### 3.2. Ý nghĩa các thư mục Backend
+```
+backend/
+├── pom.xml                                   # Khai báo thư viện backend
+├── mvnw, mvnw.cmd, .mvn/                     # Maven Wrapper (khỏi cài Maven)
+└── src/
+    ├── main/
+    │   ├── java/com/atelier/
+    │   │   ├── BackendApplication.java       # Điểm chạy của backend (có sẵn)
+    │   │   │
+    │   │   ├── common/                       # DÙNG CHUNG cho mọi tính năng
+    │   │   │   ├── PingController.java       # API thử kết nối (có sẵn)
+    │   │   │   ├── config/                   # Cấu hình: Security... (trống)
+    │   │   │   ├── exception/                # Xử lý lỗi chung (trống)
+    │   │   │   └── response/                 # Khuôn phản hồi chung (trống)
+    │   │   │
+    │   │   ├── auth/dto/                     # Đăng ký, đăng nhập (trống)
+    │   │   ├── user/dto/                     # Người dùng (trống)
+    │   │   ├── catalog/dto/                  # Sản phẩm nền: áo, màu, size (trống)
+    │   │   ├── design/dto/                   # Thiết kế của người dùng (trống)
+    │   │   ├── cart/dto/                     # Giỏ hàng (trống)
+    │   │   ├── order/dto/                    # Đơn hàng (trống)
+    │   │   ├── payment/dto/                  # Thanh toán (trống)
+    │   │   ├── production/dto/               # Tiến độ sản xuất (trống)
+    │   │   ├── file/                         # Upload ảnh (trống)
+    │   │   └── admin/                        # Quản trị, thống kê (trống)
+    │   │
+    │   └── resources/
+    │       └── application.yaml              # Cấu hình ứng dụng (có sẵn)
+    └── test/java/com/atelier/                # Test (có sẵn khung)
+```
 
-| Thư mục | Chứa gì | Ví dụ |
-|---|---|---|
-| `common/config` | Cấu hình dùng chung | `SecurityConfig`, `CorsConfig` |
-| `common/exception` | Class lỗi và bộ xử lý lỗi chung | `BusinessException`, `GlobalExceptionHandler` |
-| `common/response` | Khuôn dữ liệu trả về chung | `ApiResponse` |
-| `auth` | Đăng ký, đăng nhập | `AuthController`, `AuthService` |
-| `user` | Thông tin người dùng | `UserController`, `UserService` |
-| `catalog` | Sản phẩm nền để thiết kế | `ProductController`, `ProductService` |
-| `design` | Thiết kế người dùng tạo ra | `DesignController`, `DesignService` |
-| `cart`, `order`, `payment` | Giỏ hàng, đơn hàng, thanh toán | `OrderService` |
-| `production` | Theo dõi tiến độ sản xuất | `ProductionService` |
-| `file` | Upload và lưu ảnh | `FileController` |
-| `admin` | Chức năng quản trị | `AdminController` |
-| `<tính năng>/dto` | Class dữ liệu vào/ra của API | `CreateDesignRequest`, `DesignResponse` |
+**Mỗi tính năng là một package** (ví dụ `design/`). Khi viết tính năng, file nằm như sau:
 
-### 3.3. Ý nghĩa các thư mục Frontend
+```
+design/
+├── DesignController.java        # Khai báo API
+├── DesignService.java           # Xử lý nghiệp vụ
+├── Design.java                  # Entity (khi có database)
+├── DesignRepository.java        # Truy cập database (khi có database)
+└── dto/
+    ├── CreateDesignRequest.java # Dữ liệu gửi lên
+    └── DesignResponse.java      # Dữ liệu trả về
+```
 
-| Thư mục | Chứa gì | Ví dụ |
-|---|---|---|
-| `api` | Các hàm gọi backend, mỗi tính năng một file | `authApi.js`, `designApi.js` |
-| `routes` | Danh sách đường dẫn và route cần đăng nhập | `AppRoutes.jsx`, `ProtectedRoute.jsx` |
-| `hooks` | Hook dùng ở nhiều nơi | `useAuth.js`, `useDebounce.js` |
-| `context` | Dữ liệu chia sẻ toàn ứng dụng | `AuthContext.jsx` |
-| `utils` | Hàm thuần, không liên quan giao diện | `formatCurrency.js` |
-| `constants` | Hằng số | `orderStatus.js` |
-| `components/layout` | Bố cục chung của trang | `Navbar.jsx`, `Footer.jsx` |
-| `components/ui` | Thành phần nhỏ dùng lại nhiều nơi | `Button.jsx`, `Modal.jsx` |
-| `features/design-studio` | Toàn bộ phần thiết kế áo (canvas 2D, xem 3D) | `CanvasEditor.jsx`, `Viewer3D.jsx`, `designStore.js` |
-| `pages/<Tên>` | Mỗi trang một thư mục | `pages/Cart/Cart.jsx` |
-| `public/models` | Mô hình 3D | `tshirt.glb` |
+### 3.3. Frontend
 
-### 3.4. Quy tắc thống nhất
+```
+frontend/
+├── package.json, package-lock.json           # Khai báo thư viện frontend
+├── vite.config.js                            # Cấu hình Vite, Tailwind, proxy sang backend (có sẵn)
+├── index.html
+├── public/
+│   └── models/                               # Mô hình áo 3D .glb (trống)
+└── src/
+    ├── main.jsx                              # Điểm vào, đã bọc Router + React Query (có sẵn)
+    ├── App.jsx                               # Gọi AppRoutes (có sẵn)
+    ├── index.css                             # Chỉ có @import "tailwindcss" (có sẵn)
+    │
+    ├── routes/
+    │   └── AppRoutes.jsx                     # Khai báo đường dẫn các trang (có sẵn)
+    │
+    ├── pages/                                # MỖI TRANG MỘT THƯ MỤC (đều có sẵn, nội dung còn trống)
+    │   ├── Home/Home.jsx                     # Trang chủ
+    │   ├── Catalog/Catalog.jsx               # Danh sách sản phẩm
+    │   ├── ProductDetail/ProductDetail.jsx   # Chi tiết sản phẩm
+    │   ├── DesignStudio/DesignStudio.jsx     # Thiết kế áo
+    │   ├── MyDesigns/MyDesigns.jsx           # Thiết kế của tôi
+    │   ├── Cart/Cart.jsx                     # Giỏ hàng
+    │   ├── Checkout/Checkout.jsx             # Thanh toán
+    │   ├── MyOrders/MyOrders.jsx             # Đơn hàng của tôi
+    │   ├── Login/Login.jsx                   # Đăng nhập
+    │   ├── Register/Register.jsx             # Đăng ký
+    │   └── admin/                            # Trang quản trị (trống)
+    │
+    ├── components/                           # THÀNH PHẦN DÙNG LẠI NHIỀU NƠI
+    │   ├── layout/MainLayout.jsx             # Khung chung có menu (có sẵn)
+    │   └── ui/                               # Button, Input, Modal, ProductCard (trống)
+    │
+    ├── features/
+    │   └── design-studio/                    # Phần thiết kế áo (riêng vì phức tạp)
+    │       ├── components/                   # Canvas 2D, xem 3D, thanh công cụ (trống)
+    │       ├── hooks/                        # (trống)
+    │       └── store/                        # Trạng thái thiết kế, dùng zustand (trống)
+    │
+    ├── api/                                  # NƠI DUY NHẤT GỌI BACKEND (trống)
+    ├── hooks/                                # Hook dùng chung (trống)
+    ├── context/                              # Dữ liệu chia sẻ toàn app, ví dụ đăng nhập (trống)
+    ├── utils/                                # Hàm tiện ích (trống)
+    └── constants/                            # Hằng số (trống)
+```
+
+### 3.4. Một tính năng đi qua những file nào
+
+Ví dụ tính năng **Thiết kế** (người dùng bấm "Lưu", sau đó xem lại trong "Thiết kế của tôi"):
+
+```
+FRONTEND                                         BACKEND
+pages/DesignStudio/DesignStudio.jsx
+  └─ features/design-studio/  (canvas, 3D, store)
+  └─ api/designApi.js ── POST /api/v1/designs ─► design/DesignController.java
+                                                   └─ design/DesignService.java
+                                                        └─ design/DesignRepository.java (sau này)
+                                                   ◄─ design/dto/DesignResponse.java
+
+pages/MyDesigns/MyDesigns.jsx
+  └─ api/designApi.js ── GET /api/v1/designs ──► design/DesignController.java
+```
+
+Nghĩa là mỗi tính năng có **một cặp tên tương ứng** hai bên: `designApi.js` (frontend) gọi `DesignController` (backend). Các tính năng khác làm tương tự.
+
+### 3.5. Muốn làm việc này thì đặt file ở đâu?
+
+| Việc cần làm | Đặt ở đâu |
+|---|---|
+| Thêm một trang mới | `frontend/src/pages/<Tên>/<Tên>.jsx`, rồi khai báo đường dẫn trong `routes/AppRoutes.jsx` |
+| Thêm nút, ô nhập dùng ở nhiều trang | `frontend/src/components/ui/` |
+| Gọi một API mới từ frontend | `frontend/src/api/<tính-năng>Api.js` |
+| Lấy dữ liệu từ server cho một trang | Hook dùng react-query, đặt ở `hooks/` (hoặc `features/<tính-năng>/hooks/`) |
+| Lưu trạng thái của trình thiết kế | `frontend/src/features/design-studio/store/designStore.js` |
+| Hàm định dạng (tiền, ngày) | `frontend/src/utils/` |
+| Mô hình áo 3D | `frontend/public/models/` |
+| Thêm một API mới ở backend | Controller và Service nằm trong package của tính năng, ví dụ `design/` |
+| Class dữ liệu vào/ra của API | `backend/.../<tính-năng>/dto/` |
+| Xử lý lỗi chung, khuôn phản hồi | `backend/.../common/exception/`, `common/response/` |
+| Cấu hình backend | `backend/src/main/resources/application.yaml` |
+| Thêm thư viện mới | `backend/pom.xml` hoặc `npm install` trong `frontend` (xem mục 7) |
+
+### 3.6. Quy tắc thống nhất
 
 1. **Không tạo thêm thư mục cấp cao** (cạnh `backend`, `frontend`) khi chưa thống nhất với nhóm.
-2. **Backend theo tính năng:** code của một tính năng nằm trong package của tính năng đó. Các file như Controller, Service, Repository, Entity đặt **trực tiếp** trong package (ví dụ `design/DesignService.java`), còn DTO đặt trong `dto/`.
-3. **Cần thêm package mới** (ví dụ `common/security`, `common/util`) thì tạo trong `com.atelier` theo đúng mẫu trên và báo nhóm.
-4. **Frontend:** mỗi trang là một thư mục trong `pages/`, file chính trùng tên thư mục (`pages/Cart/Cart.jsx`). Phần chỉ dùng cho một tính năng lớn thì đặt trong `features/`; dùng ở nhiều nơi thì đặt trong `components/`.
+2. **Backend theo tính năng:** code của một tính năng nằm trong package của tính năng đó. Controller, Service, Repository, Entity đặt **trực tiếp** trong package, còn DTO đặt trong `dto/`.
+3. **Cần package mới** (ví dụ `common/security`, `common/util`) thì tạo trong `com.atelier` theo đúng mẫu trên và báo nhóm.
+4. **Frontend:** mỗi trang là một thư mục trong `pages/`, file chính trùng tên thư mục. Phần chỉ dùng cho một tính năng lớn thì đặt trong `features/`; dùng ở nhiều nơi thì đặt trong `components/`.
 5. **Gọi backend chỉ qua `src/api/`**, không gọi trực tiếp trong component.
 6. **Tên thư mục và file** theo bảng quy ước ở mục 5.3 và 6.3.
-7. Muốn đổi cấu trúc thư mục thì **sửa sơ đồ ở mục này trong cùng Pull Request**, để README luôn đúng với thực tế.
+7. Muốn đổi cấu trúc thì **sửa sơ đồ ở mục này trong cùng Pull Request**, để README luôn đúng với thực tế.
 
 ---
 
 ## 4. Cách chạy dự án
 
 ### 4.1. Lần đầu sau khi clone
+
+**Lấy code về máy:**
+
+```bash
+git clone <đường-dẫn-repo-GitHub-của-nhóm>
+cd Project_Ecormerce_Atrlier
+```
 
 **Backend (IntelliJ):**
 
@@ -225,7 +300,8 @@ npm run dev
 | Kiểm tra | Địa chỉ | Kết quả đúng |
 |---|---|---|
 | Backend | http://localhost:8080/api/v1/ping | `{"message":"Atelier backend OK"}` |
-| Frontend | http://localhost:5173 | Trang hiện chữ "Atelier backend OK" |
+| Frontend | http://localhost:5173 | Thấy thanh menu (Trang chủ, Sản phẩm, Thiết kế, Giỏ hàng, Đăng nhập); bấm từng link thì đổi trang |
+| Proxy | http://localhost:5173/api/v1/ping | Hiện cùng nội dung như backend (backend phải đang chạy) |
 
 Frontend gọi backend thông qua **proxy** cấu hình trong `frontend/vite.config.js`: mọi yêu cầu bắt đầu bằng `/api` được chuyển sang `http://localhost:8080`. Nhờ vậy không gặp lỗi CORS khi code.
 
@@ -326,8 +402,68 @@ public class DesignController {
 ### 5.6. Điều cần nhớ
 
 - **Tiền dùng `BigDecimal` hoặc số nguyên VND**, không dùng `double`.
-- Mật khẩu và khóa bí mật **không ghi cứng trong code đẩy lên Git** (dùng file `application-local.yaml` đã được `.gitignore` bỏ qua, hoặc biến môi trường).
+- Mật khẩu và khóa bí mật **không ghi cứng trong code đẩy lên Git** (khi nối database, đặt trong file riêng như `application-local.yaml` và thêm file đó vào `.gitignore`, hoặc dùng biến môi trường).
 - Không để lại `System.out.println`; cần ghi log thì dùng SLF4J (`@Slf4j` của Lombok).
+
+### 5.7. Mẫu xử lý lỗi chung (làm đầu tiên trong `common/exception/`)
+
+Mọi lỗi nghiệp vụ ném `BusinessException`, một class duy nhất bắt và trả về đúng dạng ở mục 10.1. Controller **không cần** `try/catch`.
+
+```java
+// common/exception/ErrorCode.java
+public enum ErrorCode {
+    DESIGN_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy thiết kế"),
+    EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Email đã được sử dụng");
+
+    private final HttpStatus status;
+    private final String message;
+
+    ErrorCode(HttpStatus status, String message) {
+        this.status = status;
+        this.message = message;
+    }
+    public HttpStatus getStatus() { return status; }
+    public String getMessage() { return message; }
+}
+
+// common/exception/BusinessException.java
+public class BusinessException extends RuntimeException {
+    private final ErrorCode errorCode;
+
+    public BusinessException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
+    public ErrorCode getErrorCode() { return errorCode; }
+}
+
+// common/exception/GlobalExceptionHandler.java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Map<String, Object>> handleBusiness(BusinessException ex) {
+        ErrorCode ec = ex.getErrorCode();
+        return ResponseEntity.status(ec.getStatus())
+                .body(Map.of("code", ec.name(), "message", ec.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidation(
+            MethodArgumentNotValidException ex) {
+        var errors = ex.getBindingResult().getFieldErrors().stream()
+                .map(f -> Map.of("field", f.getField(),
+                                 "message", String.valueOf(f.getDefaultMessage())))
+                .toList();
+        return ResponseEntity.badRequest().body(Map.of(
+                "code", "VALIDATION_ERROR",
+                "message", "Dữ liệu không hợp lệ",
+                "errors", errors));
+    }
+}
+```
+
+Báo lỗi mới: thêm một dòng vào `ErrorCode`, rồi `throw new BusinessException(ErrorCode.TÊN_LỖI)` trong Service.
 
 ---
 
@@ -430,6 +566,23 @@ export default function MyDesigns() {
   - Mật khẩu, khóa bí mật, file `.env`
 - Trước khi gửi PR, **chạy thử cả backend lẫn frontend** và chắc rằng không có lỗi.
 - Kéo code mới về thường xuyên (`git pull`) để giảm xung đột.
+
+### Quy trình mỗi lần làm một việc
+
+```bash
+git checkout main
+git pull                                   # lấy code mới nhất
+git checkout -b feature/design-save-api    # tạo nhánh riêng cho việc của mình
+
+# ... viết code, chạy thử cả backend và frontend ...
+
+git status                                 # kiểm tra file sắp commit
+git add .
+git commit -m "feat: thêm API lưu thiết kế"
+git push -u origin feature/design-save-api # rồi vào GitHub tạo Pull Request
+```
+
+Sau khi Pull Request được duyệt và merge, quay lại `main`, `git pull` rồi bắt đầu việc mới.
 
 ---
 
