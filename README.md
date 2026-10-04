@@ -1,6 +1,6 @@
 # Atelier
 
-Nền tảng thiết kế trang phục, xem trước 3D và đặt may theo yêu cầu (đồ án môn học).
+Nền tảng thiết kế trang phục, xem trước 3D và đặt may theo yêu cầu.
 
 - **Backend:** Spring Boot (Java 21, Maven)
 - **Frontend:** React (Vite, JavaScript)
