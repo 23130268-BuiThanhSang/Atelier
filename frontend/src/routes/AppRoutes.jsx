@@ -13,6 +13,8 @@ import Register from '../pages/Register/Register'
 import AuthLayout from "../components/layout/AuthLayout.jsx";
 import AdminLayout from '../components/layout/AdminLayout';
 import AdminDashboard from '../pages/admin/AdminDashboard';
+import AdminUsers from '../pages/admin/AdminUsers';
+import AdminUserDetail from '../pages/admin/AdminUserDetail';
 
 export default function AppRoutes() {
     return (
@@ -35,6 +37,8 @@ export default function AppRoutes() {
 
             <Route element={<AdminLayout />}>
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/users/:id" element={<AdminUserDetail />} />
             </Route>
         </Routes>
     )
