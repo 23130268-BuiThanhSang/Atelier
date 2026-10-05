@@ -11,6 +11,8 @@ import MyOrders from '../pages/MyOrders/MyOrders'
 import Login from '../pages/Login/Login'
 import Register from '../pages/Register/Register'
 import AuthLayout from "../components/layout/AuthLayout.jsx";
+import AdminLayout from '../components/layout/AdminLayout';
+import AdminDashboard from '../pages/admin/AdminDashboard';
 
 export default function AppRoutes() {
     return (
@@ -29,6 +31,10 @@ export default function AppRoutes() {
             <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+            </Route>
+
+            <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminDashboard />} />
             </Route>
         </Routes>
     )
