@@ -11,6 +11,7 @@ import MyOrders from '../pages/MyOrders/MyOrders'
 import Login from '../pages/Login/Login'
 import Register from '../pages/Register/Register'
 import AuthLayout from "../components/layout/AuthLayout.jsx";
+import ForgotPassword from "../pages/Login/Forgot_Password";
 import EmailVerification from "../pages/Login/EmailVerification";
 
 export default function AppRoutes() {
@@ -30,6 +31,7 @@ export default function AppRoutes() {
             <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot_password" element={<ForgotPassword />} />
                 <Route path="/verify_email" element={<EmailVerification />} />
             </Route>
         </Routes>
