@@ -1,18 +1,17 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
+import Header from './Header'
+import Footer from './Footer'
 
 export default function MainLayout() {
     return (
-        <div className="min-h-screen">
-            <nav className="flex gap-4 border-b p-4">
-                <Link to="/">Trang chủ</Link>
-                <Link to="/catalog">Sản phẩm</Link>
-                <Link to="/design-studio">Thiết kế</Link>
-                <Link to="/cart">Giỏ hàng</Link>
-                <Link to="/login">Đăng nhập</Link>
-            </nav>
-            <main className="p-4">
+        <div className="min-h-screen flex flex-col bg-white text-zinc-950">
+            <Header />
+
+            <main className="flex-1">
                 <Outlet />
             </main>
+
+            <Footer />
         </div>
     )
 }
