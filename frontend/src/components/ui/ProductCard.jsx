@@ -15,7 +15,7 @@ export default function ProductCard({ product, onAddToCart }) {
 
     return (
         <article className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white transition-all hover:-translate-y-0.5 hover:shadow-md">
-            <Link to={`/product/${product.id}`} className="block">
+            <Link to={`/products/${product.id}`} className="block">
                 <div className="aspect-square overflow-hidden bg-zinc-100">
                     {product.imageUrl ? (
                         <img
