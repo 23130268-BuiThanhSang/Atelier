@@ -11,6 +11,14 @@ import MyOrders from '../pages/MyOrders/MyOrders'
 import Login from '../pages/Login/Login'
 import Register from '../pages/Register/Register'
 import AuthLayout from "../components/layout/AuthLayout.jsx";
+import AdminLayout from '../components/layout/AdminLayout';
+import AdminDashboard from '../pages/admin/AdminDashboard';
+import AdminUsers from '../pages/admin/AdminUsers';
+import AdminUserDetail from '../pages/admin/AdminUserDetail';
+import AdminProducts from '../pages/admin/AdminProducts';
+import AdminProductForm from '../pages/admin/AdminProductForm';
+import AdminOrders from '../pages/admin/AdminOrders';
+import AdminOrderDetail from '../pages/admin/AdminOrderDetail';
 import ForgotPassword from "../pages/Login/Forgot_Password";
 import EmailVerification from "../pages/Login/EmailVerification";
 
@@ -33,6 +41,17 @@ export default function AppRoutes() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot_password" element={<ForgotPassword />} />
                 <Route path="/verify_email" element={<EmailVerification />} />
+            </Route>
+
+            <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/users/:id" element={<AdminUserDetail />} />
+                <Route path="/admin/products" element={<AdminProducts />} />
+                <Route path="/admin/products/new" element={<AdminProductForm />} />
+                <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />
+                <Route path="/admin/orders" element={<AdminOrders />} />
+                <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
             </Route>
         </Routes>
     )
