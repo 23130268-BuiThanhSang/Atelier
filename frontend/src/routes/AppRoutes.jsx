@@ -19,6 +19,8 @@ import AdminProducts from '../pages/admin/AdminProducts';
 import AdminProductForm from '../pages/admin/AdminProductForm';
 import AdminOrders from '../pages/admin/AdminOrders';
 import AdminOrderDetail from '../pages/admin/AdminOrderDetail';
+import ForgotPassword from "../pages/Login/Forgot_Password";
+import EmailVerification from "../pages/Login/EmailVerification";
 
 export default function AppRoutes() {
     return (
@@ -37,6 +39,8 @@ export default function AppRoutes() {
             <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot_password" element={<ForgotPassword />} />
+                <Route path="/verify_email" element={<EmailVerification />} />
             </Route>
 
             <Route element={<AdminLayout />}>

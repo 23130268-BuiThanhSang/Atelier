@@ -63,7 +63,7 @@ export default function Login() {
                                     <input
                                         id="email"
                                         type="email"
-                                        defaultValue="clara.vance@atelierdesign.co"
+                                        placeholder="clara.vance@atelierdesign.co"
                                         className="w-full pl-11 pr-4 py-3 rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#f0592a]/20 focus:border-[#f0592a] transition-all text-zinc-900 bg-zinc-50 focus:bg-white"
                                     />
                                 </div>
@@ -78,7 +78,7 @@ export default function Login() {
                                     <input
                                         id="password"
                                         type="password"
-                                        defaultValue="artisan-craft-2024"
+                                        placeholder="artisan-craft-2024"
                                         className="w-full pl-11 pr-11 py-3 rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#f0592a]/20 focus:border-[#f0592a] transition-all text-zinc-900 bg-zinc-50 focus:bg-white"
                                     />
                                     <button type="button"
@@ -148,7 +148,7 @@ export default function Login() {
                             </button>
 
                             <p className="text-center text-sm text-zinc-500 pt-2">
-                                Don't have an account? <a href="#"
+                                Don't have an account? <a href="/register"
                                                           className="text-[#f0592a] font-medium hover:text-[#d94a1f] transition-colors">Sign
                                 up</a>
                             </p>
