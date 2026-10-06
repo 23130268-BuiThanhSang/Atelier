@@ -1,47 +1,47 @@
-import React from 'react';
-import { Mail, Lock, Eye, CheckCircle2 } from 'lucide-react';
+import React, {useState} from 'react';
+import {Mail, Lock, Eye, CheckCircle2, EyeOff} from 'lucide-react';
 export default function Login() {
+    const [showPassword, setShowPassword] = useState(false);
     return (
             /* Main Content */
                 <div
-                    className="w-full max-w-[1100px] grid grid-cols-1 md:grid-cols-2 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 overflow-hidden">
+                    className="w-full max-w-[680px] bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 overflow-hidden"> {/* max-w-[1100px] grid grid-cols-1 md:grid-cols-2*/}
 
                     {/* Left Branding Panel */}
-                    <div className="bg-stone-100 p-8 md:p-14 flex flex-col justify-between hidden md:flex">
-                        <div>
-                            {/* dùng 1 Eyebrow duy nhất cho cả trang theo luật rationing */}
-                            <div className="text-[11px] font-semibold tracking-widest uppercase mb-10 text-zinc-500">
-                                Artisan Network
-                            </div>
-                            <div
-                                className="w-24 h-24 bg-white rounded-full mb-10 shadow-sm border border-zinc-100"></div>
-                            <div className="mb-6">
-                                {/* link ảnh placeholder thực tế theo chuẩn SKILL.md */}
-                                <img
-                                    src="https://picsum.photos/seed/atelier-craft/600/400"
-                                    alt="Artisan crafting apparel"
-                                    className="rounded-xl w-full max-w-[280px] object-cover aspect-[4/3] shadow-sm"
-                                />
-                                <p className="text-xs text-zinc-500 mt-3 font-medium">
-                                    Studio batch #084 - Organic twill
-                                </p>
-                            </div>
-                        </div>
+                    {/*<div className="bg-stone-100 p-8 md:p-14 flex flex-col justify-between hidden md:flex">*/}
+                    {/*    <div>*/}
+                    {/*        /!* dùng 1 Eyebrow duy nhất cho cả trang theo luật rationing *!/*/}
+                    {/*        <div className="text-[11px] font-semibold tracking-widest uppercase mb-10 text-zinc-500">*/}
+                    {/*            Artisan Network*/}
+                    {/*        </div>*/}
+                    {/*        <div className="w-24 h-24 bg-white rounded-full mb-10 shadow-sm border border-zinc-100"></div>*/}
+                    {/*        <div className="mb-6">*/}
+                    {/*            /!* link ảnh placeholder thực tế theo chuẩn SKILL.md *!/*/}
+                    {/*            <img*/}
+                    {/*                src="https://picsum.photos/seed/atelier-craft/600/400"*/}
+                    {/*                alt="Artisan crafting apparel"*/}
+                    {/*                className="rounded-xl w-full max-w-[280px] object-cover aspect-[4/3] shadow-sm"*/}
+                    {/*            />*/}
+                    {/*            <p className="text-xs text-zinc-500 mt-3 font-medium">*/}
+                    {/*                Studio batch #084 - Organic twill*/}
+                    {/*            </p>*/}
+                    {/*        </div>*/}
+                    {/*    </div>*/}
 
-                        <div>
-                            <p className="text-lg italic text-zinc-700 leading-relaxed max-w-sm mb-10">
-                                "Crafting thoughtful apparel, connecting independent designers with verified garment
-                                producers."
-                            </p>
-                            <div className="flex justify-between items-center text-xs font-medium text-zinc-500">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle2 className="w-4 h-4 text-zinc-400"/>
-                                    1,400+ Verified Guilds
-                                </div>
-                                <span className="tracking-widest uppercase">EST. 2024</span>
-                            </div>
-                        </div>
-                    </div>
+                    {/*    <div>*/}
+                    {/*        <p className="text-lg italic text-zinc-700 leading-relaxed max-w-sm mb-10">*/}
+                    {/*            "Crafting thoughtful apparel, connecting independent designers with verified garment*/}
+                    {/*            producers."*/}
+                    {/*        </p>*/}
+                    {/*        <div className="flex justify-between items-center text-xs font-medium text-zinc-500">*/}
+                    {/*            <div className="flex items-center gap-2">*/}
+                    {/*                <CheckCircle2 className="w-4 h-4 text-zinc-400"/>*/}
+                    {/*                1,400+ Verified Guilds*/}
+                    {/*            </div>*/}
+                    {/*            <span className="tracking-widest uppercase">EST. 2024</span>*/}
+                    {/*        </div>*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
 
                     {/* Right Form Panel */}
                     <div className="p-8 md:p-14 lg:p-20 flex flex-col justify-center">
@@ -63,7 +63,7 @@ export default function Login() {
                                     <input
                                         id="email"
                                         type="email"
-                                        placeholder="clara.vance@atelierdesign.co"
+                                        placeholder="Email"
                                         className="w-full pl-11 pr-4 py-3 rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#f0592a]/20 focus:border-[#f0592a] transition-all text-zinc-900 bg-zinc-50 focus:bg-white"
                                     />
                                 </div>
@@ -77,13 +77,14 @@ export default function Login() {
                                     <Lock className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"/>
                                     <input
                                         id="password"
-                                        type="password"
-                                        placeholder="artisan-craft-2024"
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Password"
                                         className="w-full pl-11 pr-11 py-3 rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#f0592a]/20 focus:border-[#f0592a] transition-all text-zinc-900 bg-zinc-50 focus:bg-white"
                                     />
                                     <button type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
                                             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors">
-                                        <Eye className="w-5 h-5"/>
+                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
                                 </div>
                             </div>
@@ -99,7 +100,7 @@ export default function Login() {
                                     />
                                     <span className="group-hover:text-zinc-900 transition-colors">Remember me</span>
                                 </label>
-                                <a href="#"
+                                <a href="/forgot_password"
                                    className="text-sm font-medium text-[#f0592a] hover:text-[#d94a1f] transition-colors">
                                     Forgot password?
                                 </a>
