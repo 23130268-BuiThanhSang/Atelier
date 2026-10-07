@@ -6,55 +6,16 @@ export default function Login() {
             /* Main Content */
                 <div
                     className="w-full max-w-[680px] bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 overflow-hidden"> {/* max-w-[1100px] grid grid-cols-1 md:grid-cols-2*/}
-
-                    {/* Left Branding Panel */}
-                    {/*<div className="bg-stone-100 p-8 md:p-14 flex flex-col justify-between hidden md:flex">*/}
-                    {/*    <div>*/}
-                    {/*        /!* dùng 1 Eyebrow duy nhất cho cả trang theo luật rationing *!/*/}
-                    {/*        <div className="text-[11px] font-semibold tracking-widest uppercase mb-10 text-zinc-500">*/}
-                    {/*            Artisan Network*/}
-                    {/*        </div>*/}
-                    {/*        <div className="w-24 h-24 bg-white rounded-full mb-10 shadow-sm border border-zinc-100"></div>*/}
-                    {/*        <div className="mb-6">*/}
-                    {/*            /!* link ảnh placeholder thực tế theo chuẩn SKILL.md *!/*/}
-                    {/*            <img*/}
-                    {/*                src="https://picsum.photos/seed/atelier-craft/600/400"*/}
-                    {/*                alt="Artisan crafting apparel"*/}
-                    {/*                className="rounded-xl w-full max-w-[280px] object-cover aspect-[4/3] shadow-sm"*/}
-                    {/*            />*/}
-                    {/*            <p className="text-xs text-zinc-500 mt-3 font-medium">*/}
-                    {/*                Studio batch #084 - Organic twill*/}
-                    {/*            </p>*/}
-                    {/*        </div>*/}
-                    {/*    </div>*/}
-
-                    {/*    <div>*/}
-                    {/*        <p className="text-lg italic text-zinc-700 leading-relaxed max-w-sm mb-10">*/}
-                    {/*            "Crafting thoughtful apparel, connecting independent designers with verified garment*/}
-                    {/*            producers."*/}
-                    {/*        </p>*/}
-                    {/*        <div className="flex justify-between items-center text-xs font-medium text-zinc-500">*/}
-                    {/*            <div className="flex items-center gap-2">*/}
-                    {/*                <CheckCircle2 className="w-4 h-4 text-zinc-400"/>*/}
-                    {/*                1,400+ Verified Guilds*/}
-                    {/*            </div>*/}
-                    {/*            <span className="tracking-widest uppercase">EST. 2024</span>*/}
-                    {/*        </div>*/}
-                    {/*    </div>*/}
-                    {/*</div>*/}
-
                     {/* Right Form Panel */}
                     <div className="p-8 md:p-14 lg:p-20 flex flex-col justify-center">
-                        <h1 className="text-3xl font-medium tracking-tight mb-2 text-zinc-950">Welcome back</h1>
-                        <p className="text-zinc-500 mb-10 text-sm">Enter your credentials to access your Atelier
-                            account.</p>
+                        <h1 className="text-3xl font-medium tracking-tight mb-2 text-zinc-950">Chào mừng trở lại!</h1>
+                        <p className="text-zinc-500 mb-10 text-sm">Nhập thông tin đăng nhập của bạn để truy cập tài khoản Atelier.</p>
 
                         <form className="space-y-6">
                             {/* Group Email */}
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center">
-                                    <label className="text-sm font-medium text-zinc-900" htmlFor="email">Email
-                                        address</label>
+                                    <label className="text-sm font-medium text-zinc-900" htmlFor="email">Địa chỉ email</label>
                                     {/* Test error preview từ hình mẫu */}
                                     <span className="text-xs text-red-500 opacity-0 transition-opacity">Test error preview</span>
                                 </div>
@@ -63,7 +24,7 @@ export default function Login() {
                                     <input
                                         id="email"
                                         type="email"
-                                        placeholder="Email"
+                                        placeholder="E-mail"
                                         className="w-full pl-11 pr-4 py-3 rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#f0592a]/20 focus:border-[#f0592a] transition-all text-zinc-900 bg-zinc-50 focus:bg-white"
                                     />
                                 </div>
@@ -72,13 +33,13 @@ export default function Login() {
                             {/* Group Password */}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-zinc-900 block"
-                                       htmlFor="password">Password</label>
+                                       htmlFor="password">Mật khẩu</label>
                                 <div className="relative">
                                     <Lock className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"/>
                                     <input
                                         id="password"
                                         type={showPassword ? "text" : "password"}
-                                        placeholder="Password"
+                                        placeholder="Mật khẩu"
                                         className="w-full pl-11 pr-11 py-3 rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#f0592a]/20 focus:border-[#f0592a] transition-all text-zinc-900 bg-zinc-50 focus:bg-white"
                                     />
                                     <button type="button"
@@ -98,11 +59,11 @@ export default function Login() {
                                         defaultChecked
                                         className="w-4 h-4 rounded border-zinc-300 text-[#f0592a] focus:ring-[#f0592a] accent-[#f0592a]"
                                     />
-                                    <span className="group-hover:text-zinc-900 transition-colors">Remember me</span>
+                                    <span className="group-hover:text-zinc-900 transition-colors">Ghi nhớ đăng nhập</span>
                                 </label>
                                 <a href="/forgot_password"
                                    className="text-sm font-medium text-[#f0592a] hover:text-[#d94a1f] transition-colors">
-                                    Forgot password?
+                                    Quên mật khẩu?
                                 </a>
                             </div>
 
@@ -121,7 +82,7 @@ export default function Login() {
                                 </div>
                                 <div
                                     className="relative flex justify-center text-[10px] uppercase tracking-widest font-semibold">
-                                    <span className="bg-white px-4 text-zinc-400">OR</span>
+                                    <span className="bg-white px-4 text-zinc-400">HOẶC</span>
                                 </div>
                             </div>
 
@@ -145,13 +106,12 @@ export default function Login() {
                                         d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                                         fill="#EA4335"/>
                                 </svg>
-                                Continue with Google
+                                Tiếp tục với Google
                             </button>
 
                             <p className="text-center text-sm text-zinc-500 pt-2">
-                                Don't have an account? <a href="/register"
-                                                          className="text-[#f0592a] font-medium hover:text-[#d94a1f] transition-colors">Sign
-                                up</a>
+                                Chưa có tài khoản? <a href="/register"
+                                                          className="text-[#f0592a] font-medium hover:text-[#d94a1f] transition-colors">Đăng ký</a>
                             </p>
                         </form>
                     </div>

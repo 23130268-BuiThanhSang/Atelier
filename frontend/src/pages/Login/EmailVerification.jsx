@@ -30,10 +30,10 @@ export default function EmailVerification() {
                 {/* Tiêu đề & Mô tả */}
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-medium tracking-tight text-zinc-950 mb-3">
-                        Verify your email
+                        Xác minh email của bạn
                     </h1>
                     <p className="text-sm text-zinc-500 leading-relaxed px-2">
-                        We sent a 6-digit confirmation code to <span className="font-semibold text-zinc-900">elias@studio.com</span>. Please enter it below to confirm your account.
+                        Chúng tôi đã gửi mã xác nhận gồm 6 chữ số đến địa chỉ <span className="font-semibold text-zinc-900">elias@studio.com</span>. Vui lòng nhập mã này bên dưới để xác nhận tài khoản của bạn.
                     </p>
                 </div>
 
@@ -63,7 +63,7 @@ export default function EmailVerification() {
                     {/* Timer */}
                     <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-zinc-600">
                         <Clock className="w-3.5 h-3.5 text-[#f0592a]" />
-                        <span>Code expires in <span className="font-bold text-zinc-900">04:59</span></span>
+                        <span>Mã này hết hạn sau <span className="font-bold text-zinc-900">04:59</span></span>
                     </div>
 
                     {/* Nút Verify */}
@@ -71,7 +71,7 @@ export default function EmailVerification() {
                         type="button"
                         className="w-full bg-[#f0592a] hover:bg-[#d94a1f] text-white font-medium py-3 rounded-lg transition-all active:scale-[0.98] shadow-sm flex items-center justify-center gap-2 group"
                     >
-                        Verify & Continue
+                        Xác minh & Tiếp tục
                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </button>
 
@@ -80,12 +80,12 @@ export default function EmailVerification() {
                 {/* Resend & Edit Email Box */}
                 <div className="mt-8 p-4 rounded-xl border border-[#f0e8ce] bg-[#fdfbf4] flex flex-col items-center text-center gap-3">
                     <p className="text-xs text-zinc-600">
-                        Didn't receive the code? <button className="text-zinc-400 font-medium cursor-not-allowed">Resend code (54s)</button>
+                        Bạn chưa nhận được mã? <button className="text-zinc-400 font-medium cursor-not-allowed">Gửi lại mã (54s)</button>
                     </p>
                     <div className="w-8 border-t border-zinc-200"></div>
                     <Link to="/register" className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-900 hover:text-[#f0592a] transition-colors">
                         <Edit2 className="w-3.5 h-3.5" />
-                        Change email address
+                        Thay đổi địa chỉ email
                     </Link>
                 </div>
 
@@ -93,20 +93,10 @@ export default function EmailVerification() {
                 <div className="mt-6 pt-5 border-t border-zinc-100 flex justify-center items-center text-[11px] font-medium text-zinc-500">
                     <div className="flex items-center gap-1.5">
                         <Lock className="w-3.5 h-3.5" />
-                        256-bit TLS encrypted
+                        Mã hóa 256-bit TLS
                     </div>
                 </div>
 
-            </div>
-
-            {/* Trust Badges (Nằm ngoài Card, bên dưới cùng) */}
-            <div className="flex items-center justify-center gap-4 text-xs font-medium text-zinc-600">
-                <div className="flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-[#d94a1f]" />
-                    Spam-free direct artisan channel
-                </div>
-                <div className="w-1 h-1 rounded-full bg-zinc-300"></div>
-                <div>Instant support</div>
             </div>
 
         </div>

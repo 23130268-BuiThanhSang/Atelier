@@ -20,13 +20,13 @@ export default function AuthLayout() {
                     <span className="hidden sm:block">
                             <span className="block text-xl font-black tracking-tight text-zinc-950">Atelier</span>
                             <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                                Custom Apparel Marketplace
+                                Sàn giao dịch quần áo may đo theo yêu cầu
                             </span>
                         </span>
                 </Link>
                 <nav className="hidden md:flex gap-6 text-sm font-medium items-center text-zinc-500">
-                    <a href="#" className="hover:text-zinc-900 transition-colors">Back to Shop</a>
-                    <a href="#" className="hover:text-zinc-900 transition-colors">Help & Support</a>
+                    <a href="/" className="hover:text-zinc-900 transition-colors">Trở lại cửa hàng</a>
+                    <a href="#" className="hover:text-zinc-900 transition-colors">Trợ giúp & Hỗ trợ</a>
                 </nav>
             </header>
 
@@ -38,11 +38,11 @@ export default function AuthLayout() {
             {/* Footer */}
             <footer
                 className="p-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-zinc-400">
-                <div>© 2024 Atelier Studio & Apparel Co. Artisan marketplace. All rights reserved.</div>
+                <div>© 2026 Atelier Studio & Apparel Co. Artisan marketplace. All rights reserved.</div>
                 <div className="flex gap-6">
-                    <a href="#" className="hover:text-zinc-700 transition-colors">Privacy Policy</a>
-                    <a href="#" className="hover:text-zinc-700 transition-colors">Terms of Service</a>
-                    <a href="#" className="hover:text-zinc-700 transition-colors">Security & Compliance</a>
+                    <a href="#" className="hover:text-zinc-700 transition-colors">Chính sách bảo mật</a>
+                    <a href="#" className="hover:text-zinc-700 transition-colors">Điều khoản dịch vụ</a>
+                    <a href="#" className="hover:text-zinc-700 transition-colors">Bảo mật & Tuân thủ</a>
                 </div>
             </footer>
         </div>
