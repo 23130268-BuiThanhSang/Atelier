@@ -28,15 +28,14 @@ export default function ForgotPassword() {
             <form className="space-y-6">
 
                 <div className="space-y-2">
-                    <label className="text-[11px] font-bold text-zinc-900 uppercase tracking-widest" htmlFor="email">
-                        Email address
-                    </label>
+                    <label className="text-sm font-medium text-zinc-900" htmlFor="email">Email
+                        address</label>
                     <div className="relative">
                         <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
                         <input
                             id="email"
                             type="email"
-                            placeholder="artisan@atelier-apparel.com"
+                            placeholder="Email"
                             className="w-full pl-10 pr-4 py-3 rounded-lg border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#f0592a]/20 focus:border-[#f0592a] transition-all text-sm text-zinc-900 bg-zinc-50 focus:bg-white"
                         />
                     </div>

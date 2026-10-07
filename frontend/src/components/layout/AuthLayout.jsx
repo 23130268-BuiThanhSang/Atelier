@@ -1,6 +1,7 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { Globe, User } from 'lucide-react';
 import React from "react";
+import logo from '../../assets/logo.png';
 
 export default function AuthLayout() {
     return (
@@ -8,18 +9,24 @@ export default function AuthLayout() {
 
             {/* Header */}
             <header className="flex justify-between items-center p-6 md:px-12 w-full">
-                <div className="font-semibold tracking-tight text-lg flex items-center gap-4">
-                    <span>ATELIER</span>
-                </div>
+                <Link to="/" className="group flex shrink-0 items-center gap-3 cursor-pointer" aria-label="Trang chủ Atelier">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#fefccf] to-[#f0592a] shadow-[0_4px_12px_rgba(240,89,42,0.15)] ring-1 ring-[#f0592a]/10 transition-transform duration-300 group-hover:-translate-y-0.5">
+                        <img
+                            src={logo}
+                            alt="Atelier Logo Icon"
+                            className="h-7 w-7 object-contain"
+                        />
+                    </div>
+                    <span className="hidden sm:block">
+                            <span className="block text-xl font-black tracking-tight text-zinc-950">Atelier</span>
+                            <span className="block text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                Custom Apparel Marketplace
+                            </span>
+                        </span>
+                </Link>
                 <nav className="hidden md:flex gap-6 text-sm font-medium items-center text-zinc-500">
                     <a href="#" className="hover:text-zinc-900 transition-colors">Back to Shop</a>
                     <a href="#" className="hover:text-zinc-900 transition-colors">Help & Support</a>
-                    <span className="uppercase text-zinc-900">EN</span>
-                    <div
-                        className="w-8 h-8 bg-zinc-200 rounded-full flex items-center justify-center text-zinc-600 hover:bg-zinc-300 cursor-pointer transition-colors">
-                        {/* Placeholder cho Avatar */}
-                        <span className="text-xs font-bold">U</span>
-                    </div>
                 </nav>
             </header>
 

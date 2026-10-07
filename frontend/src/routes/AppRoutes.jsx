@@ -19,8 +19,9 @@ import AdminProducts from '../pages/admin/AdminProducts';
 import AdminProductForm from '../pages/admin/AdminProductForm';
 import AdminOrders from '../pages/admin/AdminOrders';
 import AdminOrderDetail from '../pages/admin/AdminOrderDetail';
-import ForgotPassword from "../pages/Login/Forgot_Password";
+import ForgotPassword from "../pages/Login/ForgotPassword.jsx";
 import EmailVerification from "../pages/Login/EmailVerification";
+import MyProfile from "../pages/Login/MyProfile";
 
 export default function AppRoutes() {
     return (
@@ -41,6 +42,7 @@ export default function AppRoutes() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot_password" element={<ForgotPassword />} />
                 <Route path="/verify_email" element={<EmailVerification />} />
+                <Route path="/my_profile" element={<MyProfile />} />
             </Route>
 
             <Route element={<AdminLayout />}>
