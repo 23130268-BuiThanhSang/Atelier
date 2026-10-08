@@ -28,6 +28,7 @@ import SecurityCompliance from "../pages/Policy/SecurityComplience.jsx";
 import HelpSupport from "../pages/Policy/Help_Support.jsx";
 import ProducerDashboard from '../pages/Producer/ProducerDashboard.jsx';
 import OrderResolutionCenter from '../pages/Producer/OrderResolutionCenter';
+import DesignStudio3D from '../pages/DesignStudio/DesignStudio3D';
 
 export default function AppRoutes() {
     return (
@@ -47,6 +48,7 @@ export default function AppRoutes() {
                 <Route path="/help_support" element={<HelpSupport />} />
                 <Route path="/producer/dashboard" element={<ProducerDashboard />} />
                 <Route path="/orders/:id/resolution" element={<OrderResolutionCenter />} />
+                <Route path="/design-studio/3d" element={<DesignStudio3D />} />
             </Route>
 
             <Route element={<AuthLayout />}>
