@@ -26,7 +26,7 @@ export default function AuthLayout() {
                 </Link>
                 <nav className="hidden md:flex gap-6 text-sm font-medium items-center text-zinc-500">
                     <a href="/" className="hover:text-zinc-900 transition-colors">Trở lại cửa hàng</a>
-                    <a href="#" className="hover:text-zinc-900 transition-colors">Trợ giúp & Hỗ trợ</a>
+                    <a href="/help_support" className="hover:text-zinc-900 transition-colors">Trợ giúp & Hỗ trợ</a>
                 </nav>
             </header>
 
@@ -40,9 +40,9 @@ export default function AuthLayout() {
                 className="p-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-medium text-zinc-400">
                 <div>© 2026 Atelier Studio & Apparel Co. Artisan marketplace. All rights reserved.</div>
                 <div className="flex gap-6">
-                    <a href="#" className="hover:text-zinc-700 transition-colors">Chính sách bảo mật</a>
-                    <a href="#" className="hover:text-zinc-700 transition-colors">Điều khoản dịch vụ</a>
-                    <a href="#" className="hover:text-zinc-700 transition-colors">Bảo mật & Tuân thủ</a>
+                    <a href="/privacy_policy" className="hover:text-zinc-700 transition-colors">Chính sách bảo mật</a>
+                    <a href="/term_service" className="hover:text-zinc-700 transition-colors">Điều khoản dịch vụ</a>
+                    <a href="/security_complience" className="hover:text-zinc-700 transition-colors">Bảo mật & Tuân thủ</a>
                 </div>
             </footer>
         </div>

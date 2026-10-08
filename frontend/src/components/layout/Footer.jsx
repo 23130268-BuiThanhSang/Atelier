@@ -2,12 +2,12 @@ import { Link } from 'react-router-dom'
 
 const columns = [
     {
-        title: 'Khám phá',
+        title: 'Chính sách',
         links: [
-            { to: '/', label: 'Trang chủ' },
-            { to: '/catalog', label: 'Sản phẩm' },
-            { to: '/design-studio', label: 'Design Studio' },
-            { to: '/my-designs', label: 'Thiết kế của tôi' },
+            { to: '/privacy_policy', label: 'Chính sách bảo mật' },
+            { to: '/term_service', label: 'Điều khoản dịch vụ' },
+            { to: '/security_complience', label: 'Bảo mật & Tuân thủ' },
+            { to: '/help_support', label: 'Trợ giúp & Hỗ trợ' },
         ],
     },
     {
