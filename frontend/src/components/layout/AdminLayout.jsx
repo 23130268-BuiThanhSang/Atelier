@@ -15,10 +15,10 @@ export default function AdminLayout() {
     const location = useLocation();
 
     const navItems = [
-        { label: 'Dashboard', path: '/admin', icon: LayoutGrid },
-        { label: 'Products', path: '/admin/products', icon: Shirt },
-        { label: 'Orders', path: '/admin/orders', icon: ReceiptText },
-        { label: 'Users', path: '/admin/users', icon: Users },
+        { label: 'Bảng điều khiển', path: '/admin', icon: LayoutGrid },
+        { label: 'Sản phẩm', path: '/admin/products', icon: Shirt },
+        { label: 'Đơn hàng', path: '/admin/orders', icon: ReceiptText },
+        { label: 'Người dùng', path: '/admin/users', icon: Users },
     ];
 
     return (
@@ -33,10 +33,7 @@ export default function AdminLayout() {
                         </div>
                         <div className="flex flex-col min-w-0">
               <span className="font-bold text-sm tracking-wider uppercase text-zinc-950 truncate">
-                Atelier Admin
-              </span>
-                            <span className="text-[11px] text-zinc-500 font-medium truncate">
-                T-Shirt Shop Studio
+                Quản trị viên
               </span>
                         </div>
                     </div>
@@ -45,7 +42,9 @@ export default function AdminLayout() {
                     <nav className="p-3 space-y-1">
                         {navItems.map((item) => {
                             const Icon = item.icon;
-                            const isActive = location.pathname === item.path;
+                            const isActive = item.path === '/admin'
+                                ? location.pathname === '/admin'
+                                : location.pathname.startsWith(item.path);
                             return (
                                 <Link
                                     key={item.path}
@@ -72,8 +71,8 @@ export default function AdminLayout() {
                                 M
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-semibold text-zinc-900 truncate">Admin Marcus</span>
-                                <span className="text-[10px] text-zinc-500 truncate">Super Admin</span>
+                                <span className="text-xs font-semibold text-zinc-900 truncate">Mai Thất Nghiệp</span>
+                                <span className="text-[10px] text-zinc-500 truncate">Quản trị viên</span>
                             </div>
                         </div>
                         <button
@@ -94,7 +93,7 @@ export default function AdminLayout() {
                         <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
                         <input
                             type="search"
-                            placeholder="Search orders, products, users..."
+                            placeholder="Tìm kiếm đơn hàng, sản phẩm, người dùng..."
                             className="w-full h-10 pl-10 pr-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#f0592a] focus:ring-2 focus:ring-[#f0592a]/20 transition-all"
                         />
                     </div>
@@ -109,7 +108,7 @@ export default function AdminLayout() {
                             <div className="w-8 h-8 rounded-full bg-[#f0592a] text-white flex items-center justify-center font-bold text-xs">
                                 M
                             </div>
-                            <span className="text-xs font-semibold text-zinc-800 hidden md:inline">Marcus A.</span>
+                            <span className="text-xs font-semibold text-zinc-800 hidden md:inline">Mai Thất Nghiệp</span>
                         </div>
                     </div>
                 </header>
