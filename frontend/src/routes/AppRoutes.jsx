@@ -22,6 +22,10 @@ import AdminOrderDetail from '../pages/admin/AdminOrderDetail';
 import ForgotPassword from "../pages/Login/ForgotPassword.jsx";
 import EmailVerification from "../pages/Login/EmailVerification";
 import MyProfile from "../pages/Login/MyProfile";
+import PrivacyPolicy from "../pages/Policy/PrivacyPolicy.jsx";
+import TermOfService from "../pages/Policy/TermOfService.jsx";
+import SecurityCompliance from "../pages/Policy/SecurityComplience.jsx";
+import HelpSupport from "../pages/Policy/Help_Support.jsx";
 
 export default function AppRoutes() {
     return (
@@ -35,6 +39,10 @@ export default function AppRoutes() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/my-orders" element={<MyOrders />} />
+                <Route path="/privacy_policy" element={<PrivacyPolicy />} />
+                <Route path="/term_service" element={<TermOfService />} />
+                <Route path="/security_complience" element={<SecurityCompliance />} />
+                <Route path="/help_support" element={<HelpSupport />} />
             </Route>
 
             <Route element={<AuthLayout />}>
