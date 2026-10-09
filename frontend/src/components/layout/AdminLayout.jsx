@@ -28,9 +28,9 @@ export default function AdminLayout() {
                 <div>
                     {/* Logo Header */}
                     <div className="h-16 px-6 border-b border-zinc-100 flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#f0592a] flex items-center justify-center text-white shadow-sm shrink-0">
-                            <Scissors className="w-5 h-5 -rotate-45" />
-                        </div>
+                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f0592a] text-base font-black tracking-tight text-white shadow-[0_8px_18px_rgba(240,89,42,0.25)] transition-all group-hover:-translate-y-0.5">
+                            A
+                        </span>
                         <div className="flex flex-col min-w-0">
               <span className="font-bold text-sm tracking-wider uppercase text-zinc-950 truncate">
                 Quản trị viên
