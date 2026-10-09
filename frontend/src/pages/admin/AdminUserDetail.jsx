@@ -32,73 +32,70 @@ export default function AdminUserDetail() {
     const { id } = useParams(); // Lấy ID người dùng từ URL (/admin/users/:id)
 
     const [roleMenuOpen, setRoleMenuOpen] = useState(false);
-    const [selectedRole, setSelectedRole] = useState('Producer (Active)');
+    const [selectedRole, setSelectedRole] = useState('Xưởng sản xuất (Hoạt động)');
     const [decisionStatus, setDecisionStatus] = useState(null); // 'approved' | 'rejected' | null
     const [decisionNote, setDecisionNote] = useState('');
 
-    // 1. MOCK DATA: Thông tin chi tiết nhà sản xuất (Studio Nord)
+    // 1. DỮ LIỆU MẪU: Thông tin chi tiết nhà sản xuất (Studio Nord)
     const user = {
         id: id || '#USR-8492',
         name: 'Studio Nord Artisan Wear',
-        status: 'Verification Pending',
-        tier: 'Tier II Artisan',
+        status: 'Chờ xác minh',
+        tier: 'Nghệ nhân Cấp II',
         email: 'contact@studionord-apparel.com',
         phone: '+1 (555) 382-9014',
-        location: 'Portland, Oregon, USA',
-        joined: 'Nov 12, 2023',
-        classification: 'Producer (Manufacturer)',
+        location: 'Portland, Oregon, Hoa Kỳ',
+        joined: '12/11/2023',
+        classification: 'Xưởng may (Nhà sản xuất)',
         avatar: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=240&auto=format&fit=crop&q=80',
-        bio: 'Specialized in 280gsm heavyweight combed organic cotton, bespoke screen printing and vintage acid washing. Direct-to-garment and manual screen press equipment installed in Portland workshop.',
+        bio: 'Chuyên gia công vải cotton hữu cơ chải kỹ định lượng 280gsm, in lụa thủ công cao cấp và xử lý wash acid vintage. Xưởng may tại Portland trang bị đầy đủ máy in trực tiếp kỹ thuật số và bàn in lụa tay chuẩn công nghiệp.',
         trustScore: 94,
         batchesCount: 38,
         metrics: {
             onTimeDispatch: '98%',
             disputeRate: '0.4%',
             qualityScore: '4.9',
-            tierLevel: 'Lvl 2',
+            tierLevel: 'Cấp 2',
         },
         facility: {
-            name: 'Facility: SE Division Warehouse',
-            desc: '4,200 sq.ft screen printing, curing tunnel & quality inspection station.',
+            name: 'Cơ sở: Kho xưởng Phân khu Đông Nam',
+            desc: 'Không gian 390m² phục vụ in lụa, buồng sấy nhiệt và trạm kiểm định chất lượng xuất xưởng.',
             image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&auto=format&fit=crop&q=80',
         },
         documents: [
             {
                 id: 1,
-                title: 'Business License & Tax ID (EIN-9482103).pdf',
-                meta: 'State of Oregon Registered Entity • 2.4 MB',
+                title: 'Giấy phép đăng ký kinh doanh & Mã số thuế (EIN-9482103).pdf',
                 type: 'pdf',
                 icon: FileText,
                 iconColor: 'text-[#f0592a]',
             },
             {
                 id: 2,
-                title: 'Organic Cotton GOTS Certificate 2026.pdf',
-                meta: 'Global Organic Textile Standard Scope • 4.1 MB',
+                title: 'Chứng nhận vải hữu cơ GOTS 2026.pdf',
                 type: 'gots',
                 icon: Leaf,
                 iconColor: 'text-emerald-600',
             },
             {
                 id: 3,
-                title: 'Workshop Facility & Screen-print Equipment Photos (4 files)',
-                meta: 'High-res inspection photography • 18.2 MB archive',
+                title: 'Hình ảnh thực tế xưởng may & Máy in lụa (4 tệp).zip',
                 type: 'gallery',
                 icon: Images,
                 iconColor: 'text-[#f0592a]',
             },
         ],
         orders: [
-            { id: '#ORD-9824', brand: 'Pacific Drift Co.', spec: '280gsm Vintage Tee', qty: '450 units', amount: '$8,325', status: 'In Production' },
-            { id: '#ORD-9740', brand: 'Komorebi Apparel', spec: 'Acid-wash Boxy Crew', qty: '600 units', amount: '$11,400', status: 'Delivered' },
-            { id: '#ORD-9612', brand: 'Sylvan Club Works', spec: 'Organic Heavyweight Blank', qty: '1,200 units', amount: '$19,800', status: 'Delivered' },
-            { id: '#ORD-9533', brand: 'Vapour Archive', spec: 'Puff Print Heavy Jersey', qty: '300 units', amount: '$5,750', status: 'Delivered' },
+            { id: '#ORD-9824', brand: 'Pacific Drift Co.', spec: 'Áo thun Vintage 280gsm', qty: '450 chiếc', amount: '83.250.000 ₫', status: 'In Production' },
+            { id: '#ORD-9740', brand: 'Komorebi Apparel', spec: 'Áo nỉ cổ tròn Acid-wash dáng hộp', qty: '600 chiếc', amount: '114.000.000 ₫', status: 'Delivered' },
+            { id: '#ORD-9612', brand: 'Sylvan Club Works', spec: 'Phôi áo thun Organic Heavyweight', qty: '1.200 chiếc', amount: '198.000.000 ₫', status: 'Delivered' },
+            { id: '#ORD-9533', brand: 'Vapour Archive', spec: 'Áo nỉ Cotton in xốp Puff Print', qty: '300 chiếc', amount: '57.500.000 ₫', status: 'Delivered' },
         ],
         auditLogs: [
-            { title: 'Uploaded tax renewal (EIN-9482103)', meta: 'Nov 14, 2026 • 14:22 EST • IP 67.183.91.12', isDotOrange: true },
-            { title: 'Logged in via 2FA Hardware Key', meta: 'Nov 14, 2026 • 13:58 EST • IP 67.183.91.12' },
-            { title: 'Updated bank payout ACH credentials', meta: 'Nov 02, 2026 • 09:15 EST • Admin Marcus' },
-            { title: 'Account created & email confirmed', meta: 'Nov 12, 2026 • 11:04 EST • System Automated' },
+            { title: 'Tải lên gia hạn mã số thuế (EIN-9482103)', meta: '14/11/2026 • 14:22 • IP 67.183.91.12', isDotOrange: true },
+            { title: 'Đăng nhập thành công bằng khóa bảo mật vật lý 2FA', meta: '14/11/2026 • 13:58 • IP 67.183.91.12' },
+            { title: 'Cập nhật thông tin tài khoản nhận thanh toán ngân hàng', meta: '02/11/2026 • 09:15 • Quản trị viên Marcus' },
+            { title: 'Đăng ký tài khoản & xác minh địa chỉ email', meta: '12/11/2026 • 11:04 • Hệ thống tự động' },
         ],
     };
 
@@ -107,22 +104,20 @@ export default function AdminUserDetail() {
             {/* 1. Breadcrumbs & Nút quay lại */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs font-medium text-zinc-500 flex-wrap">
-                    <Link to="/admin/users" className="hover:text-[#f0592a] transition-colors">Users</Link>
+                    <Link to="/admin/users" className="hover:text-[#f0592a] transition-colors">Người dùng</Link>
                     <span>/</span>
-                    <span>Producers</span>
-                    <span>/</span>
-                    <span className="font-semibold text-zinc-900">{user.name} (ID: {user.id})</span>
+                    <span className="font-semibold text-zinc-900">{user.name} (Mã: {user.id})</span>
                 </div>
                 <Link
                     to="/admin/users"
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-[#f0592a] transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
-                    <span>Back to Users list</span>
+                    <span>Quay lại danh sách người dùng</span>
                 </Link>
             </div>
 
-            {/* 2. Header Profile Card */}
+            {/* 2. Thẻ hồ sơ đầu trang */}
             <div className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="flex items-start sm:items-center gap-5 flex-col sm:flex-row">
                     <div className="relative w-20 h-20 rounded-2xl bg-zinc-100 overflow-hidden shadow-xs shrink-0 border border-zinc-200/70">
@@ -134,28 +129,28 @@ export default function AdminUserDetail() {
                         <div className="flex items-center gap-2.5 flex-wrap">
                             <h1 className="text-2xl font-bold tracking-tight text-zinc-950">{user.name}</h1>
                             <span className="px-3 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-amber-50 text-amber-800 border border-amber-200 tracking-wider">
-                {user.status}
-              </span>
+                                {user.status}
+                            </span>
                             <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 text-zinc-600">
-                {user.tier}
-              </span>
+                                {user.tier}
+                            </span>
                         </div>
 
                         <div className="flex items-center gap-4 text-xs text-zinc-500 flex-wrap">
-              <span className="flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-zinc-400" />
-                  {user.email}
-              </span>
+                            <span className="flex items-center gap-1.5">
+                                <Mail className="w-3.5 h-3.5 text-zinc-400" />
+                                {user.email}
+                            </span>
                             <span className="w-1 h-1 rounded-full bg-zinc-300"></span>
                             <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-zinc-400" />
-                Joined {user.joined}
-              </span>
+                                <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                                Tham gia {user.joined}
+                            </span>
                             <span className="w-1 h-1 rounded-full bg-zinc-300"></span>
                             <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
-                ID: {user.id}
-              </span>
+                                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" />
+                                Mã ID: {user.id}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -170,12 +165,16 @@ export default function AdminUserDetail() {
                             className="h-10 px-3.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold flex items-center gap-2 transition-colors"
                         >
                             <UserCheck className="w-4 h-4 text-zinc-600" />
-                            <span>Change role</span>
+                            <span>Đổi vai trò</span>
                             <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
                         </button>
                         {roleMenuOpen && (
-                            <div className="absolute right-0 mt-2 w-52 rounded-xl bg-white shadow-lg border border-zinc-200 py-1.5 z-30 text-xs font-medium">
-                                {['Producer (Active)', 'Creator / Merchant', 'Fabric Mill Partner'].map((r) => (
+                            <div className="absolute right-0 mt-2 w-60 rounded-xl bg-white shadow-lg border border-zinc-200 py-1.5 z-30 text-xs font-medium">
+                                {[
+                                    'Xưởng sản xuất (Hoạt động)',
+                                    'Nhà sáng tạo / Thương nhân',
+                                    'Đối tác dệt may'
+                                ].map((r) => (
                                     <button
                                         key={r}
                                         onClick={() => { setSelectedRole(r); setRoleMenuOpen(false); }}
@@ -194,7 +193,7 @@ export default function AdminUserDetail() {
                         className="h-10 px-3.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold flex items-center gap-2 transition-colors"
                     >
                         <Send className="w-3.5 h-3.5 text-zinc-600" />
-                        <span>Send message</span>
+                        <span>Gửi tin nhắn</span>
                     </button>
 
                     <button
@@ -202,7 +201,7 @@ export default function AdminUserDetail() {
                         className="h-10 px-3.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold flex items-center gap-2 transition-colors"
                     >
                         <Ban className="w-3.5 h-3.5" />
-                        <span>Suspend account</span>
+                        <span>Đình chỉ tài khoản</span>
                     </button>
                 </div>
             </div>
@@ -213,16 +212,16 @@ export default function AdminUserDetail() {
                 {/* CỘT TRÁI (8 Cột) */}
                 <div className="lg:col-span-8 space-y-6">
 
-                    {/* Khối Profile & Trust Score */}
+                    {/* Khối Hồ sơ xưởng & Chỉ số tín nhiệm */}
                     <div className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-5">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <BadgeCheck className="w-5 h-5 text-[#f0592a]" />
-                                <h2 className="text-base font-bold text-zinc-950">Producer Profile & Craft Capabilities</h2>
+                                <h2 className="text-base font-bold text-zinc-950">Hồ sơ nhà sản xuất & Năng lực may thủ công</h2>
                             </div>
                             <span className="text-[11px] font-semibold uppercase bg-zinc-100 text-zinc-600 px-2.5 py-1 rounded-full">
-                Specialist Studio
-              </span>
+                                Xưởng chuyên môn cao
+                            </span>
                         </div>
 
                         <p className="text-xs text-zinc-600 leading-relaxed italic">
@@ -232,25 +231,25 @@ export default function AdminUserDetail() {
                         {/* Lưới phân loại thông tin */}
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <div className="p-3.5 rounded-xl bg-[#faf8e4]/60 border border-zinc-200/50 flex flex-col gap-1">
-                                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Account Classification</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Phân loại tài khoản</span>
                                 <span className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
-                  <Factory className="w-4 h-4 text-[#f0592a]" />
+                                    <Factory className="w-4 h-4 text-[#f0592a]" />
                                     {user.classification}
-                </span>
+                                </span>
                             </div>
                             <div className="p-3.5 rounded-xl bg-[#faf8e4]/60 border border-zinc-200/50 flex flex-col gap-1">
-                                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Primary Phone</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Điện thoại liên hệ</span>
                                 <span className="text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-zinc-500" />
+                                    <Phone className="w-3.5 h-3.5 text-zinc-500" />
                                     {user.phone}
-                </span>
+                                </span>
                             </div>
                             <div className="p-3.5 rounded-xl bg-[#faf8e4]/60 border border-zinc-200/50 flex flex-col gap-1">
-                                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Location</span>
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Địa điểm xưởng</span>
                                 <span className="text-xs font-semibold text-zinc-800 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-zinc-500" />
+                                    <MapPin className="w-3.5 h-3.5 text-zinc-500" />
                                     {user.location}
-                </span>
+                                </span>
                             </div>
                         </div>
 
@@ -283,21 +282,17 @@ export default function AdminUserDetail() {
                                 </div>
 
                                 <div className="space-y-0.5">
-                                    <span className="text-sm font-bold text-zinc-950">Artisan Trust Index</span>
-                                    <p className="text-xs text-zinc-500">Computed over {user.batchesCount} successful production batches</p>
-                                    <div className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700">
-                                        <TrendingUp className="w-3.5 h-3.5" />
-                                        <span>Top 5% among textile printers</span>
-                                    </div>
+                                    <span className="text-sm font-bold text-zinc-950">Chỉ số tín nhiệm thủ công</span>
+                                    <p className="text-xs text-zinc-500">Được tính dựa trên {user.batchesCount} lô sản xuất hoàn thành đạt chuẩn</p>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full md:w-auto flex-1">
                                 {[
-                                    { label: 'On-time Dispatch', val: user.metrics.onTimeDispatch, valColor: 'text-[#f0592a]' },
-                                    { label: 'Dispute Rate', val: user.metrics.disputeRate, valColor: 'text-zinc-900' },
-                                    { label: 'Quality (5.0)', val: user.metrics.qualityScore, valColor: 'text-emerald-700' },
-                                    { label: 'Tier Status', val: user.metrics.tierLevel, valColor: 'text-zinc-900' },
+                                    { label: 'Giao đúng hạn', val: user.metrics.onTimeDispatch, valColor: 'text-[#f0592a]' },
+                                    { label: 'Tỷ lệ tranh chấp', val: user.metrics.disputeRate, valColor: 'text-zinc-900' },
+                                    { label: 'Chất lượng (5.0)', val: user.metrics.qualityScore, valColor: 'text-emerald-700' },
+                                    { label: 'Hạng xưởng', val: user.metrics.tierLevel, valColor: 'text-zinc-900' },
                                 ].map((item, idx) => (
                                     <div key={idx} className="flex flex-col bg-white p-2.5 rounded-xl text-center border border-zinc-200/50 shadow-2xs">
                                         <span className={`text-sm font-bold ${item.valColor}`}>{item.val}</span>
@@ -308,22 +303,21 @@ export default function AdminUserDetail() {
                         </div>
                     </div>
 
-                    {/* Khối Producer Verification Documents */}
+                    {/* Khối Hồ sơ chứng nhận năng lực xưởng may */}
                     <div className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-5">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="flex items-center gap-2.5">
                                 <ShieldCheck className="w-5 h-5 text-[#f0592a]" />
                                 <div>
-                                    <h2 className="text-base font-bold text-zinc-950">Producer Verification & Workshop Credentials</h2>
-                                    <p className="text-xs text-zinc-500">Review official compliance records submitted on Nov 14, 2026</p>
+                                    <h2 className="text-base font-bold text-zinc-950">Hồ sơ thẩm định nhà sản xuất & Năng lực xưởng may</h2>
                                 </div>
                             </div>
                             <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-center">
-                Pending Verification
-              </span>
+                                Đang chờ xác minh
+                            </span>
                         </div>
 
-                        {/* Danh sách file hồ sơ */}
+                        {/* Danh sách tệp hồ sơ */}
                         <div className="space-y-2.5">
                             {user.documents.map((doc) => {
                                 const Icon = doc.icon;
@@ -348,14 +342,14 @@ export default function AdminUserDetail() {
                                                 className="h-8 px-3 rounded-lg bg-white border border-zinc-200 text-[11px] font-semibold text-zinc-700 hover:text-[#f0592a] hover:border-[#f0592a] transition-all flex items-center gap-1.5 shadow-2xs"
                                             >
                                                 <Eye className="w-3.5 h-3.5" />
-                                                <span>{doc.type === 'gallery' ? 'View Gallery' : 'Preview'}</span>
+                                                <span>{doc.type === 'gallery' ? 'Xem bộ ảnh' : 'Xem trước'}</span>
                                             </button>
                                             <button
                                                 type="button"
                                                 className="h-8 px-3 rounded-lg bg-white border border-zinc-200 text-[11px] font-semibold text-zinc-700 hover:text-[#f0592a] hover:border-[#f0592a] transition-all flex items-center gap-1.5 shadow-2xs"
                                             >
                                                 <Download className="w-3.5 h-3.5" />
-                                                <span>Download</span>
+                                                <span>Tải xuống</span>
                                             </button>
                                         </div>
                                     </div>
@@ -367,19 +361,19 @@ export default function AdminUserDetail() {
                         <div className="p-5 rounded-xl bg-[#faf8e4] border border-[#f0592a]/20 space-y-3">
                             <div className="flex items-center gap-2">
                                 <ClipboardCheck className="w-4 h-4 text-[#f0592a]" />
-                                <span className="text-xs font-bold text-zinc-950 uppercase tracking-wider">Verification Decision</span>
+                                <span className="text-xs font-bold text-zinc-950 uppercase tracking-wider">Quyết định thẩm định</span>
                             </div>
                             <p className="text-xs text-zinc-600">
-                                Approving grants Level 2 Producer status, enabling checkout escrows and direct client volume contracts.
+                                Việc phê duyệt sẽ cấp quyền Xưởng may Cấp 2, kích hoạt hợp đồng ký quỹ thanh toán an toàn và cho phép nhận các hợp đồng đặt hàng số lượng lớn.
                             </p>
 
                             <div className="space-y-1">
-                                <label className="text-[10px] font-bold uppercase text-zinc-500">Decision Notes or Rejection Reason (Optional)</label>
+                                <label className="text-[10px] font-bold uppercase text-zinc-500">Ghi chú quyết định hoặc Lý do từ chối (Không bắt buộc)</label>
                                 <input
                                     type="text"
                                     value={decisionNote}
                                     onChange={(e) => setDecisionNote(e.target.value)}
-                                    placeholder="e.g., Please provide GOTS Appendix B annex document..."
+                                    placeholder="Ví dụ: Vui lòng bổ sung phụ lục B chứng chỉ GOTS..."
                                     className="w-full h-10 px-3.5 bg-white rounded-xl border border-zinc-200 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#f0592a] focus:ring-2 focus:ring-[#f0592a]/20 transition-all shadow-2xs"
                                 />
                             </div>
@@ -394,7 +388,7 @@ export default function AdminUserDetail() {
                                     }`}
                                 >
                                     <ShieldCheck className="w-4 h-4" />
-                                    <span>Approve verification</span>
+                                    <span>Phê duyệt chứng nhận</span>
                                 </button>
                                 <button
                                     type="button"
@@ -405,34 +399,33 @@ export default function AdminUserDetail() {
                                     }`}
                                 >
                                     <X className="w-4 h-4" />
-                                    <span>Reject credentials</span>
+                                    <span>Từ chối hồ sơ</span>
                                 </button>
 
                                 {decisionStatus === 'approved' && (
                                     <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Verification Approved
-                  </span>
+                                        Đã phê duyệt thẩm định
+                                    </span>
                                 )}
                                 {decisionStatus === 'rejected' && (
                                     <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-200">
-                    Credentials Rejected
-                  </span>
+                                        Đã từ chối hồ sơ
+                                    </span>
                                 )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Khối Lịch sử sản xuất & Hợp đồng (Orders History) */}
+                    {/* Khối Lịch sử sản xuất & Hợp đồng may đo */}
                     <div className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-4">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div>
-                                <h2 className="text-base font-bold text-zinc-950">Production & Batch Fulfillment History</h2>
-                                <p className="text-xs text-zinc-500">Overview of manufacturing contracts produced by {user.name}</p>
+                                <h2 className="text-base font-bold text-zinc-950">Lịch sử gia công & Bàn giao lô sản xuất</h2>
                             </div>
                             <div className="flex items-center gap-2 text-[11px] font-semibold">
-                                <span className="bg-zinc-100 text-zinc-700 px-2.5 py-0.5 rounded-full">38 Completed</span>
-                                <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full">4 Active</span>
-                                <span className="bg-[#fefccf] text-[#f0592a] border border-[#f0592a]/20 px-2.5 py-0.5 rounded-full">$54,200 Total Vol</span>
+                                <span className="bg-zinc-100 text-zinc-700 px-2.5 py-0.5 rounded-full">38 Đã hoàn tất</span>
+                                <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full">4 Đang chạy</span>
+                                <span className="bg-[#fefccf] text-[#f0592a] border border-[#f0592a]/20 px-2.5 py-0.5 rounded-full">1,35 tỷ ₫ Tổng giá trị</span>
                             </div>
                         </div>
 
@@ -440,12 +433,12 @@ export default function AdminUserDetail() {
                             <table className="w-full text-left text-xs border-collapse">
                                 <thead>
                                 <tr className="bg-zinc-50 text-zinc-400 text-[10px] uppercase font-semibold border-y border-zinc-100">
-                                    <th className="py-2.5 px-3">Order ID</th>
-                                    <th className="py-2.5 px-3">Client Brand</th>
-                                    <th className="py-2.5 px-3">Garment Spec</th>
-                                    <th className="py-2.5 px-3">Quantity</th>
-                                    <th className="py-2.5 px-3">Total Amount</th>
-                                    <th className="py-2.5 px-3">Batch Status</th>
+                                    <th className="py-2.5 px-3">Mã đơn</th>
+                                    <th className="py-2.5 px-3">Thương hiệu đặt hàng</th>
+                                    <th className="py-2.5 px-3">Quy cách sản phẩm</th>
+                                    <th className="py-2.5 px-3">Số lượng</th>
+                                    <th className="py-2.5 px-3">Tổng giá trị</th>
+                                    <th className="py-2.5 px-3">Trạng thái lô</th>
                                 </tr>
                                 </thead>
                                 <tbody className="divide-y divide-zinc-100">
@@ -457,13 +450,13 @@ export default function AdminUserDetail() {
                                         <td className="py-3 px-3 text-zinc-800">{ord.qty}</td>
                                         <td className="py-3 px-3 font-bold text-[#f0592a]">{ord.amount}</td>
                                         <td className="py-3 px-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                            ord.status === 'In Production'
-                                ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                                : 'bg-emerald-50 text-emerald-700'
-                        }`}>
-                          {ord.status}
-                        </span>
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                                    ord.status === 'In Production'
+                                                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                                        : 'bg-emerald-50 text-emerald-700'
+                                                }`}>
+                                                    {ord.status === 'In Production' ? 'Đang sản xuất' : 'Đã giao hàng'}
+                                                </span>
                                         </td>
                                     </tr>
                                 ))}
@@ -477,14 +470,14 @@ export default function AdminUserDetail() {
                 {/* CỘT PHẢI (4 Cột) */}
                 <div className="lg:col-span-4 space-y-6">
 
-                    {/* Hình ảnh Xưởng sản xuất (Facility Showcase) */}
+                    {/* Hình ảnh Xưởng may (Facility Showcase) */}
                     <div className="bg-white rounded-2xl overflow-hidden shadow-xs border border-zinc-200/70">
                         <div className="relative h-44 w-full bg-zinc-100">
-                            <img src={user.facility.image} alt="Workshop Facility" className="w-full h-full object-cover" />
+                            <img src={user.facility.image} alt="Cơ sở xưởng may" className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                             <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/95 text-zinc-800 shadow-xs">
-                Facility Tour Verified
-              </span>
+                                Đã xác thực địa điểm
+                            </span>
                         </div>
                         <div className="p-4 space-y-1">
                             <span className="text-xs font-bold text-zinc-950 block">{user.facility.name}</span>
@@ -497,45 +490,45 @@ export default function AdminUserDetail() {
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Shield className="w-4 h-4 text-emerald-600" />
-                                <h2 className="text-sm font-bold text-zinc-950">Disputes & Complaints</h2>
+                                <h2 className="text-sm font-bold text-zinc-950">Khiếu nại & Tranh chấp</h2>
                             </div>
                             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
-                Clean Standing
-              </span>
+                                Hồ sơ uy tín tốt
+                            </span>
                         </div>
 
                         <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200/60 flex items-center justify-between text-center">
                             <div className="flex-1">
-                                <span className="text-sm font-bold text-zinc-950 block">0 Active</span>
-                                <span className="text-[10px] text-zinc-400">Open client disputes</span>
+                                <span className="text-sm font-bold text-zinc-950 block">0 Vụ việc</span>
+                                <span className="text-[10px] text-zinc-400">Tranh chấp đang mở</span>
                             </div>
                             <div className="w-px h-8 bg-zinc-200"></div>
                             <div className="flex-1">
-                                <span className="text-sm font-bold text-zinc-950 block">1 Resolved</span>
-                                <span className="text-[10px] text-zinc-400">Historical inquiry</span>
+                                <span className="text-sm font-bold text-zinc-950 block">1 Vụ việc</span>
+                                <span className="text-[10px] text-zinc-400">Đã giải quyết êm đẹp</span>
                             </div>
                         </div>
 
                         {/* Chi tiết 1 vụ đã giải quyết */}
                         <div className="p-3.5 rounded-xl bg-[#faf8e4]/60 border border-zinc-200/50 space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-zinc-900">Delayed Swatch Dispatch</span>
-                                <span className="text-[10px] text-zinc-400">Sep 28, 2026</span>
+                                <span className="font-bold text-zinc-900">Giao mẫu vải chậm trễ</span>
+                                <span className="text-[10px] text-zinc-400">28/09/2026</span>
                             </div>
                             <p className="text-[11px] text-zinc-600 leading-relaxed">
-                                Order #ORD-7721: Courier delay on custom pantone dyed swatches. Resolved amicably with client via replacement air shipment.
+                                Đơn hàng #ORD-7721: Đơn vị vận chuyển giao trễ mẫu vải nhuộm chuẩn màu pantone. Đã thỏa thuận bồi thường thỏa đáng với khách hàng bằng phương án gửi hàng hỏa tốc đường hàng không.
                             </p>
                             <div className="pt-1 flex items-center gap-1.5 text-[10px] font-bold text-emerald-700">
                                 <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>No administrative penalty applied</span>
+                                <span>Không áp dụng chế tài xử phạt hành chính</span>
                             </div>
                         </div>
 
-                        {/* Sparkline xu hướng điểm tin cậy */}
+                        {/* Đường xu hướng điểm tín nhiệm */}
                         <div className="pt-1 space-y-1.5">
                             <div className="flex items-center justify-between text-xs">
-                                <span className="text-zinc-500 text-[11px]">Trust Score Trajectory (6 Mos)</span>
-                                <span className="font-bold text-zinc-900">+4 pts</span>
+                                <span className="text-zinc-500 text-[11px]">Xu hướng điểm tín nhiệm (6 tháng)</span>
+                                <span className="font-bold text-zinc-900">+4 điểm</span>
                             </div>
                             <svg className="w-full h-8 text-[#f0592a]" fill="none" viewBox="0 0 100 24">
                                 <path d="M0 18 Q 20 16, 35 15 T 60 12 T 80 8 T 100 4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
@@ -544,14 +537,14 @@ export default function AdminUserDetail() {
                         </div>
                     </div>
 
-                    {/* Nhật ký kiểm toán tài khoản (Audit & Activity Log) */}
+                    {/* Nhật ký kiểm toán tài khoản */}
                     <div className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <History className="w-4 h-4 text-[#f0592a]" />
-                                <h2 className="text-sm font-bold text-zinc-950">Audit & Activity Log</h2>
+                                <h2 className="text-sm font-bold text-zinc-950">Nhật ký kiểm toán & Hoạt động</h2>
                             </div>
-                            <span className="text-[10px] font-bold text-zinc-400 uppercase">Realtime</span>
+                            <span className="text-[10px] font-bold text-zinc-400 uppercase">Thời gian thực</span>
                         </div>
 
                         <div className="space-y-3">
@@ -570,7 +563,7 @@ export default function AdminUserDetail() {
                             type="button"
                             className="w-full h-9 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-xs font-semibold text-zinc-700 transition-colors flex items-center justify-center gap-1.5"
                         >
-                            <span>View complete audit trail</span>
+                            <span>Xem toàn bộ lịch sử kiểm toán</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                     </div>
