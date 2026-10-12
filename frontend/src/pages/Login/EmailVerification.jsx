@@ -83,7 +83,7 @@ export default function EmailVerification() {
                         Bạn chưa nhận được mã? <button className="text-zinc-400 font-medium cursor-not-allowed">Gửi lại mã (54s)</button>
                     </p>
                     <div className="w-8 border-t border-zinc-200"></div>
-                    <Link to="/register" className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-900 hover:text-[#f0592a] transition-colors">
+                    <Link to="/login" className="flex items-center justify-center gap-1.5 text-xs font-semibold text-zinc-900 hover:text-[#f0592a] transition-colors">
                         <Edit2 className="w-3.5 h-3.5" />
                         Thay đổi địa chỉ email
                     </Link>
