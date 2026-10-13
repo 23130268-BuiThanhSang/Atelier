@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-    Download,
     Plus,
     Box,
     CheckCircle2,
@@ -8,17 +7,14 @@ import {
     PackageX,
     Search,
     ChevronDown,
-    SlidersHorizontal,
     Star,
     Edit,
     Eye,
     EyeOff,
     Trash2,
-    MoreVertical,
     Check,
     ChevronLeft,
-    ChevronRight,
-    Archive
+    ChevronRight
 } from 'lucide-react';
 
 export default function AdminProducts() {
@@ -70,7 +66,6 @@ export default function AdminProducts() {
             stockStatus: 'in-stock',
             sold: '1.420 đã bán',
             gmv: '53,9 triệu ₫ GMV',
-            views: '18.4k',
             status: 'Active',
             featured: true,
             image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=120&auto=format&fit=crop&q=80',
@@ -86,7 +81,6 @@ export default function AdminProducts() {
             stockStatus: 'in-stock',
             sold: '840 đã bán',
             gmv: '36,9 triệu ₫ GMV',
-            views: '11.9k',
             status: 'Active',
             featured: true,
             image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=120&auto=format&fit=crop&q=80',
@@ -102,7 +96,6 @@ export default function AdminProducts() {
             stockStatus: 'in-stock',
             sold: '630 đã bán',
             gmv: '26,4 triệu ₫ GMV',
-            views: '9.8k',
             status: 'Active',
             image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=120&auto=format&fit=crop&q=80',
         },
@@ -117,7 +110,6 @@ export default function AdminProducts() {
             stockStatus: 'hidden',
             sold: '540 đã bán',
             gmv: '19,4 triệu ₫ GMV',
-            views: '7.2k',
             status: 'Hidden',
             image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=120&auto=format&fit=crop&q=80',
         },
@@ -132,7 +124,6 @@ export default function AdminProducts() {
             stockStatus: 'low-stock',
             sold: '980 đã bán',
             gmv: '82,3 triệu ₫ GMV',
-            views: '14.2k',
             status: 'Active',
             image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=120&auto=format&fit=crop&q=80',
         },
@@ -147,7 +138,6 @@ export default function AdminProducts() {
             stockStatus: 'out-of-stock',
             sold: '390 đã bán',
             gmv: '18,7 triệu ₫ GMV',
-            views: '8.1k',
             status: 'Out of stock',
             image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=120&auto=format&fit=crop&q=80',
         },
@@ -162,7 +152,6 @@ export default function AdminProducts() {
             stockStatus: 'in-stock',
             sold: '310 đã bán',
             gmv: '8,6 triệu ₫ GMV',
-            views: '4.5k',
             status: 'Active',
             image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=120&auto=format&fit=crop&q=80',
         },
@@ -251,18 +240,10 @@ export default function AdminProducts() {
                     </div>
                     <div className="flex items-baseline gap-3">
                         <h1 className="text-3xl font-bold tracking-tight text-zinc-950">Sản phẩm</h1>
-                        <span className="text-sm font-medium text-zinc-500">(184 sản phẩm)</span>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
-                    <button
-                        type="button"
-                        className="h-11 px-4 rounded-xl bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 text-xs font-semibold shadow-xs transition-all flex items-center gap-2"
-                    >
-                        <Download className="w-4 h-4 text-zinc-500" />
-                        <span>Xuất CSV</span>
-                    </button>
                     <button
                         type="button"
                         className="h-11 px-5 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] text-white text-xs font-semibold shadow-xs active:scale-[0.98] transition-all flex items-center gap-2"
@@ -314,23 +295,6 @@ export default function AdminProducts() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    {/* Lọc Category */}
-                    <div className="relative">
-                        <select
-                            value={categoryFilter}
-                            onChange={(e) => setCategoryFilter(e.target.value)}
-                            className="h-11 pl-3.5 pr-8 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 appearance-none cursor-pointer focus:outline-none focus:border-[#f0592a]"
-                        >
-                            <option>Tất cả danh mục</option>
-                            <option>Áo thun Graphic</option>
-                            <option>Áo hoodie nỉ dày</option>
-                            <option>Áo nỉ cổ tròn Organic</option>
-                            <option>Mũ lưỡi trai thêu</option>
-                            <option>Túi vải Canvas</option>
-                        </select>
-                        <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-                    </div>
-
                     {/* Lọc Status */}
                     <div className="relative">
                         <select
@@ -360,27 +324,6 @@ export default function AdminProducts() {
                         </select>
                         <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                     </div>
-
-                    <button
-                        type="button"
-                        className="h-11 px-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-                    >
-                        <SlidersHorizontal className="w-4 h-4" />
-                        <span className="hidden sm:inline">Bộ lọc</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setCategoryFilter('Tất cả danh mục');
-                            setStatusFilter('Tất cả trạng thái');
-                            setStockFilter('Mức tồn kho: Tất cả');
-                            setSearchKeyword('');
-                        }}
-                        className="h-11 px-3 rounded-xl text-[#f0592a] hover:bg-[#fefccf] text-xs font-semibold transition-colors"
-                    >
-                        Đặt lại
-                    </button>
                 </div>
             </div>
 
@@ -401,20 +344,6 @@ export default function AdminProducts() {
                         >
                             <span>Đổi trạng thái</span>
                             <ChevronDown className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                            type="button"
-                            className="h-8 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-colors"
-                        >
-                            <Archive className="w-3.5 h-3.5" />
-                            <span>Cập nhật kho</span>
-                        </button>
-                        <button
-                            type="button"
-                            className="h-8 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-colors"
-                        >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Xuất dữ liệu</span>
                         </button>
                         <button
                             type="button"
@@ -452,7 +381,6 @@ export default function AdminProducts() {
                             <th className="py-3.5 px-4">Danh mục</th>
                             <th className="py-3.5 px-4">Giá bán</th>
                             <th className="py-3.5 px-4">Mức tồn kho</th>
-                            <th className="py-3.5 px-4">Lượt xem</th>
                             <th className="py-3.5 px-4">Trạng thái</th>
                             <th className="py-3.5 pl-4 pr-6 text-right">Thao tác</th>
                         </tr>
@@ -509,11 +437,6 @@ export default function AdminProducts() {
                                         {renderStockProgress(p)}
                                     </td>
 
-                                    {/* Lượt xem */}
-                                    <td className="py-4 px-4 align-middle font-medium text-zinc-800">
-                                        {p.views}
-                                    </td>
-
                                     {/* Trạng thái */}
                                     <td className="py-4 px-4 align-middle">
                                         {renderStatusBadge(p.status)}
@@ -542,13 +465,6 @@ export default function AdminProducts() {
                                                 className="p-1.5 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                type="button"
-                                                title="Khác"
-                                                className="p-1.5 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
-                                            >
-                                                <MoreVertical className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </td>

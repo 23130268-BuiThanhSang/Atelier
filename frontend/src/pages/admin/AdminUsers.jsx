@@ -14,7 +14,7 @@ import {
     Hourglass,
     ShieldAlert,
     ChevronLeft,
-    ChevronRight
+    ChevronRight, Ban
 } from 'lucide-react';
 
 export default function AdminUsers() {
@@ -26,28 +26,15 @@ export default function AdminUsers() {
     // 1. DỮ LIỆU MẪU: 4 chỉ số thống kê trên cùng
     const metrics = [
         {
-            title: 'Xưởng sản xuất đang hoạt động',
-            value: '268 Xưởng',
+            title: 'Xưởng sản xuất',
+            value: '268',
             subColor: 'text-[#f0592a] font-bold',
             icon: Shirt,
             iconColor: 'text-[#f0592a]',
         },
         {
-            title: 'Hồ sơ xưởng chờ duyệt',
-            value: '12 Đang chờ',
-            icon: ShieldCheck,
-            iconColor: 'text-[#f0592a]',
-        },
-        {
-            title: 'Chỉ số tín nhiệm chung',
-            value: '96.4%',
-            subColor: 'text-zinc-500',
-            icon: Activity,
-            iconColor: 'text-[#f0592a]',
-        },
-        {
-            title: 'Khách hàng thân thiết',
-            value: '960 Đã đăng ký',
+            title: 'Khách hàng',
+            value: '960',
             subColor: 'text-[#f0592a]',
             icon: Users,
             iconColor: 'text-zinc-400',
@@ -59,13 +46,10 @@ export default function AdminUsers() {
         {
             id: 1,
             name: 'Elias Thorne',
-            org: 'Thorne Screen & Loom Co.',
             avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
             email: 'elias@thorneloom.studio',
             role: 'Producer',
-            trustScore: 98,
             orders: '142 lô sản xuất',
-            ordersSub: '4.280 sản phẩm',
             joined: '14/10/2023',
             status: 'Active',
             verified: true,
@@ -73,26 +57,20 @@ export default function AdminUsers() {
         {
             id: 2,
             name: 'Sienna Krause',
-            org: 'Thành viên Bạc · Silver Patron',
             avatarInitial: 'SK',
             email: 'sienna.k@archway.io',
             role: 'Customer',
-            trustScore: 92,
             orders: '24 đơn hàng',
-            ordersSub: '46.000.000 ₫ tích lũy',
             joined: '05/01/2024',
             status: 'Active',
         },
         {
             id: 3,
             name: 'Mira Vance',
-            org: 'Studio Botanical Dye',
             avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80',
             email: 'mira@botanicaldye.co',
             role: 'Producer',
-            trustScore: 65,
             orders: '0 lô sản xuất',
-            ordersSub: 'Xét duyệt giai đoạn 3',
             joined: '18/03/2024',
             status: 'Pending verification',
             pendingIcon: true,
@@ -100,26 +78,20 @@ export default function AdminUsers() {
         {
             id: 4,
             name: 'Julian Lowe',
-            org: 'Có lịch sử tranh chấp giao dịch',
             avatarInitial: 'JL',
             email: 'j.lowe@outerloop.net',
             role: 'Customer',
-            trustScore: 45,
             orders: '3 đơn hàng',
-            ordersSub: '2 khiếu nại đang mở',
             joined: '22/11/2023',
             status: 'Suspended',
         },
         {
             id: 5,
             name: 'Devon Castillo',
-            org: 'Trưởng ban An toàn & Vận hành',
             tag: 'VẬN HÀNH',
             email: 'devon@atelier.style',
             role: 'Admin',
-            trustScore: 100,
             orders: '—',
-            ordersSub: 'Nhân sự nội bộ',
             joined: '10/08/2023',
             status: 'Active',
             isAdminIcon: true,
@@ -127,13 +99,10 @@ export default function AdminUsers() {
         {
             id: 6,
             name: 'Kenzo Mori',
-            org: 'Mori Raw Cotton Works',
             avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
             email: 'k.mori@moricotton.jp',
             role: 'Producer',
-            trustScore: 99,
             orders: '89 lô sản xuất',
-            ordersSub: '3.110 sản phẩm',
             joined: '01/12/2023',
             status: 'Active',
             verified: true,
@@ -141,13 +110,10 @@ export default function AdminUsers() {
         {
             id: 7,
             name: 'Aria Lindqvist',
-            org: 'Khách mua tiêu chuẩn',
             avatarInitial: 'AL',
             email: 'aria.l@stockholmart.se',
             role: 'Customer',
-            trustScore: 91,
             orders: '8 đơn hàng',
-            ordersSub: '13.500.000 ₫ tích lũy',
             joined: '14/02/2024',
             status: 'Active',
         },
@@ -208,31 +174,14 @@ export default function AdminUsers() {
             {/* 1. Tiêu đề trang & Nút hành động */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1 flex items-center gap-1.5">
+                    <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#f0592a] mb-1">
                         <span>Quản trị tài khoản</span>
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight text-zinc-950">Người dùng</h1>
                 </div>
-
-                <div className="flex items-center gap-3 shrink-0">
-                    <button
-                        type="button"
-                        className="h-11 px-4 rounded-xl bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 text-xs font-semibold shadow-xs transition-all flex items-center gap-2"
-                    >
-                        <Download className="w-4 h-4 text-zinc-500" />
-                        <span>Xuất tệp</span>
-                    </button>
-                    <button
-                        type="button"
-                        className="h-11 px-5 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] text-white text-xs font-semibold shadow-xs active:scale-[0.98] transition-all flex items-center gap-2"
-                    >
-                        <UserPlus className="w-4 h-4" />
-                        <span>Thêm người dùng</span>
-                    </button>
-                </div>
             </div>
 
-            {/* 2. Dải 4 Card chỉ số (Metric Strip) */}
+            {/* 2. Dải 2 Card chỉ số (Metric Strip) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {metrics.map((metric, idx) => {
                     const Icon = metric.icon;
@@ -267,42 +216,6 @@ export default function AdminUsers() {
 
             {/* 3. Khung bảng dữ liệu chính (Table Container) */}
             <div className="bg-white rounded-2xl shadow-xs border border-zinc-200/70 overflow-hidden">
-                {/* Tab chuyển danh mục */}
-                <div className="px-6 pt-3 flex items-center justify-between gap-4 overflow-x-auto bg-[#faf8e4]/60 border-b border-zinc-200/60">
-                    <div className="flex items-center gap-2 shrink-0">
-                        {[
-                            { id: 'all', label: 'Tất cả người dùng', count: '1.240' },
-                            { id: 'customers', label: 'Khách hàng', count: '960' },
-                            { id: 'producers', label: 'Xưởng sản xuất', count: '268' },
-                            { id: 'pending', label: 'Chờ xác minh xưởng', count: '12' },
-                        ].map((tab) => {
-                            const isActive = activeTab === tab.id;
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    type="button"
-                                    className={`relative pb-3 px-3 flex items-center gap-2 text-xs font-semibold transition-colors ${
-                                        isActive ? 'text-[#f0592a]' : 'text-zinc-500 hover:text-zinc-900'
-                                    }`}
-                                >
-                                    <span>{tab.label}</span>
-                                    <span
-                                        className={`px-2 py-0.5 rounded-full text-[10px] ${
-                                            isActive ? 'bg-[#fefccf] text-[#f0592a] font-bold border border-[#f0592a]/20' : 'bg-zinc-100 text-zinc-600'
-                                        }`}
-                                    >
-                                        {tab.count}
-                                    </span>
-                                    {isActive && (
-                                        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#f0592a] rounded-full" />
-                                    )}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
                 {/* Thanh tìm kiếm & Bộ lọc */}
                 <div className="p-4 md:p-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-white">
                     <div className="relative flex-1 max-w-md">
@@ -346,14 +259,6 @@ export default function AdminUsers() {
                             </select>
                             <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                         </div>
-
-                        <button
-                            type="button"
-                            title="Bộ lọc tùy chỉnh"
-                            className="h-11 w-11 flex items-center justify-center rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
-                        >
-                            <SlidersHorizontal className="w-4 h-4" />
-                        </button>
                     </div>
                 </div>
 
@@ -365,16 +270,14 @@ export default function AdminUsers() {
                             <th className="py-3 px-6">Ảnh đại diện & Họ tên</th>
                             <th className="py-3 px-4">Email</th>
                             <th className="py-3 px-4">Vai trò</th>
-                            <th className="py-3 px-4">Điểm tín nhiệm</th>
                             <th className="py-3 px-4">Đơn hàng / Lô may</th>
                             <th className="py-3 px-4">Ngày tham gia</th>
                             <th className="py-3 px-4">Trạng thái</th>
-                            <th className="py-3 px-6 text-right"><span className="sr-only">Thao tác</span></th>
+                            <th className="py-3 px-4">Thao tác</th>
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 text-xs">
                         {users.map((u) => {
-                            const isTrustCritical = u.trustScore < 50;
                             return (
                                 <tr key={u.id} className="hover:bg-zinc-50/70 transition-colors">
                                     {/* Cột Tên & Avatar */}
@@ -399,19 +302,7 @@ export default function AdminUsers() {
                                             <div className="flex flex-col min-w-0">
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="font-semibold text-zinc-900 truncate">{u.name}</span>
-                                                    {u.verified && (
-                                                        <CheckCircle2 className="w-4 h-4 text-[#f0592a]" />
-                                                    )}
-                                                    {u.pendingIcon && (
-                                                        <Hourglass className="w-3.5 h-3.5 text-zinc-400" />
-                                                    )}
-                                                    {u.tag && (
-                                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-[#f0592a] text-white">
-                                                                {u.tag}
-                                                            </span>
-                                                    )}
                                                 </div>
-                                                <span className="text-[11px] text-zinc-400 truncate">{u.org}</span>
                                             </div>
                                         </div>
                                     </td>
@@ -422,27 +313,10 @@ export default function AdminUsers() {
                                     {/* Vai trò */}
                                     <td className="py-4 px-4">{renderRoleBadge(u.role)}</td>
 
-                                    {/* Điểm tín nhiệm */}
-                                    <td className="py-4 px-4">
-                                        <div className="flex items-center gap-2">
-                                                <span
-                                                    className={`w-2 h-2 rounded-full shrink-0 ${
-                                                        isTrustCritical ? 'bg-red-500' : 'bg-[#f0592a]'
-                                                    }`}
-                                                />
-                                            <span className={`font-semibold ${isTrustCritical ? 'text-red-500' : 'text-zinc-900'}`}>
-                                                    {u.trustScore}/100
-                                                </span>
-                                        </div>
-                                    </td>
-
                                     {/* Đơn hàng / Lô may */}
                                     <td className="py-4 px-4 text-zinc-800">
                                         <div className="flex flex-col">
                                             <span className="font-semibold">{u.orders}</span>
-                                            <span className={`text-[11px] ${u.ordersSub.includes('khiếu nại') ? 'text-red-500 font-medium' : 'text-zinc-400'}`}>
-                                                    {u.ordersSub}
-                                                </span>
                                         </div>
                                     </td>
 
@@ -453,13 +327,12 @@ export default function AdminUsers() {
                                     <td className="py-4 px-4">{renderStatusBadge(u.status)}</td>
 
                                     {/* Hành động */}
-                                    <td className="py-4 px-6 text-right">
+                                    <td className="py-4 px-6">
                                         <button
                                             type="button"
-                                            title="Tùy chọn khác"
                                             className="w-8 h-8 rounded-lg inline-flex items-center justify-center text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
                                         >
-                                            <MoreVertical className="w-4 h-4" />
+                                            <Ban className="w-4 h-4" />
                                         </button>
                                     </td>
                                 </tr>
@@ -483,7 +356,6 @@ export default function AdminUsers() {
                             className="h-9 px-3 rounded-lg bg-zinc-100 text-zinc-400 opacity-50 cursor-not-allowed flex items-center gap-1"
                         >
                             <ChevronLeft className="w-4 h-4" />
-                            <span className="hidden sm:inline">Trước</span>
                         </button>
                         <button className="w-9 h-9 rounded-lg bg-[#f0592a] text-white flex items-center justify-center shadow-xs">
                             1
@@ -496,7 +368,6 @@ export default function AdminUsers() {
                         </button>
                         <span className="px-1 text-zinc-400 font-normal">…</span>
                         <button className="h-9 px-3 rounded-lg bg-zinc-50 border border-zinc-200 text-zinc-700 hover:bg-zinc-100 flex items-center gap-1 transition-colors">
-                            <span className="hidden sm:inline">Sau</span>
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </nav>

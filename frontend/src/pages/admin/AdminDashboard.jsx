@@ -75,10 +75,6 @@ export default function AdminDashboard() {
                         <Calendar className="w-4 h-4 text-zinc-400" />
                         <span>01/10 — 31/10/2026</span>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] text-white text-xs font-semibold shadow-xs active:scale-[0.98] transition-all">
-                        <Download className="w-4 h-4" />
-                        <span>Xuất báo cáo</span>
-                    </button>
                 </div>
             </div>
 
@@ -130,30 +126,11 @@ export default function AdminDashboard() {
                                     Đơn hàng
                                 </button>
                             </div>
-
-                            <div className="inline-flex p-1 rounded-xl bg-zinc-100">
-                                {['Today', '7D', '30D', '12M'].map((range) => (
-                                    <button
-                                        key={range}
-                                        onClick={() => setSelectedRange(range)}
-                                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-all ${
-                                            selectedRange === range ? 'bg-[#f0592a] text-white shadow-xs' : 'text-zinc-600 hover:text-zinc-950'
-                                        }`}
-                                    >
-                                        {rangeLabels[range]}
-                                    </button>
-                                ))}
-                            </div>
                         </div>
                     </div>
 
                     {/* SVG Biểu đồ cột */}
                     <div className="relative w-full pt-2">
-                        <div className="absolute top-2 right-8 px-3 py-1.5 rounded-xl bg-zinc-900 text-white text-[11px] font-medium shadow-md flex items-center gap-2 pointer-events-none">
-                            <span className="w-2 h-2 rounded-full bg-[#f0592a]"></span>
-                            <span>Ngày 24: <strong>14.820.000 ₫</strong> (312 đơn)</span>
-                        </div>
-
                         <svg className="w-full h-64 overflow-visible" preserveAspectRatio="none" viewBox="0 0 680 240">
                             <defs>
                                 <linearGradient id="barOrange" x1="0" y1="0" x2="0" y2="1">
@@ -192,7 +169,7 @@ export default function AdminDashboard() {
                                 { x: 410, h1: 110, h2: 125 },
                                 { x: 460, h1: 150, h2: 165 },
                                 { x: 510, h1: 120, h2: 145 },
-                                { x: 560, h1: 180, h2: 175, highlight: true },
+                                { x: 560, h1: 180, h2: 175},
                                 { x: 610, h1: 130, h2: 145 },
                             ].map((bar, i) => (
                                 <g key={i}>
@@ -203,7 +180,7 @@ export default function AdminDashboard() {
                                         width="14"
                                         height={bar.h2}
                                         rx="3"
-                                        fill={bar.highlight ? '#18181b' : 'url(#barOrange)'}
+                                        fill={'url(#barOrange)'}
                                     />
                                 </g>
                             ))}
@@ -225,10 +202,6 @@ export default function AdminDashboard() {
                             <div className="flex items-center gap-2">
                                 <span className="w-3 h-3 rounded-sm bg-[#ffdbd0] border border-zinc-200"></span>
                                 <span>Tổng doanh số cơ bản</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="w-3 h-3 rounded-sm bg-zinc-900"></span>
-                                <span>Đỉnh tăng trưởng ngày</span>
                             </div>
                         </div>
                     </div>
@@ -283,81 +256,6 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* 4. Ba Panel Danh sách Sản phẩm (3 cột) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Panel 1: Bán chạy nhất */}
-                <div className="p-5 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
-                    <div>
-                        <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-3">
-                            <div className="flex items-center gap-1.5 font-bold text-sm text-zinc-950">
-                                <Flame className="w-4 h-4 text-[#f0592a]" />
-                                <span>Bán chạy nhất</span>
-                            </div>
-                            <a href="#" className="text-xs font-semibold text-[#f0592a] hover:underline">Xem tất cả</a>
-                        </div>
-                        <div className="space-y-3">
-                            {bestSellers.map((item, i) => (
-                                <div key={i} className="flex items-center gap-3 group cursor-pointer">
-                                    <img src={item.img} alt={item.name} className="w-10 h-10 rounded-lg object-cover border border-zinc-100 shrink-0" />
-                                    <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
-                                        <h4 className="text-xs font-medium text-zinc-900 truncate group-hover:text-[#f0592a] transition-colors">{item.name}</h4>
-                                        <span className="text-[11px] text-zinc-400 shrink-0 whitespace-nowrap">{item.sold}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Panel 2: Mới về */}
-                <div className="p-5 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
-                    <div>
-                        <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-3">
-                            <div className="flex items-center gap-1.5 font-bold text-sm text-zinc-950">
-                                <Shirt className="w-4 h-4 text-[#f0592a]" />
-                                <span>Hàng mới về</span>
-                            </div>
-                            <a href="#" className="text-xs font-semibold text-[#f0592a] hover:underline">Xem tất cả</a>
-                        </div>
-                        <div className="space-y-3">
-                            {newestProducts.map((item, i) => (
-                                <div key={i} className="flex items-center gap-3 group cursor-pointer">
-                                    <img src={item.img} alt={item.name} className="w-10 h-10 rounded-lg object-cover border border-zinc-100 shrink-0" />
-                                    <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
-                                        <h4 className="text-xs font-medium text-zinc-900 truncate group-hover:text-[#f0592a] transition-colors">{item.name}</h4>
-                                        <span className="text-[11px] text-zinc-400 shrink-0 whitespace-nowrap">{item.time}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Panel 3: Xem nhiều nhất */}
-                <div className="p-5 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
-                    <div>
-                        <div className="flex items-center justify-between pb-3 border-b border-zinc-100 mb-3">
-                            <div className="flex items-center gap-1.5 font-bold text-sm text-zinc-950">
-                                <Eye className="w-4 h-4 text-[#f0592a]" />
-                                <span>Xem nhiều nhất</span>
-                            </div>
-                            <a href="#" className="text-xs font-semibold text-[#f0592a] hover:underline">Xem tất cả</a>
-                        </div>
-                        <div className="space-y-3">
-                            {mostViewed.map((item, i) => (
-                                <div key={i} className="flex items-center gap-3 group cursor-pointer">
-                                    <img src={item.img} alt={item.name} className="w-10 h-10 rounded-lg object-cover border border-zinc-100 shrink-0" />
-                                    <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
-                                        <h4 className="text-xs font-medium text-zinc-900 truncate group-hover:text-[#f0592a] transition-colors">{item.name}</h4>
-                                        <span className="text-[11px] text-zinc-400 shrink-0 whitespace-nowrap">{item.views} lượt xem</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 </div>
             </div>

@@ -89,20 +89,9 @@ export default function AdminLayout() {
             <div className="pl-64 flex flex-col min-h-screen">
                 {/* Top Header cố định */}
                 <header className="fixed top-0 left-64 right-0 h-16 bg-white/90 backdrop-blur-md border-b border-zinc-200/70 z-40 px-8 flex items-center justify-between shadow-xs">
-                    <div className="relative w-full max-w-md">
-                        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
-                        <input
-                            type="search"
-                            placeholder="Tìm kiếm đơn hàng, sản phẩm, người dùng..."
-                            className="w-full h-10 pl-10 pr-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#f0592a] focus:ring-2 focus:ring-[#f0592a]/20 transition-all"
-                        />
-                    </div>
+                    <div className="relative w-full max-w-md"></div>
 
                     <div className="flex items-center gap-4">
-                        <button className="relative p-2 rounded-xl text-zinc-500 hover:text-[#f0592a] hover:bg-zinc-50 transition-colors">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#f0592a]"></span>
-                        </button>
                         <div className="h-5 w-px bg-zinc-200"></div>
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-[#f0592a] text-white flex items-center justify-center font-bold text-xs">

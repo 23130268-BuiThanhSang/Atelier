@@ -143,11 +143,6 @@ export default function AdminProductForm() {
                             {isEditMode ? `Chỉnh sửa: ${name} (#PRD-7702)` : 'Thêm sản phẩm mới'}
                         </span>
                     </div>
-
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold uppercase bg-emerald-50 text-emerald-700">
-                        <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
-                        Hiện tại: Đang bán
-                    </span>
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-zinc-200/60">
@@ -156,13 +151,6 @@ export default function AdminProductForm() {
                     </div>
 
                     <div className="flex items-center gap-2.5 shrink-0">
-                        <button
-                            type="button"
-                            className="h-10 px-4 rounded-xl bg-white hover:bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 shadow-xs flex items-center gap-1.5 transition-colors"
-                        >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Hủy thay đổi</span>
-                        </button>
                         <button
                             type="button"
                             className="h-10 px-5 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] text-white text-xs font-semibold shadow-xs active:scale-[0.98] transition-all flex items-center gap-2"
@@ -206,10 +194,10 @@ export default function AdminProductForm() {
 
                             <div>
                                 <label className="block text-xs font-bold text-zinc-800 mb-1.5">
-                                    Đường dẫn định danh (Slug / Canonical URL)
+                                    Đường dẫn định danh
                                 </label>
                                 <div className="flex items-center rounded-xl bg-zinc-50 border border-zinc-200 px-3.5 h-11">
-                                    <span className="text-xs text-zinc-400 select-none">atelier.style/shop/</span>
+                                    <span className="text-xs text-zinc-400 select-none">atelier/products/</span>
                                     <input
                                         type="text"
                                         value={slug}
@@ -272,7 +260,7 @@ export default function AdminProductForm() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-zinc-800 mb-1.5">Kiểu dáng / Phom cắt (Silhouette)</label>
+                                    <label className="block text-xs font-bold text-zinc-800 mb-1.5">Kiểu dáng</label>
                                     <div className="relative">
                                         <select
                                             value={subcategory}
@@ -301,10 +289,6 @@ export default function AdminProductForm() {
                                 </h2>
                                 <p className="text-xs text-zinc-500">Tải lên ít nhất 3 góc chụp chất lượng cao (Mặt trước, Mặt sau, Cận cảnh đường chỉ, Mặc trên người mẫu).</p>
                             </div>
-                            <button type="button" className="text-xs font-semibold text-[#f0592a] flex items-center gap-1 hover:underline">
-                                <Sliders className="w-3.5 h-3.5" />
-                                <span>Quy chuẩn hình ảnh</span>
-                            </button>
                         </div>
 
                         {/* Lưới xem trước ảnh */}
@@ -351,43 +335,8 @@ export default function AdminProductForm() {
                         </div>
                     </section>
 
-                    {/* Khối 3: Bảng phối màu & Ma trận Size */}
+                    {/* Khối 3: Ma trận Size */}
                     <section className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-5">
-                        <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                            <div>
-                                <h2 className="text-base font-bold text-zinc-950 flex items-center gap-2">
-                                    <Palette className="w-4 h-4 text-[#f0592a]" />
-                                    <span>Bảng màu nhuộm có sẵn</span>
-                                </h2>
-                            </div>
-                            <span className="text-[10px] font-bold uppercase bg-zinc-100 text-zinc-700 px-2.5 py-1 rounded-full">
-                                4 Tông màu nhuộm
-                            </span>
-                        </div>
-
-                        {/* Danh sách Swatches màu */}
-                        <div className="flex flex-wrap items-center gap-2.5">
-                            {colorways.map((c, i) => (
-                                <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200/80 shadow-2xs">
-                                    <div className="w-6 h-6 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: c.hex }} />
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-semibold text-zinc-900">{c.name}</span>
-                                        <span className="text-[10px] text-zinc-400 font-mono">{c.hex}</span>
-                                    </div>
-                                    <span className="text-[9px] font-bold uppercase text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full ml-1">
-                                        Đang dùng
-                                    </span>
-                                </div>
-                            ))}
-                            <button
-                                type="button"
-                                className="h-10 px-3.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-xs font-semibold text-[#f0592a] flex items-center gap-1.5 transition-colors"
-                            >
-                                <PlusCircle className="w-4 h-4" />
-                                <span>Thêm mẫu màu</span>
-                            </button>
-                        </div>
-
                         {/* Ma trận Size & SKU */}
                         <div className="space-y-3 pt-2">
                             <div className="flex items-center justify-between">
@@ -437,74 +386,6 @@ export default function AdminProductForm() {
                             </div>
                         </div>
                     </section>
-
-                    {/* Khối 4: Bảng thông số kích thước (Size Chart) */}
-                    <section className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-100 pb-3">
-                            <div>
-                                <h2 className="text-base font-bold text-zinc-950 flex items-center gap-2">
-                                    <Ruler className="w-4 h-4 text-[#f0592a]" />
-                                    <span>Bảng thông số kích thước chuẩn</span>
-                                </h2>
-                                <p className="text-xs text-zinc-500">Số đo may mặc chuẩn hóa hiển thị ngoài trang sản phẩm cho khách hàng</p>
-                            </div>
-
-                            {/* Chuyển đổi đơn vị Inches / Centimeters */}
-                            <div className="inline-flex p-1 rounded-xl bg-zinc-100 border border-zinc-200/80">
-                                <button
-                                    type="button"
-                                    onClick={() => setUnit('in')}
-                                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                                        unit === 'in' ? 'bg-white text-[#f0592a] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
-                                    }`}
-                                >
-                                    Inches
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setUnit('cm')}
-                                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                                        unit === 'cm' ? 'bg-white text-[#f0592a] shadow-xs' : 'text-zinc-600 hover:text-zinc-900'
-                                    }`}
-                                >
-                                    Centimet
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="overflow-x-auto rounded-xl border border-zinc-200">
-                            <table className="w-full text-left text-xs border-collapse font-mono">
-                                <thead>
-                                <tr className="bg-[#faf8e4]/60 text-zinc-400 font-semibold text-[10px] uppercase font-sans border-b border-zinc-200/70">
-                                    <th className="py-2.5 px-3">Kích cỡ</th>
-                                    <th className="py-2.5 px-3">Rộng ngực</th>
-                                    <th className="py-2.5 px-3">Dài áo</th>
-                                    <th className="py-2.5 px-3">Dài tay</th>
-                                    <th className="py-2.5 px-3 font-sans">Gợi ý phom mặc</th>
-                                </tr>
-                                </thead>
-                                <tbody className="divide-y divide-zinc-100">
-                                {currentChart.map((row, idx) => (
-                                    <tr key={idx} className="hover:bg-zinc-50/70 transition-colors">
-                                        <td className="py-2.5 px-3 font-bold text-zinc-900 font-sans">{row.size}</td>
-                                        <td className="py-2.5 px-3 text-zinc-800">{row.chest}</td>
-                                        <td className="py-2.5 px-3 text-zinc-800">{row.length}</td>
-                                        <td className="py-2.5 px-3 text-zinc-800">{row.sleeve}</td>
-                                        <td className="py-2.5 px-3 text-zinc-500 font-sans">{row.fit}</td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div className="flex items-center justify-between text-xs text-zinc-500 pt-1">
-                            <button type="button" className="text-[#f0592a] font-semibold hover:underline flex items-center gap-1">
-                                <Plus className="w-4 h-4" />
-                                <span>Thêm hàng số đo</span>
-                            </button>
-                        </div>
-                    </section>
-
                 </div>
 
                 {/* CỘT PHẢI (4 Cột) */}
@@ -514,76 +395,21 @@ export default function AdminProductForm() {
                     <section className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-4">
                         <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
                             <ToggleRight className="w-5 h-5 text-[#f0592a]" />
-                            <h2 className="text-base font-bold text-zinc-950">Trạng thái & Xuất bản</h2>
+                            <h2 className="text-base font-bold text-zinc-950">Trạng thái sản phẩm</h2>
                         </div>
 
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-zinc-800 mb-1.5">Trạng thái sản phẩm</label>
-                                <div className="relative">
-                                    <select
-                                        value={status}
-                                        onChange={(e) => setStatus(e.target.value)}
-                                        className="w-full h-11 px-3.5 pr-8 appearance-none rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-[#f0592a] cursor-pointer"
-                                    >
-                                        <option value="active">Đang bán · Hiển thị trên cửa hàng</option>
-                                        <option value="hidden">Đang ẩn / Bản nháp</option>
-                                        <option value="out_of_stock">Hết hàng</option>
-                                        <option value="archived">Lưu trữ</option>
-                                    </select>
-                                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-                                </div>
-                            </div>
-
-                            {/* Công tắc Sản phẩm nổi bật */}
-                            <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 flex items-start justify-between gap-3">
-                                <div className="space-y-0.5">
-                                    <span className="text-xs font-bold text-zinc-900 block">Sản phẩm nổi bật</span>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
-                                    <input
-                                        type="checkbox"
-                                        checked={isFeatured}
-                                        onChange={(e) => setIsFeatured(e.target.checked)}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-zinc-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#f0592a]"></div>
-                                </label>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-zinc-800 mb-1.5">Thẻ nhãn mặt tiền cửa hàng</label>
-                                <input
-                                    type="text"
-                                    value={badgeTag}
-                                    onChange={(e) => setBadgeTag(e.target.value)}
-                                    className="w-full h-11 px-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-medium text-zinc-900 focus:outline-none focus:border-[#f0592a]"
-                                />
-                            </div>
-
-                            {/* Thông tin Xưởng sản xuất gán kèm */}
-                            <div className="p-3.5 rounded-xl bg-[#faf8e4]/60 border border-[#f0592a]/20 space-y-2">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Xưởng / Nhà sản xuất</span>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2.5">
-                                        <div className="w-8 h-8 rounded-lg bg-[#fefccf] text-[#f0592a] font-bold text-xs flex items-center justify-center border border-[#f0592a]/20">
-                                            SN
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-xs font-bold text-zinc-900">Studio Nord Artisan Wear</span>
-                                            <span className="text-[10px] font-semibold text-emerald-700 flex items-center gap-0.5">
-                                                <CheckCircle2 className="w-3 h-3" /> Xưởng đạt chứng nhận
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <Link
-                                        to="/admin/users/USR-8492"
-                                        title="Xem hồ sơ xưởng"
-                                        className="p-1.5 rounded-lg hover:bg-zinc-200 text-zinc-500 hover:text-[#f0592a] transition-colors"
-                                    >
-                                        <ExternalLink className="w-4 h-4" />
-                                    </Link>
-                                </div>
+                            <div className="relative">
+                                <select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className="w-full h-11 px-3.5 pr-8 appearance-none rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-[#f0592a] cursor-pointer"
+                                >
+                                    <option value="active">Đang bán · Hiển thị trên cửa hàng</option>
+                                    <option value="hidden">Đang ẩn / Bản nháp</option>
+                                    <option value="out_of_stock">Hết hàng</option>
+                                </select>
+                                <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                             </div>
                         </div>
                     </section>
@@ -593,103 +419,54 @@ export default function AdminProductForm() {
                         <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                             <div className="flex items-center gap-2">
                                 <DollarSign className="w-5 h-5 text-[#f0592a]" />
-                                <h2 className="text-base font-bold text-zinc-950">Định giá & Biên lợi nhuận</h2>
+                                <h2 className="text-base font-bold text-zinc-950">Giá bán</h2>
                             </div>
                             <span className="text-[11px] font-mono font-bold bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded">
                                 VND (₫)
                             </span>
                         </div>
-
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-800 mb-1.5">Giá bán lẻ</label>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={basePrice}
-                                            onChange={(e) => setBasePrice(e.target.value)}
-                                            className="w-full h-11 px-3 rounded-xl bg-zinc-50 border border-zinc-200 text-sm font-mono font-bold text-[#f0592a] focus:outline-none focus:border-[#f0592a]"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-bold text-zinc-800 mb-1.5">Giá gốc so sánh</label>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={comparePrice}
-                                            onChange={(e) => setComparePrice(e.target.value)}
-                                            className="w-full h-11 px-3 rounded-xl bg-zinc-50 border border-zinc-200 text-sm font-mono text-zinc-400 line-through focus:outline-none focus:border-[#f0592a]"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-zinc-800 mb-1.5">Giá vốn mỗi chiếc (Giá xưởng sản xuất - COGS)</label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={cogs}
-                                        onChange={(e) => setCogs(e.target.value)}
-                                        className="w-full h-11 px-3 rounded-xl bg-zinc-50 border border-zinc-200 text-sm font-mono text-zinc-800 focus:outline-none focus:border-[#f0592a]"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-bold text-zinc-800 mb-1.5">Danh mục thuế</label>
-                                <div className="relative">
-                                    <select
-                                        value={taxCategory}
-                                        onChange={(e) => setTaxCategory(e.target.value)}
-                                        className="w-full h-11 px-3.5 pr-8 appearance-none rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-800 focus:outline-none focus:border-[#f0592a] cursor-pointer"
-                                    >
-                                        <option>Hàng may mặc tiêu chuẩn (Chịu thuế)</option>
-                                        <option>Miễn thuế / Mẫu sản phẩm thử nghiệm</option>
-                                        <option>Thuế suất đặc biệt (Hàng xuất khẩu)</option>
-                                    </select>
-                                    <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-                                </div>
-                            </div>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={basePrice}
+                                onChange={(e) => setBasePrice(e.target.value)}
+                                className="w-full h-11 px-3 rounded-xl bg-zinc-50 border border-zinc-200 text-sm font-mono font-bold text-[#f0592a] focus:outline-none focus:border-[#f0592a]"
+                            />
                         </div>
                     </section>
 
-                    {/* Khối 3: Quản lý tồn kho */}
                     <section className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-4">
-                        <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
-                            <Warehouse className="w-5 h-5 text-[#f0592a]" />
-                            <h2 className="text-base font-bold text-zinc-950">Quản lý tồn kho</h2>
-                        </div>
-
-                        <div className="space-y-4">
-                            <label className="flex items-center gap-3 cursor-pointer select-none">
-                                <input
-                                    type="checkbox"
-                                    checked={trackInventory}
-                                    onChange={(e) => setTrackInventory(e.target.checked)}
-                                    className="w-4 h-4 rounded text-[#f0592a] accent-[#f0592a] cursor-pointer"
-                                />
-                                <span className="text-xs font-bold text-zinc-900">Theo dõi số lượng tồn kho cho sản phẩm này</span>
-                            </label>
-
+                        <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                             <div>
-                                <label className="block text-xs font-bold text-zinc-800 mb-1.5">Ngưỡng cảnh báo sắp hết hàng</label>
-                                <div className="relative">
-                                    <input
-                                        type="number"
-                                        value={lowStockAlert}
-                                        onChange={(e) => setLowStockAlert(e.target.value)}
-                                        className="w-full h-11 px-3.5 pr-14 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-mono font-bold text-zinc-900 focus:outline-none focus:border-[#f0592a]"
-                                    />
-                                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-zinc-400">chiếc</span>
-                                </div>
+                                <h2 className="text-base font-bold text-zinc-950 flex items-center gap-2">
+                                    <Palette className="w-4 h-4 text-[#f0592a]" />
+                                    <span>Bảng màu nhuộm</span>
+                                </h2>
                             </div>
                         </div>
+                        {/* Danh sách Swatches màu */}
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            {colorways.map((c, i) => (
+                                <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200/80 shadow-2xs">
+                                    <div className="w-6 h-6 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: c.hex }} />
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-semibold text-zinc-900">{c.name}</span>
+                                        <span className="text-[10px] text-zinc-400 font-mono">{c.hex}</span>
+                                    </div>
+                                    <span className="text-[9px] font-bold uppercase text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full ml-1">
+                                        Đang dùng
+                                    </span>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                className="h-10 px-3.5 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-xs font-semibold text-[#f0592a] flex items-center gap-1.5 transition-colors"
+                            >
+                                <PlusCircle className="w-4 h-4" />
+                                <span>Thêm mẫu màu</span>
+                            </button>
+                        </div>
                     </section>
-
                 </div>
             </div>
         </div>
