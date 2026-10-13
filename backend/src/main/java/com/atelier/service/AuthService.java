@@ -2,6 +2,7 @@ package com.atelier.service;
 
 import com.atelier.auth.dto.LoginRequest;
 import com.atelier.auth.dto.RegisterRequest;
+import com.atelier.user.dto.ResetPasswordRequest;
 import com.atelier.user.entity.Role;
 import com.atelier.user.entity.User;
 import com.atelier.repository.RoleRepository;
@@ -12,10 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -29,6 +27,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
     private final Map<String, TempUserInfo> otpCache = new ConcurrentHashMap<>(); // lưu tạm user khi đăng ký
+    private final Map<String, TempUserInfo> resetTokenCache = new ConcurrentHashMap<>(); //quên mk
 
     private static class TempUserInfo { // chứa dữ liệu tạm
         RegisterRequest request;
@@ -115,5 +114,63 @@ public class AuthService {
         response.put("message", "Đăng nhập thành công!");
         response.put("fullName", user.getFullName());
         return response;
+    }
+
+    // Quên mk
+    public String requestPasswordReset(String email) {
+        if (!userRepository.existsByEmail(email)) {
+            throw new RuntimeException("Không tìm thấy tài khoản nào được liên kết với email này.");
+        }
+        String resetToken = UUID.randomUUID().toString();
+
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(30);
+
+        resetTokenCache.put(resetToken, new TempUserInfo(null, email, expiryTime));
+
+        try {
+            String resetLink = "http://localhost:5173/reset_password?token=" + resetToken;
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("Atelier System <no-reply@atelier.com>");
+            message.setTo(email);
+            message.setSubject("Đặt lại mật khẩu tài khoản Atelier");
+            message.setText("Bạn vừa yêu cầu đặt lại mật khẩu.\n\n"
+                    + "Vui lòng click vào đường link dưới đây để đổi mật khẩu mới:\n"
+                    + resetLink + "\n\n"
+                    + "Liên kết này sẽ tự động hết hạn sau 30 phút.\n"
+                    + "Nếu bạn không yêu cầu, vui lòng bỏ qua email này.");
+
+            mailSender.send(message);
+        } catch (Exception e) {
+            resetTokenCache.remove(resetToken);
+            throw new RuntimeException("Không thể gửi email lúc này. Vui lòng thử lại sau.");
+        }
+
+        return "Liên kết đặt lại mật khẩu đã được gửi đến email của bạn.";
+    }
+
+    public String resetPassword(ResetPasswordRequest request) {
+        String token = request.getToken();
+        String newPassword = request.getNewPassword();
+
+        TempUserInfo tempInfo = resetTokenCache.get(token);
+
+        if (tempInfo == null) {
+            throw new RuntimeException("Liên kết đặt lại mật khẩu không hợp lệ hoặc đã bị hủy.");
+        }
+        if (LocalDateTime.now().isAfter(tempInfo.expiryTime)) {
+            resetTokenCache.remove(token); // Xóa token hết hạn khỏi RAM
+            throw new RuntimeException("Liên kết này đã hết hạn. Vui lòng yêu cầu cấp lại liên kết mới.");
+        }
+
+        String email = tempInfo.otp;
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại."));
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        resetTokenCache.remove(token);
+        return "Mật khẩu đã được cập nhật thành công!";
     }
 }

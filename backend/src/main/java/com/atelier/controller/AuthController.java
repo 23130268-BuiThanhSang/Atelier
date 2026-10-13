@@ -3,6 +3,7 @@ package com.atelier.controller;
 import com.atelier.auth.dto.LoginRequest;
 import com.atelier.auth.dto.RegisterRequest;
 import com.atelier.service.AuthService;
+import com.atelier.user.dto.ResetPasswordRequest;
 import com.atelier.user.dto.VerifyOtpRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -44,6 +45,27 @@ public class AuthController {
         try {
             Map<String, String> response = authService.login(request);
             return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+    //quên mk
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            String message = authService.requestPasswordReset(email);
+            return ResponseEntity.ok(message);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        try {
+            String message = authService.resetPassword(request);
+            return ResponseEntity.ok(Map.of("message", message));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
