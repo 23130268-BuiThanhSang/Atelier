@@ -2,49 +2,118 @@ package com.atelier.service;
 
 import com.atelier.auth.dto.LoginRequest;
 import com.atelier.auth.dto.RegisterRequest;
-import com.atelier.entity.User;
+import com.atelier.user.entity.Role;
+import com.atelier.user.entity.User;
+import com.atelier.repository.RoleRepository;
 import com.atelier.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
 @Service
 @RequiredArgsConstructor
-
 public class AuthService {
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
 
-    // Đăng ký
-    public String register(RegisterRequest request) {
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JavaMailSender mailSender;
+    private final Map<String, TempUserInfo> otpCache = new ConcurrentHashMap<>(); // lưu tạm user khi đăng ký
+
+    private static class TempUserInfo { // chứa dữ liệu tạm
+        RegisterRequest request;
+        String otp;
+        LocalDateTime expiryTime;
+
+        public TempUserInfo(RegisterRequest request, String otp, LocalDateTime expiryTime) {
+            this.request = request;
+            this.otp = otp;
+            this.expiryTime = expiryTime;
+        }
+    }
+
+    public String requestRegisterAndSendOtp(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email đã được sử dụng!");
         }
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(5);
+        otpCache.put(request.getEmail(), new TempUserInfo(request, otp, expiryTime));
 
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("Atelier System <no-reply@atelier.com>");
+            message.setTo(request.getEmail());
+            message.setSubject("Mã xác thực tài khoản Atelier của bạn");
+            message.setText("Chào " + request.getFullName() + ",\n\n"
+                    + "Mã OTP xác minh tài khoản của bạn là: " + otp + "\n"
+                    + "Mã này sẽ hết hạn trong vòng 5 phút.\n\n"
+                    + "Trân trọng,\nĐội ngũ Atelier");
+
+            mailSender.send(message);
+        } catch (Exception e) {
+            otpCache.remove(request.getEmail());
+            throw new RuntimeException("Lỗi hệ thống: Không thể gửi email lúc này!");
+        }
+
+        return "Mã OTP đã được gửi đến email của bạn!";
+    }
+
+    // Đã xác thực email và tiến hành lưu db
+    public String verifyOtpAndSaveUser(String email, String inputOtp) {
+        TempUserInfo tempInfo = otpCache.get(email);
+
+        if (tempInfo == null) {
+            throw new RuntimeException("Không tìm thấy yêu cầu đăng ký hoặc đã bị hủy!");
+        }
+
+        if (LocalDateTime.now().isAfter(tempInfo.expiryTime)) {
+            otpCache.remove(email);
+            throw new RuntimeException("Mã OTP đã hết hạn! Vui lòng đăng ký lại.");
+        }
+
+        if (!tempInfo.otp.equals(inputOtp)) {
+            throw new RuntimeException("Mã OTP không chính xác!");
+        }
+
+        RegisterRequest request = tempInfo.request;
         User user = new User();
         user.setEmail(request.getEmail());
         user.setFullName(request.getFullName());
-        user.setRole(request.getRole().toUpperCase());
-        user.setPassword(passwordEncoder.encode(request.getPassword())); // mã hoá mk
-
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        String roleName = request.getRole().toUpperCase();
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy quyền: " + roleName));
+        user.getRoles().add(role);
         userRepository.save(user);
+        otpCache.remove(email);
+
         return "Đăng ký thành công!";
     }
 
-    //Đăng nhập
-    public String login(LoginRequest request) {
+    // ĐĂNG NHẬP
+    public Map<String, String> login(LoginRequest request) {
         Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
-
         if (userOptional.isEmpty()) {
             throw new RuntimeException("Tài khoản không tồn tại!");
         }
         User user = userOptional.get();
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("Sai mật khẩu!");
         }
-        return "Đăng nhập thành công!";
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Đăng nhập thành công!");
+        response.put("fullName", user.getFullName());
+        return response;
     }
-
 }
