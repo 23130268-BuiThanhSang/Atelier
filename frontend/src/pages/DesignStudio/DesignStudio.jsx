@@ -174,13 +174,6 @@ export default function DesignStudio() {
                 <div className="flex flex-wrap items-center justify-end gap-2 w-full xl:w-auto">
                     <button
                         type="button"
-                        className="px-4 py-2 bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors"
-                    >
-                        <Bookmark className="w-4 h-4 text-zinc-400" />
-                        <span>Lưu nháp</span>
-                    </button>
-                    <button
-                        type="button"
                         className="px-4 py-2 bg-[#f0592a] hover:bg-[#d94a1f] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98]"
                     >
                         <CheckCircle2 className="w-4 h-4" />
