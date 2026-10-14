@@ -16,4 +16,13 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
             order by image.isThumbnail desc, image.displayOrder asc, image.id asc
             """)
     List<ProductImage> findCatalogImages(@Param("productIds") List<Long> productIds);
+
+    /** Lấy toàn bộ ảnh của một sản phẩm theo thứ tự hiển thị cho trang chi tiết. */
+    @Query("""
+            select image
+            from ProductImage image
+            where image.product.id = :productId
+            order by image.isThumbnail desc, image.displayOrder asc, image.id asc
+            """)
+    List<ProductImage> findProductImages(@Param("productId") Long productId);
 }
