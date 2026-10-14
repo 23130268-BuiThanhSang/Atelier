@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 
 const navItems = [
@@ -70,14 +70,23 @@ function SparkIcon() {
     )
 }
 
-/**
- * userName is intentionally optional so the same component can later show
- * the authenticated user's name without changing the header structure.
- */
-export default function Header({ userName = '', cartCount = 0 }) {
+export default function Header({ cartCount = 0 }) {
     const [isOpen, setIsOpen] = useState(false)
+    const [userName, setUserName] = useState('')
+
+    // Tự động kiểm tra xem người dùng đã đăng nhập chưa khi load trang
+    useEffect(() => {
+        const storedName = localStorage.getItem('userName')
+        if (storedName) {
+            setUserName(storedName)
+        }
+    }, [])
+
     const closeMenu = () => setIsOpen(false)
+
+    // Cấu hình linh hoạt: Đã đăng nhập thì hiện tên và link tới /profile, chưa thì hiện 'Đăng nhập' và link /login
     const accountLabel = userName || 'Đăng nhập'
+    const accountLink = userName ? '/my_profile' : '/login'
 
     return (
         <header className="sticky top-0 z-40 border-b border-[#dfc67f] bg-[#fff1bf]/95 shadow-[0_8px_24px_rgba(146,93,24,0.10)] backdrop-blur">
@@ -139,7 +148,7 @@ export default function Header({ userName = '', cartCount = 0 }) {
                         </Link>
 
                         <Link
-                            to="/login"
+                            to={accountLink}
                             aria-label={accountLabel}
                             className="group flex min-w-[68px] flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-zinc-700 transition-all hover:bg-white/70 hover:text-[#f0592a]"
                         >
@@ -189,7 +198,7 @@ export default function Header({ userName = '', cartCount = 0 }) {
                                 Giỏ hàng
                             </Link>
                             <Link
-                                to="/login"
+                                to={accountLink}
                                 onClick={closeMenu}
                                 className="flex items-center justify-center gap-2 rounded-xl bg-[#f0592a] px-4 py-2.5 text-center text-sm font-bold text-white transition-all hover:bg-[#d94a1f] active:scale-[0.98]"
                             >

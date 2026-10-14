@@ -29,6 +29,7 @@ import ProducerDashboard from '../pages/Producer/ProducerDashboard.jsx';
 import OrderResolutionCenter from '../pages/Producer/OrderResolutionCenter';
 import DesignStudio3D from '../pages/DesignStudio/DesignStudio3D';
 import DesignProposals from '../pages/DesignStudio/DesignProposals.jsx';
+import ResetPassword from "../pages/Login/ResetPassword.jsx";
 
 export default function AppRoutes() {
     return (
@@ -50,13 +51,14 @@ export default function AppRoutes() {
                 <Route path="/orders/:id/resolution" element={<OrderResolutionCenter />} />
                 <Route path="/design-studio/3d" element={<DesignStudio3D />} />
                 <Route path="/design-studio/:id/proposals" element={<DesignProposals />} />
+                <Route path="/my_profile" element={<MyProfile />} />
             </Route>
 
             <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot_password" element={<ForgotPassword />} />
                 <Route path="/verify_email" element={<EmailVerification />} />
-                <Route path="/my_profile" element={<MyProfile />} />
+                <Route path="/reset_password" element={<ResetPassword />} />
             </Route>
 
             <Route element={<AdminLayout />}>

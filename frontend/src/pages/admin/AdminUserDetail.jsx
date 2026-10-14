@@ -40,8 +40,6 @@ export default function AdminUserDetail() {
     const user = {
         id: id || '#USR-8492',
         name: 'Studio Nord Artisan Wear',
-        status: 'Chờ xác minh',
-        tier: 'Nghệ nhân Cấp II',
         email: 'contact@studionord-apparel.com',
         phone: '+1 (555) 382-9014',
         location: 'Portland, Oregon, Hoa Kỳ',
@@ -128,12 +126,6 @@ export default function AdminUserDetail() {
                     <div className="space-y-1.5">
                         <div className="flex items-center gap-2.5 flex-wrap">
                             <h1 className="text-2xl font-bold tracking-tight text-zinc-950">{user.name}</h1>
-                            <span className="px-3 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-amber-50 text-amber-800 border border-amber-200 tracking-wider">
-                                {user.status}
-                            </span>
-                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-zinc-100 text-zinc-600">
-                                {user.tier}
-                            </span>
                         </div>
 
                         <div className="flex items-center gap-4 text-xs text-zinc-500 flex-wrap">
@@ -190,14 +182,6 @@ export default function AdminUserDetail() {
 
                     <button
                         type="button"
-                        className="h-10 px-3.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold flex items-center gap-2 transition-colors"
-                    >
-                        <Send className="w-3.5 h-3.5 text-zinc-600" />
-                        <span>Gửi tin nhắn</span>
-                    </button>
-
-                    <button
-                        type="button"
                         className="h-10 px-3.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold flex items-center gap-2 transition-colors"
                     >
                         <Ban className="w-3.5 h-3.5" />
@@ -219,9 +203,6 @@ export default function AdminUserDetail() {
                                 <BadgeCheck className="w-5 h-5 text-[#f0592a]" />
                                 <h2 className="text-base font-bold text-zinc-950">Hồ sơ nhà sản xuất & Năng lực may thủ công</h2>
                             </div>
-                            <span className="text-[11px] font-semibold uppercase bg-zinc-100 text-zinc-600 px-2.5 py-1 rounded-full">
-                                Xưởng chuyên môn cao
-                            </span>
                         </div>
 
                         <p className="text-xs text-zinc-600 leading-relaxed italic">
@@ -252,168 +233,6 @@ export default function AdminUserDetail() {
                                 </span>
                             </div>
                         </div>
-
-                        {/* Thẻ Trust Index tròn */}
-                        <div className="p-5 rounded-xl bg-zinc-50 border border-zinc-200/60 flex flex-col md:flex-row items-center justify-between gap-6">
-                            <div className="flex items-center gap-5 w-full md:w-auto">
-                                <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-white shadow-xs shrink-0 border border-zinc-200/60">
-                                    <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
-                                        <path
-                                            className="text-zinc-200"
-                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="3.2"
-                                        />
-                                        <path
-                                            className="text-[#f0592a]"
-                                            d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeDasharray="94, 100"
-                                            strokeLinecap="round"
-                                            strokeWidth="3.2"
-                                        />
-                                    </svg>
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                                        <span className="text-lg font-bold text-zinc-950 leading-none">{user.trustScore}</span>
-                                        <span className="text-[9px] font-semibold text-zinc-400">/ 100</span>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-0.5">
-                                    <span className="text-sm font-bold text-zinc-950">Chỉ số tín nhiệm thủ công</span>
-                                    <p className="text-xs text-zinc-500">Được tính dựa trên {user.batchesCount} lô sản xuất hoàn thành đạt chuẩn</p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full md:w-auto flex-1">
-                                {[
-                                    { label: 'Giao đúng hạn', val: user.metrics.onTimeDispatch, valColor: 'text-[#f0592a]' },
-                                    { label: 'Tỷ lệ tranh chấp', val: user.metrics.disputeRate, valColor: 'text-zinc-900' },
-                                    { label: 'Chất lượng (5.0)', val: user.metrics.qualityScore, valColor: 'text-emerald-700' },
-                                    { label: 'Hạng xưởng', val: user.metrics.tierLevel, valColor: 'text-zinc-900' },
-                                ].map((item, idx) => (
-                                    <div key={idx} className="flex flex-col bg-white p-2.5 rounded-xl text-center border border-zinc-200/50 shadow-2xs">
-                                        <span className={`text-sm font-bold ${item.valColor}`}>{item.val}</span>
-                                        <span className="text-[10px] font-medium text-zinc-400 mt-0.5">{item.label}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Khối Hồ sơ chứng nhận năng lực xưởng may */}
-                    <div className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-5">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="flex items-center gap-2.5">
-                                <ShieldCheck className="w-5 h-5 text-[#f0592a]" />
-                                <div>
-                                    <h2 className="text-base font-bold text-zinc-950">Hồ sơ thẩm định nhà sản xuất & Năng lực xưởng may</h2>
-                                </div>
-                            </div>
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-center">
-                                Đang chờ xác minh
-                            </span>
-                        </div>
-
-                        {/* Danh sách tệp hồ sơ */}
-                        <div className="space-y-2.5">
-                            {user.documents.map((doc) => {
-                                const Icon = doc.icon;
-                                return (
-                                    <div
-                                        key={doc.id}
-                                        className="p-3.5 rounded-xl bg-zinc-50 hover:bg-[#faf8e4]/70 border border-zinc-200/60 transition-colors flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap"
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <div className="w-10 h-10 rounded-xl bg-white border border-zinc-200/80 flex items-center justify-center shrink-0 shadow-2xs">
-                                                <Icon className={`w-5 h-5 ${doc.iconColor}`} />
-                                            </div>
-                                            <div className="flex flex-col min-w-0">
-                                                <span className="text-xs font-semibold text-zinc-900 truncate">{doc.title}</span>
-                                                <span className="text-[11px] text-zinc-400">{doc.meta}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 ml-auto shrink-0">
-                                            <button
-                                                type="button"
-                                                className="h-8 px-3 rounded-lg bg-white border border-zinc-200 text-[11px] font-semibold text-zinc-700 hover:text-[#f0592a] hover:border-[#f0592a] transition-all flex items-center gap-1.5 shadow-2xs"
-                                            >
-                                                <Eye className="w-3.5 h-3.5" />
-                                                <span>{doc.type === 'gallery' ? 'Xem bộ ảnh' : 'Xem trước'}</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="h-8 px-3 rounded-lg bg-white border border-zinc-200 text-[11px] font-semibold text-zinc-700 hover:text-[#f0592a] hover:border-[#f0592a] transition-all flex items-center gap-1.5 shadow-2xs"
-                                            >
-                                                <Download className="w-3.5 h-3.5" />
-                                                <span>Tải xuống</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        {/* Khối quyết định phê duyệt (Verification Decision) */}
-                        <div className="p-5 rounded-xl bg-[#faf8e4] border border-[#f0592a]/20 space-y-3">
-                            <div className="flex items-center gap-2">
-                                <ClipboardCheck className="w-4 h-4 text-[#f0592a]" />
-                                <span className="text-xs font-bold text-zinc-950 uppercase tracking-wider">Quyết định thẩm định</span>
-                            </div>
-                            <p className="text-xs text-zinc-600">
-                                Việc phê duyệt sẽ cấp quyền Xưởng may Cấp 2, kích hoạt hợp đồng ký quỹ thanh toán an toàn và cho phép nhận các hợp đồng đặt hàng số lượng lớn.
-                            </p>
-
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold uppercase text-zinc-500">Ghi chú quyết định hoặc Lý do từ chối (Không bắt buộc)</label>
-                                <input
-                                    type="text"
-                                    value={decisionNote}
-                                    onChange={(e) => setDecisionNote(e.target.value)}
-                                    placeholder="Ví dụ: Vui lòng bổ sung phụ lục B chứng chỉ GOTS..."
-                                    className="w-full h-10 px-3.5 bg-white rounded-xl border border-zinc-200 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#f0592a] focus:ring-2 focus:ring-[#f0592a]/20 transition-all shadow-2xs"
-                                />
-                            </div>
-
-                            <div className="flex items-center gap-3 pt-1 flex-wrap">
-                                <button
-                                    type="button"
-                                    disabled={decisionStatus !== null}
-                                    onClick={() => setDecisionStatus('approved')}
-                                    className={`h-10 px-5 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] text-white text-xs font-semibold transition-all active:scale-[0.98] flex items-center gap-2 shadow-xs ${
-                                        decisionStatus !== null ? 'opacity-50 cursor-not-allowed' : ''
-                                    }`}
-                                >
-                                    <ShieldCheck className="w-4 h-4" />
-                                    <span>Phê duyệt chứng nhận</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    disabled={decisionStatus !== null}
-                                    onClick={() => setDecisionStatus('rejected')}
-                                    className={`h-10 px-5 rounded-xl bg-white hover:bg-red-50 text-red-600 border border-red-200 text-xs font-semibold transition-all flex items-center gap-2 shadow-xs ${
-                                        decisionStatus !== null ? 'opacity-50 cursor-not-allowed' : ''
-                                    }`}
-                                >
-                                    <X className="w-4 h-4" />
-                                    <span>Từ chối hồ sơ</span>
-                                </button>
-
-                                {decisionStatus === 'approved' && (
-                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        Đã phê duyệt thẩm định
-                                    </span>
-                                )}
-                                {decisionStatus === 'rejected' && (
-                                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-200">
-                                        Đã từ chối hồ sơ
-                                    </span>
-                                )}
-                            </div>
-                        </div>
                     </div>
 
                     {/* Khối Lịch sử sản xuất & Hợp đồng may đo */}
@@ -421,11 +240,6 @@ export default function AdminUserDetail() {
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div>
                                 <h2 className="text-base font-bold text-zinc-950">Lịch sử gia công & Bàn giao lô sản xuất</h2>
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] font-semibold">
-                                <span className="bg-zinc-100 text-zinc-700 px-2.5 py-0.5 rounded-full">38 Đã hoàn tất</span>
-                                <span className="bg-amber-50 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full">4 Đang chạy</span>
-                                <span className="bg-[#fefccf] text-[#f0592a] border border-[#f0592a]/20 px-2.5 py-0.5 rounded-full">1,35 tỷ ₫ Tổng giá trị</span>
                             </div>
                         </div>
 
@@ -469,107 +283,18 @@ export default function AdminUserDetail() {
 
                 {/* CỘT PHẢI (4 Cột) */}
                 <div className="lg:col-span-4 space-y-6">
-
                     {/* Hình ảnh Xưởng may (Facility Showcase) */}
                     <div className="bg-white rounded-2xl overflow-hidden shadow-xs border border-zinc-200/70">
                         <div className="relative h-44 w-full bg-zinc-100">
                             <img src={user.facility.image} alt="Cơ sở xưởng may" className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
-                            <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-white/95 text-zinc-800 shadow-xs">
-                                Đã xác thực địa điểm
-                            </span>
                         </div>
                         <div className="p-4 space-y-1">
                             <span className="text-xs font-bold text-zinc-950 block">{user.facility.name}</span>
                             <p className="text-[11px] text-zinc-500 leading-relaxed">{user.facility.desc}</p>
                         </div>
                     </div>
-
-                    {/* Khiếu nại & Tranh chấp (Disputes & Complaints) */}
-                    <div className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Shield className="w-4 h-4 text-emerald-600" />
-                                <h2 className="text-sm font-bold text-zinc-950">Khiếu nại & Tranh chấp</h2>
-                            </div>
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
-                                Hồ sơ uy tín tốt
-                            </span>
-                        </div>
-
-                        <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200/60 flex items-center justify-between text-center">
-                            <div className="flex-1">
-                                <span className="text-sm font-bold text-zinc-950 block">0 Vụ việc</span>
-                                <span className="text-[10px] text-zinc-400">Tranh chấp đang mở</span>
-                            </div>
-                            <div className="w-px h-8 bg-zinc-200"></div>
-                            <div className="flex-1">
-                                <span className="text-sm font-bold text-zinc-950 block">1 Vụ việc</span>
-                                <span className="text-[10px] text-zinc-400">Đã giải quyết êm đẹp</span>
-                            </div>
-                        </div>
-
-                        {/* Chi tiết 1 vụ đã giải quyết */}
-                        <div className="p-3.5 rounded-xl bg-[#faf8e4]/60 border border-zinc-200/50 space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-zinc-900">Giao mẫu vải chậm trễ</span>
-                                <span className="text-[10px] text-zinc-400">28/09/2026</span>
-                            </div>
-                            <p className="text-[11px] text-zinc-600 leading-relaxed">
-                                Đơn hàng #ORD-7721: Đơn vị vận chuyển giao trễ mẫu vải nhuộm chuẩn màu pantone. Đã thỏa thuận bồi thường thỏa đáng với khách hàng bằng phương án gửi hàng hỏa tốc đường hàng không.
-                            </p>
-                            <div className="pt-1 flex items-center gap-1.5 text-[10px] font-bold text-emerald-700">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Không áp dụng chế tài xử phạt hành chính</span>
-                            </div>
-                        </div>
-
-                        {/* Đường xu hướng điểm tín nhiệm */}
-                        <div className="pt-1 space-y-1.5">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-zinc-500 text-[11px]">Xu hướng điểm tín nhiệm (6 tháng)</span>
-                                <span className="font-bold text-zinc-900">+4 điểm</span>
-                            </div>
-                            <svg className="w-full h-8 text-[#f0592a]" fill="none" viewBox="0 0 100 24">
-                                <path d="M0 18 Q 20 16, 35 15 T 60 12 T 80 8 T 100 4" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-                                <circle cx="100" cy="4" r="3" fill="#f0592a" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    {/* Nhật ký kiểm toán tài khoản */}
-                    <div className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <History className="w-4 h-4 text-[#f0592a]" />
-                                <h2 className="text-sm font-bold text-zinc-950">Nhật ký kiểm toán & Hoạt động</h2>
-                            </div>
-                            <span className="text-[10px] font-bold text-zinc-400 uppercase">Thời gian thực</span>
-                        </div>
-
-                        <div className="space-y-3">
-                            {user.auditLogs.map((log, idx) => (
-                                <div key={idx} className="flex items-start gap-2.5">
-                                    <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${log.isDotOrange ? 'bg-[#f0592a]' : 'bg-zinc-300'}`}></span>
-                                    <div className="space-y-0.5 min-w-0">
-                                        <span className="text-xs font-semibold text-zinc-900 block truncate">{log.title}</span>
-                                        <span className="text-[10px] text-zinc-400 block">{log.meta}</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <button
-                            type="button"
-                            className="w-full h-9 rounded-xl bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-xs font-semibold text-zinc-700 transition-colors flex items-center justify-center gap-1.5"
-                        >
-                            <span>Xem toàn bộ lịch sử kiểm toán</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                    </div>
-
                 </div>
-
             </div>
         </div>
     );
