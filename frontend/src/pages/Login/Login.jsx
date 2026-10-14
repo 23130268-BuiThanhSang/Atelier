@@ -68,12 +68,8 @@ export default function AuthPage() {
     // HÀM XỬ LÝ ĐĂNG NHẬP (Gọi API /login)
     const handleLogin = async (e) => {
         e.preventDefault();
-        if (!logEmail || !logPassword) {
-            setMessage({ type: 'error', text: 'Vui lòng nhập Email và Mật khẩu!' });
-            return;
-        }
         setIsLoading(true);
-        setMessage({ type: '', text: '' });
+        setMessage({ type: '', text: '' }); // Xóa thông báo cũ
 
         try {
             const response = await fetch('http://localhost:8080/api/auth/login', {
@@ -84,19 +80,34 @@ export default function AuthPage() {
                     password: logPassword
                 })
             });
-            const data = await response.json();
+            const textData = await response.text();
+            let data;
+
+            try {
+                data = JSON.parse(textData);
+            } catch (parseError) {
+                data = { message: 'Lỗi máy chủ hoặc định dạng dữ liệu không hợp lệ.' };
+            }
+
             if (response.ok) {
-                setMessage({ type: 'success', text: data.message + ' Đang chuyển hướng...' });
+                setMessage({ type: 'success', text: 'Đăng nhập thành công! Đang chuyển hướng...' });
+
                 localStorage.setItem('userName', data.fullName);
+                localStorage.setItem('userEmail', data.email);
+                localStorage.setItem('userRole', data.role);
+
                 setTimeout(() => {
                     navigate('/');
                 }, 1000);
-
             } else {
-                setMessage({ type: 'error', text: data || 'Sai tài khoản hoặc mật khẩu' });
+                // 3. Hiển thị thông báo lỗi an toàn (chỉ lấy chuỗi text)
+                setMessage({ type: 'error', text: data.message || 'Sai tài khoản hoặc mật khẩu' });
             }
+
         } catch (error) {
-            setMessage({ type: 'error', text: 'Không thể kết nối đến server.' });
+            // Lỗi này xảy ra khi mất mạng hoặc không gọi được Backend
+            console.error("Lỗi đăng nhập:", error);
+            setMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại.' });
         } finally {
             setIsLoading(false);
         }

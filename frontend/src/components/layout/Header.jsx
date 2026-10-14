@@ -86,7 +86,7 @@ export default function Header({ cartCount = 0 }) {
 
     // Cấu hình linh hoạt: Đã đăng nhập thì hiện tên và link tới /profile, chưa thì hiện 'Đăng nhập' và link /login
     const accountLabel = userName || 'Đăng nhập'
-    const accountLink = userName ? '/profile' : '/login'
+    const accountLink = userName ? '/my_profile' : '/login'
 
     return (
         <header className="sticky top-0 z-40 border-b border-[#dfc67f] bg-[#fff1bf]/95 shadow-[0_8px_24px_rgba(146,93,24,0.10)] backdrop-blur">
