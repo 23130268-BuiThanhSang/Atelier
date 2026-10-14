@@ -88,6 +88,8 @@ export default function AuthPage() {
             if (response.ok) {
                 setMessage({ type: 'success', text: data.message + ' Đang chuyển hướng...' });
                 localStorage.setItem('userName', data.fullName);
+                localStorage.setItem('userEmail', data.email);
+                localStorage.setItem('userRole', data.role);
                 setTimeout(() => {
                     navigate('/');
                 }, 1000);
