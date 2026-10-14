@@ -97,7 +97,11 @@ export default function AuthPage() {
                 localStorage.setItem('userRole', data.role);
 
                 setTimeout(() => {
-                    navigate('/');
+                    if (data.role === 'ADMIN') {
+                        navigate('/admin');
+                    } else {
+                        navigate('/');
+                    }
                 }, 1000);
             } else {
                 // 3. Hiển thị thông báo lỗi an toàn (chỉ lấy chuỗi text)
