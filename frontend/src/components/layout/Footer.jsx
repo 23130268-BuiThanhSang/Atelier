@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import logo from "../../assets/logo.png";
+import React from "react";
 
 const columns = [
     {
@@ -23,7 +24,7 @@ const columns = [
         title: 'Tài khoản',
         links: [
             { to: '/login', label: 'Đăng nhập' },
-            { to: '/register', label: 'Tạo tài khoản' },
+            { to: '/login', label: 'Tạo tài khoản' },
             { to: '/my-orders', label: 'Lịch sử đơn hàng' },
         ],
     },
@@ -39,9 +40,13 @@ export default function Footer() {
                     <div className="grid gap-8 lg:grid-cols-[1.45fr_1fr] lg:items-end">
                         <div>
                             <div className="flex items-center gap-3">
-                                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f0592a] text-lg font-black text-white">
-                                    A
-                                </span>
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#fefccf] to-[#f0592a] shadow-[0_4px_12px_rgba(240,89,42,0.15)] ring-1 ring-[#f0592a]/10 transition-transform duration-300 group-hover:-translate-y-0.5">
+                                    <img
+                                        src={logo}
+                                        alt="Atelier Logo Icon"
+                                        className="h-7 w-7 object-contain"
+                                    />
+                                </div>
                                 <div>
                                     <div className="text-2xl font-black tracking-tight">Atelier</div>
                                     <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-600">
@@ -99,12 +104,12 @@ export default function Footer() {
                             <ul className="mt-4 space-y-3">
                                 {column.links.map((link) => (
                                     <li key={`${column.title}-${link.label}`}>
-                                        <Link
-                                            to={link.to}
+                                        <a
+                                            href={link.to}
                                             className="text-sm text-zinc-700 transition-colors hover:text-[#c94a1f]"
                                         >
                                             {link.label}
-                                        </Link>
+                                        </a>
                                     </li>
                                 ))}
                             </ul>
