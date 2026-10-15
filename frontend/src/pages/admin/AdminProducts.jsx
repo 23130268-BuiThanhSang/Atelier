@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Plus,
     Box,
@@ -14,155 +14,107 @@ import {
     Trash2,
     Check,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Loader2
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminProducts() {
-    const [selectedIds, setSelectedIds] = useState([1, 2, 3]); // Mặc định chọn 3 sản phẩm đầu
-    const [categoryFilter, setCategoryFilter] = useState('Tất cả danh mục');
+    const [selectedIds, setSelectedIds] = useState([]);
     const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
-    const [stockFilter, setStockFilter] = useState('Mức tồn kho: Tất cả');
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [currentPage, setCurrentPage] = useState(0);
+    const pageSize = 7;
+    const navigate = useNavigate();
 
-    // 1. DỮ LIỆU MẪU: 4 thẻ KPI đầu trang
-    const kpis = [
-        { title: 'Tổng danh mục', value: '184 mục', icon: Box, iconColor: 'text-zinc-500', bgIcon: 'bg-zinc-100' },
-        {
-            title: 'Đang mở bán',
-            value: '162',
-            badgeColor: 'bg-emerald-50 text-emerald-700',
-            icon: CheckCircle2,
-            iconColor: 'text-emerald-700',
-            bgIcon: 'bg-emerald-50'
-        },
-        {
-            title: 'Sắp hết hàng',
-            value: '8',
-            badgeColor: 'bg-amber-50 text-amber-800',
-            icon: AlertTriangle,
-            iconColor: 'text-amber-800',
-            bgIcon: 'bg-amber-50'
-        },
-        {
-            title: 'Hết hàng',
-            value: '14',
-            badgeColor: 'bg-red-50 text-red-600',
-            icon: PackageX,
-            iconColor: 'text-red-600',
-            bgIcon: 'bg-red-50'
-        },
-    ];
+    const [isLoading, setIsLoading] = useState(false);
+    const [productData, setProductData] = useState({
+        kpis: { totalCategories: 0, activeCount: 0, lowStockCount: 0, outOfStockCount: 0 },
+        items: [],
+        totalElements: 0,
+        totalPages: 1
+    });
 
-    // 2. DỮ LIỆU MẪU: Danh sách sản phẩm
-    const products = [
-        {
-            id: 1,
-            name: 'Áo thun Vintage Washed Oversized Heavy Tee',
-            sku: 'SKU-TEE-084 · 280gsm Cotton chải kỹ',
-            category: 'Áo thun Heavyweight',
-            price: '380.000 ₫',
-            stock: 420,
-            stockPercent: 82,
-            stockStatus: 'in-stock',
-            sold: '1.420 đã bán',
-            gmv: '53,9 triệu ₫ GMV',
-            status: 'Active',
-            featured: true,
-            image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=120&auto=format&fit=crop&q=80',
-        },
-        {
-            id: 2,
-            name: 'Áo thun Artisan Raw Cotton Boxy Fit Tee',
-            sku: 'SKU-TEE-119 · Cotton thô mộc không tẩy',
-            category: 'Vintage Organic',
-            price: '440.000 ₫',
-            stock: 185,
-            stockPercent: 55,
-            stockStatus: 'in-stock',
-            sold: '840 đã bán',
-            gmv: '36,9 triệu ₫ GMV',
-            status: 'Active',
-            featured: true,
-            image: 'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=120&auto=format&fit=crop&q=80',
-        },
-        {
-            id: 3,
-            name: 'Áo thun Acid Wash Distressed Pocket Crew',
-            sku: 'SKU-TEE-052 · Nhuộm sắc tố Charcoal',
-            category: 'Áo thun Graphic',
-            price: '420.000 ₫',
-            stock: 85,
-            stockPercent: 32,
-            stockStatus: 'in-stock',
-            sold: '630 đã bán',
-            gmv: '26,4 triệu ₫ GMV',
-            status: 'Active',
-            image: 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=120&auto=format&fit=crop&q=80',
-        },
-        {
-            id: 4,
-            name: 'Áo thun thêu logo Atelier tối giản',
-            sku: 'SKU-TEE-003 · Chỉ thêu đồng sắc độ',
-            category: 'Áo thun Graphic',
-            price: '360.000 ₫',
-            stock: 210,
-            stockPercent: 60,
-            stockStatus: 'hidden',
-            sold: '540 đã bán',
-            gmv: '19,4 triệu ₫ GMV',
-            status: 'Hidden',
-            image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=120&auto=format&fit=crop&q=80',
-        },
-        {
-            id: 5,
-            name: 'Áo hoodie French Terry Heavyweight Pullover',
-            sku: 'SKU-HD-014 · 450gsm Cotton vảy cá Loopback',
-            category: 'Áo hoodie nỉ dày',
-            price: '840.000 ₫',
-            stock: 14,
-            stockPercent: 14,
-            stockStatus: 'low-stock',
-            sold: '980 đã bán',
-            gmv: '82,3 triệu ₫ GMV',
-            status: 'Active',
-            image: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=120&auto=format&fit=crop&q=80',
-        },
-        {
-            id: 6,
-            name: 'Áo thun nhuộm thảo mộc tự nhiên (Bản giới hạn)',
-            sku: 'SKU-TEE-099 · Sắc tố thực vật màu Sage',
-            category: 'Vintage Organic',
-            price: '480.000 ₫',
-            stock: 0,
-            stockPercent: 0,
-            stockStatus: 'out-of-stock',
-            sold: '390 đã bán',
-            gmv: '18,7 triệu ₫ GMV',
-            status: 'Out of stock',
-            image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=120&auto=format&fit=crop&q=80',
-        },
-        {
-            id: 7,
-            name: 'Túi tote Selvedge Woven Heavy Canvas',
-            sku: 'SKU-ACC-021 · Vải bố Canvas 16oz',
-            category: 'Túi vải Canvas',
-            price: '280.000 ₫',
-            stock: 130,
-            stockPercent: 45,
-            stockStatus: 'in-stock',
-            sold: '310 đã bán',
-            gmv: '8,6 triệu ₫ GMV',
-            status: 'Active',
-            image: 'https://images.unsplash.com/photo-1544816155-12df9643f363?w=120&auto=format&fit=crop&q=80',
-        },
-    ];
+    // 1. Gọi API lấy danh sách sản phẩm
+    const fetchAdminProducts = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams({
+                page: currentPage,
+                size: pageSize
+            });
+            if (searchKeyword.trim()) params.append('keyword', searchKeyword.trim());
+            if (statusFilter !== 'Tất cả trạng thái') params.append('status', statusFilter);
 
-    // Xử lý chọn hàng loạt checkbox
+            const res = await fetch(`http://localhost:8080/api/v1/admin/products?${params.toString()}`);
+            if (res.ok) {
+                const data = await res.json();
+                setProductData(data);
+            }
+        } catch (error) {
+            console.error('Lỗi lấy danh sách sản phẩm:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentPage, searchKeyword, statusFilter]);
+
+    useEffect(() => {
+        fetchAdminProducts();
+    }, [fetchAdminProducts]);
+
+    // Format tiền tệ
+    const formatCurrency = (val) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+    };
+
+    // 2. Thao tác ẩn/hiện sản phẩm
+    const handleToggleStatus = async (product) => {
+        const nextStatus = product.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        try {
+            const res = await fetch('/api/v1/admin/products/bulk-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productIds: [product.id],
+                    targetStatus: nextStatus
+                })
+            });
+
+            if (res.ok) {
+                // Tải lại dữ liệu ngay lập tức
+                fetchAdminProducts();
+            } else {
+                console.error('Lỗi khi đổi trạng thái đơn lẻ:', res.status);
+            }
+        } catch (err) {
+            console.error('Lỗi kết nối khi đổi trạng thái:', err);
+        }
+    };
+
+    // 3. Thao tác hàng loạt (Bulk)
+    const handleBulkStatus = async (targetStatus) => {
+        if (!selectedIds.length) return;
+        try {
+            const res = await fetch('/api/v1/admin/products/bulk-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productIds: selectedIds, targetStatus })
+            });
+            if (res.ok) {
+                setSelectedIds([]);
+                fetchAdminProducts();
+            }
+        } catch (err) {
+            console.error('Lỗi bulk status:', err);
+        }
+    };
+
+    // 4. Chọn checkbox
     const toggleSelectAll = () => {
-        if (selectedIds.length === products.length) {
+        if (selectedIds.length === productData.items.length) {
             setSelectedIds([]);
         } else {
-            setSelectedIds(products.map(p => p.id));
+            setSelectedIds(productData.items.map(p => p.id));
         }
     };
 
@@ -172,81 +124,31 @@ export default function AdminProducts() {
         );
     };
 
-    // Render badge trạng thái
-    const renderStatusBadge = (status) => {
-        switch (status) {
-            case 'Active':
-                return (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-emerald-50 text-emerald-700">
-                        Đang bán
-                    </span>
-                );
-            case 'Hidden':
-                return (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-zinc-100 text-zinc-700">
-                        Đang ẩn
-                    </span>
-                );
-            case 'Out of stock':
-                return (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-red-50 text-red-600">
-                        Hết hàng
-                    </span>
-                );
-            default:
-                return null;
-        }
-    };
-
-    // Render thanh đo tồn kho
-    const renderStockProgress = (product) => {
-        let barColor = 'bg-emerald-600';
-        let textColor = 'text-emerald-700';
-        let label = `Còn ${product.stock} chiếc`;
-
-        if (product.stockStatus === 'low-stock') {
-            barColor = 'bg-amber-600';
-            textColor = 'text-amber-800 font-semibold';
-            label = `Còn ${product.stock} (Sắp hết)`;
-        } else if (product.stockStatus === 'out-of-stock') {
-            barColor = 'bg-red-600';
-            textColor = 'text-red-600 font-semibold';
-            label = '0 chiếc';
-        } else if (product.stockStatus === 'hidden') {
-            barColor = 'bg-zinc-500';
-            textColor = 'text-zinc-600 font-semibold';
-        }
-
-        return (
-            <div className="flex flex-col gap-1 w-28">
-                <span className={`text-[11px] ${textColor}`}>{label}</span>
-                <div className="w-full h-1.5 rounded-full bg-zinc-100 overflow-hidden">
-                    <div
-                        className={`h-full rounded-full ${barColor}`}
-                        style={{ width: `${product.stockPercent}%` }}
-                    />
-                </div>
-            </div>
-        );
-    };
+    // 4 KPI Stats
+    const kpis = [
+        { title: 'Tổng danh mục', value: `${productData.kpis.totalCategories} mục`, icon: Box, iconColor: 'text-zinc-500', bgIcon: 'bg-zinc-100' },
+        { title: 'Đang mở bán', value: productData.kpis.activeCount, icon: CheckCircle2, iconColor: 'text-emerald-700', bgIcon: 'bg-emerald-50' },
+        { title: 'Sắp hết hàng (<20)', value: productData.kpis.lowStockCount, icon: AlertTriangle, iconColor: 'text-amber-800', bgIcon: 'bg-amber-50' },
+        { title: 'Hết hàng', value: productData.kpis.outOfStockCount, icon: PackageX, iconColor: 'text-red-600', bgIcon: 'bg-red-50' },
+    ];
 
     return (
         <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto">
-            {/* 1. Tiêu đề trang & Các nút hành động */}
+            {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#f0592a] mb-1">
                         <span>Danh mục & Kho hàng</span>
+                        {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-[#f0592a]" />}
                     </div>
-                    <div className="flex items-baseline gap-3">
-                        <h1 className="text-3xl font-bold tracking-tight text-zinc-950">Sản phẩm</h1>
-                    </div>
+                    <h1 className="text-3xl font-bold tracking-tight text-zinc-950">Sản phẩm</h1>
                 </div>
 
                 <div className="flex items-center gap-3 shrink-0">
                     <button
                         type="button"
-                        className="h-11 px-5 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] text-white text-xs font-semibold shadow-xs active:scale-[0.98] transition-all flex items-center gap-2"
+                        onClick={() => navigate('/admin/products/new')}
+                        className="h-11 px-5 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] text-white text-xs font-semibold shadow-xs active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Thêm sản phẩm</span>
@@ -254,24 +156,15 @@ export default function AdminProducts() {
                 </div>
             </div>
 
-            {/* 2. Bốn Card KPI */}
+            {/* Bốn Card KPI */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {kpis.map((kpi, idx) => {
                     const Icon = kpi.icon;
                     return (
                         <div key={idx} className="bg-white p-4 rounded-xl border border-zinc-200/70 shadow-xs flex items-center justify-between">
                             <div>
-                                <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">
-                                    {kpi.title}
-                                </span>
-                                <div className="flex items-baseline gap-2 mt-0.5">
-                                    <span className="text-lg font-bold text-zinc-950 tracking-tight">{kpi.value}</span>
-                                    {kpi.badge && (
-                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${kpi.badgeColor}`}>
-                                            {kpi.badge}
-                                        </span>
-                                    )}
-                                </div>
+                                <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">{kpi.title}</span>
+                                <div className="text-lg font-bold text-zinc-950 tracking-tight mt-0.5">{kpi.value}</div>
                             </div>
                             <div className={`w-10 h-10 rounded-xl ${kpi.bgIcon} flex items-center justify-center shrink-0`}>
                                 <Icon className={`w-5 h-5 ${kpi.iconColor}`} />
@@ -281,25 +174,31 @@ export default function AdminProducts() {
                 })}
             </div>
 
-            {/* 3. Toolbar bộ lọc & tìm kiếm */}
+            {/* Toolbar bộ lọc & tìm kiếm */}
             <div className="bg-white p-4 rounded-2xl shadow-xs border border-zinc-200/70 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
                 <div className="relative flex-1 max-w-md">
                     <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
                     <input
                         type="text"
                         value={searchKeyword}
-                        onChange={(e) => setSearchKeyword(e.target.value)}
-                        placeholder="Tìm kiếm theo tên sản phẩm, mã SKU, thẻ tag..."
-                        className="w-full h-11 pl-10 pr-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#f0592a] focus:ring-2 focus:ring-[#f0592a]/20 transition-all font-medium"
+                        onChange={(e) => {
+                            setSearchKeyword(e.target.value);
+                            setCurrentPage(0);
+                        }}
+                        placeholder="Tìm kiếm theo tên sản phẩm..."
+                        className="w-full h-11 pl-10 pr-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#f0592a] transition-all font-medium"
                     />
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                    {/* Lọc Status */}
+                    {/* Trạng thái */}
                     <div className="relative">
                         <select
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value);
+                                setCurrentPage(0);
+                            }}
                             className="h-11 pl-3.5 pr-8 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 appearance-none cursor-pointer focus:outline-none focus:border-[#f0592a]"
                         >
                             <option>Tất cả trạng thái</option>
@@ -309,27 +208,12 @@ export default function AdminProducts() {
                         </select>
                         <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                     </div>
-
-                    {/* Lọc Stock level */}
-                    <div className="relative">
-                        <select
-                            value={stockFilter}
-                            onChange={(e) => setStockFilter(e.target.value)}
-                            className="h-11 pl-3.5 pr-8 rounded-xl bg-zinc-50 border border-zinc-200 text-xs font-semibold text-zinc-700 appearance-none cursor-pointer focus:outline-none focus:border-[#f0592a]"
-                        >
-                            <option>Mức tồn kho: Tất cả</option>
-                            <option>Còn hàng (&gt; 20)</option>
-                            <option>Sắp hết (&lt; 20)</option>
-                            <option>Hết hàng (0)</option>
-                        </select>
-                        <ChevronDown className="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
-                    </div>
                 </div>
             </div>
 
-            {/* 4. Thanh thao tác hàng loạt khi có chọn sản phẩm (Bulk Action Bar) */}
+            {/* Thanh thao tác hàng loạt */}
             {selectedIds.length > 0 && (
-                <div className="bg-zinc-900 text-white px-5 py-3 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200">
+                <div className="bg-zinc-900 text-white px-5 py-3 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                         <div className="w-6 h-6 rounded-md bg-[#f0592a] flex items-center justify-center text-white text-xs">
                             <Check className="w-4 h-4 stroke-[3]" />
@@ -340,17 +224,17 @@ export default function AdminProducts() {
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            className="h-8 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                            onClick={() => handleBulkStatus('ACTIVE')}
+                            className="h-8 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition-colors"
                         >
-                            <span>Đổi trạng thái</span>
-                            <ChevronDown className="w-3.5 h-3.5" />
+                            Mở bán hàng loạt
                         </button>
                         <button
                             type="button"
-                            className="h-8 px-3 rounded-lg bg-red-950/60 hover:bg-red-900/80 text-red-300 text-xs font-medium flex items-center gap-1 transition-colors"
+                            onClick={() => handleBulkStatus('INACTIVE')}
+                            className="h-8 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium transition-colors"
                         >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Xóa</span>
+                            Ẩn hàng loạt
                         </button>
                         <button
                             type="button"
@@ -363,7 +247,7 @@ export default function AdminProducts() {
                 </div>
             )}
 
-            {/* 5. Bảng dữ liệu sản phẩm (Data Table) */}
+            {/* Data Table */}
             <div className="bg-white rounded-2xl shadow-xs border border-zinc-200/70 overflow-hidden flex flex-col">
                 <div className="overflow-x-auto w-full">
                     <table className="w-full text-left border-collapse min-w-[1020px]">
@@ -372,7 +256,7 @@ export default function AdminProducts() {
                             <th className="py-3.5 pl-6 pr-3 w-12 text-center">
                                 <input
                                     type="checkbox"
-                                    checked={selectedIds.length === products.length}
+                                    checked={productData.items.length > 0 && selectedIds.length === productData.items.length}
                                     onChange={toggleSelectAll}
                                     className="w-4 h-4 rounded text-[#f0592a] accent-[#f0592a] cursor-pointer"
                                 />
@@ -386,16 +270,32 @@ export default function AdminProducts() {
                         </tr>
                         </thead>
                         <tbody className="divide-y divide-zinc-100 text-xs">
-                        {products.map((p) => {
+                        {productData.items.map((p) => {
                             const isSelected = selectedIds.includes(p.id);
+
+                            let barColor = 'bg-emerald-600';
+                            let textColor = 'text-emerald-700';
+                            let label = p.totalStock === 0 ? '0 chiếc' : `Còn ${p.totalStock} chiếc`;
+
+                            if (p.stockStatus === 'hidden') {
+                                barColor = 'bg-zinc-500';
+                                textColor = 'text-zinc-600 font-semibold';
+                                if (p.totalStock === 0) label = '0 chiếc';
+                            } else if (p.stockStatus === 'out-of-stock' || p.totalStock === 0) {
+                                barColor = 'bg-red-600';
+                                textColor = 'text-red-600 font-semibold';
+                                label = '0 chiếc';
+                            } else if (p.stockStatus === 'low-stock') {
+                                barColor = 'bg-amber-600';
+                                textColor = 'text-amber-800 font-semibold';
+                                label = `Còn ${p.totalStock} (Sắp hết)`;
+                            }
+
                             return (
                                 <tr
                                     key={p.id}
-                                    className={`transition-colors ${
-                                        isSelected ? 'bg-[#fefccf]/40 hover:bg-[#fefccf]/60' : 'hover:bg-zinc-50/70'
-                                    }`}
+                                    className={`transition-colors ${isSelected ? 'bg-[#fefccf]/40 hover:bg-[#fefccf]/60' : 'hover:bg-zinc-50/70'}`}
                                 >
-                                    {/* Checkbox */}
                                     <td className="py-4 pl-6 pr-3 text-center align-middle">
                                         <input
                                             type="checkbox"
@@ -404,67 +304,65 @@ export default function AdminProducts() {
                                             className="w-4 h-4 rounded text-[#f0592a] accent-[#f0592a] cursor-pointer"
                                         />
                                     </td>
-
-                                    {/* Thông tin sản phẩm */}
                                     <td className="py-4 px-4 align-middle">
                                         <div className="flex items-center gap-3">
                                             <div className="w-12 h-12 rounded-xl bg-zinc-100 shrink-0 overflow-hidden relative border border-zinc-200/70 shadow-2xs">
-                                                <img src={p.image} alt={p.name} className="w-full h-full object-cover" />
+                                                <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
                                             </div>
-                                            <div className="flex flex-col min-w-0 max-w-xs">
-                                                <div className="flex items-center gap-1.5">
-                                                    <span className="font-semibold text-zinc-950 truncate">{p.name}</span>
-                                                    {p.featured && (
-                                                        <Star className="w-3.5 h-3.5 fill-[#f0592a] text-[#f0592a] shrink-0" />
-                                                    )}
-                                                </div>
+                                            <div className="flex items-center gap-1.5 min-w-0 max-w-xs">
+                                                <span className="font-semibold text-zinc-950 truncate">{p.name}</span>
+                                                {p.featured && <Star className="w-3.5 h-3.5 fill-[#f0592a] text-[#f0592a] shrink-0" />}
                                             </div>
                                         </div>
                                     </td>
-
-                                    {/* Danh mục */}
-                                    <td className="py-4 px-4 align-middle font-medium text-zinc-700">
-                                        {p.category}
-                                    </td>
-
-                                    {/* Giá bán */}
-                                    <td className="py-4 px-4 align-middle font-bold text-[#f0592a]">
-                                        {p.price}
-                                    </td>
-
-                                    {/* Mức tồn kho */}
+                                    <td className="py-4 px-4 align-middle font-medium text-zinc-700">{p.categoryName}</td>
+                                    <td className="py-4 px-4 align-middle font-bold text-[#f0592a]">{formatCurrency(p.price)}</td>
                                     <td className="py-4 px-4 align-middle">
-                                        {renderStockProgress(p)}
+                                        <div className="flex flex-col gap-1 w-28">
+                                            <span className={`text-[11px] ${textColor}`}>{label}</span>
+                                            <div className="w-full h-1.5 rounded-full bg-zinc-100 overflow-hidden">
+                                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${p.stockPercent}%` }} />
+                                            </div>
+                                        </div>
                                     </td>
-
-                                    {/* Trạng thái */}
                                     <td className="py-4 px-4 align-middle">
-                                        {renderStatusBadge(p.status)}
+                                        {p.status === 'ACTIVE' && (
+                                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-emerald-50 text-emerald-700">Đang bán</span>
+                                        )}
+                                        {p.status === 'INACTIVE' && (
+                                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-zinc-100 text-zinc-700">Đang ẩn</span>
+                                        )}
+                                        {p.status === 'OUT_OF_STOCK' && (
+                                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase bg-red-50 text-red-600">Hết hàng</span>
+                                        )}
                                     </td>
-
-                                    {/* Thao tác */}
                                     <td className="py-4 pl-4 pr-6 align-middle text-right">
-                                        <div className="inline-flex items-center gap-1 text-zinc-400">
+                                        <div className="inline-flex items-center gap-1.5 text-zinc-400">
+                                            {/* 1. Nút Chỉnh sửa: Điều hướng sang trang edit */}
                                             <button
                                                 type="button"
-                                                title="Chỉnh sửa"
-                                                className="p-1.5 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                                                onClick={() => navigate(`/admin/products/${p.id}/edit`)}
+                                                title="Chỉnh sửa sản phẩm"
+                                                className="p-1.5 hover:text-[#f0592a] hover:bg-[#fefccf]/60 rounded-lg transition-colors cursor-pointer"
                                             >
                                                 <Edit className="w-4 h-4" />
                                             </button>
+
+                                            {/* 2. Nút Mắt: Chuyển đổi nhanh trạng thái Đang bán / Đang ẩn */}
                                             <button
                                                 type="button"
-                                                title={p.status === 'Hidden' ? 'Hiện sản phẩm' : 'Ẩn sản phẩm'}
-                                                className="p-1.5 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleToggleStatus(p);
+                                                }}
+                                                title={p.status === 'INACTIVE' ? 'Nhấn để mở bán' : 'Nhấn để ẩn sản phẩm'}
+                                                className="p-1.5 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
                                             >
-                                                {p.status === 'Hidden' ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                            </button>
-                                            <button
-                                                type="button"
-                                                title="Xóa"
-                                                className="p-1.5 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
+                                                {p.status === 'INACTIVE' ? (
+                                                    <EyeOff className="w-4 h-4 text-zinc-400 hover:text-zinc-700 pointer-events-none" />
+                                                ) : (
+                                                    <Eye className="w-4 h-4 text-emerald-600 hover:text-emerald-700 pointer-events-none" />
+                                                )}
                                             </button>
                                         </div>
                                     </td>
@@ -475,50 +373,35 @@ export default function AdminProducts() {
                     </table>
                 </div>
 
-                {/* 6. Thanh phân trang */}
+                {/* Phân trang */}
                 <div className="p-4 bg-zinc-50 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-                    <div className="flex items-center gap-4">
-                        <span>
-                            Hiển thị <strong className="text-zinc-900">1 đến 7</strong> trong <strong className="text-zinc-900">184</strong> sản phẩm
-                        </span>
+                    <div>
+                        Hiển thị <strong className="text-zinc-900">{productData.items.length ? currentPage * pageSize + 1 : 0} đến {Math.min((currentPage + 1) * pageSize, productData.totalElements)}</strong> trong <strong className="text-zinc-900">{productData.totalElements}</strong> sản phẩm
                     </div>
 
                     <div className="flex items-center gap-1 font-semibold">
                         <button
-                            disabled
-                            type="button"
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 bg-white border border-zinc-200 disabled:opacity-40 transition-colors"
+                            disabled={currentPage === 0}
+                            onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                            className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-700 bg-white border border-zinc-200 disabled:opacity-40 transition-colors"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
+                        {Array.from({ length: productData.totalPages }).map((_, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setCurrentPage(idx)}
+                                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                                    currentPage === idx ? 'bg-[#f0592a] text-white shadow-xs' : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100'
+                                }`}
+                            >
+                                {idx + 1}
+                            </button>
+                        ))}
                         <button
-                            type="button"
-                            className="w-9 h-9 rounded-lg bg-[#f0592a] text-white flex items-center justify-center shadow-xs"
-                        >
-                            1
-                        </button>
-                        <button
-                            type="button"
-                            className="w-9 h-9 rounded-lg bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100 flex items-center justify-center transition-colors"
-                        >
-                            2
-                        </button>
-                        <button
-                            type="button"
-                            className="w-9 h-9 rounded-lg bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100 flex items-center justify-center transition-colors"
-                        >
-                            3
-                        </button>
-                        <span className="w-7 text-center text-zinc-400 font-normal">…</span>
-                        <button
-                            type="button"
-                            className="w-9 h-9 rounded-lg bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100 flex items-center justify-center transition-colors"
-                        >
-                            19
-                        </button>
-                        <button
-                            type="button"
-                            className="w-9 h-9 rounded-lg bg-white border border-zinc-200 flex items-center justify-center text-zinc-700 hover:bg-zinc-100 transition-colors"
+                            disabled={currentPage >= productData.totalPages - 1}
+                            onClick={() => setCurrentPage(p => p + 1)}
+                            className="w-9 h-9 rounded-lg bg-white border border-zinc-200 flex items-center justify-center text-zinc-700 disabled:opacity-40 hover:bg-zinc-100 transition-colors"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
