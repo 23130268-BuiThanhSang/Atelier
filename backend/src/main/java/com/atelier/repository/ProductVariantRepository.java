@@ -27,4 +27,7 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
         GROUP BY pv.product.id
     """)
     List<Object[]> sumStockByProductIds(@Param("productIds") List<Long> productIds);
+
+    List<ProductVariant> findByProductId(Long productId);
+    void deleteByProductId(Long productId);
 }
