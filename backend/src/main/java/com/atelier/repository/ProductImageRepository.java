@@ -25,4 +25,13 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
             order by image.isThumbnail desc, image.displayOrder asc, image.id asc
             """)
     List<ProductImage> findProductImages(@Param("productId") Long productId);
+
+    List<ProductImage> findByProductIdInAndIsThumbnailTrue(List<Long> productIds);
+
+    @Query(value = """
+        SELECT product_id, image_url 
+        FROM product_images 
+        WHERE product_id IN :productIds AND is_thumbnail = 1
+    """, nativeQuery = true)
+    List<Object[]> findThumbnailsByProductIds(@Param("productIds") List<Long> productIds);
 }
