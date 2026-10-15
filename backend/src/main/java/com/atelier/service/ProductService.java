@@ -1,6 +1,10 @@
 package com.atelier.service;
 
 import com.atelier.catalog.dto.ProductCatalogResponse;
+import com.atelier.catalog.dto.ProductDetailResponse;
+import com.atelier.catalog.dto.ProductVariantResponse;
+import com.atelier.common.exception.BusinessException;
+import com.atelier.common.exception.ErrorCode;
 import com.atelier.catalog.dto.ProductRatingSummary;
 import com.atelier.catalog.entity.Product;
 import com.atelier.catalog.entity.ProductImage;
@@ -59,6 +63,75 @@ public class ProductService {
                         ratingsByProductId.get(product.getId())
                 ))
                 .toList();
+    }
+
+    /**
+     * Trả dữ liệu cần cho trang chi tiết, gồm tất cả ảnh, các biến thể ACTIVE
+     * và điểm tổng hợp từ product_reviews. Không đọc bảng reviews.
+     */
+    public ProductDetailResponse getActiveProductById(Long productId) {
+        Product product = productRepository.findById(productId)
+                .filter(item -> ACTIVE.equalsIgnoreCase(item.getStatus()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        List<String> imageUrls = productImageRepository.findProductImages(productId).stream()
+                .map(ProductImage::getImageUrl)
+                .filter(url -> url != null && !url.isBlank())
+                .distinct()
+                .toList();
+
+        List<ProductVariant> activeVariants = productVariantRepository
+                .findActiveCatalogVariants(List.of(productId));
+        List<ProductVariantResponse> variants = activeVariants.stream()
+                .map(variant -> new ProductVariantResponse(
+                        variant.getId(),
+                        variant.getSku(),
+                        variant.getSize(),
+                        variant.getColor(),
+                        variant.getPrice(),
+                        variant.getStockQuantity() == null ? 0 : variant.getStockQuantity()))
+                .toList();
+
+        List<String> colors = activeVariants.stream()
+                .map(ProductVariant::getColor)
+                .filter(value -> value != null && !value.isBlank())
+                .distinct()
+                .toList();
+        List<String> sizes = activeVariants.stream()
+                .map(ProductVariant::getSize)
+                .filter(value -> value != null && !value.isBlank())
+                .distinct()
+                .toList();
+
+        ProductRatingSummary rating = productReviewRepository
+                .summarizeByProductIds(List.of(productId), VISIBLE)
+                .stream()
+                .findFirst()
+                .orElse(null);
+        Double averageRating = rating == null || rating.averageRating() == null
+                ? 0.0 : rating.averageRating();
+        Long reviewCount = rating == null || rating.reviewCount() == null
+                ? 0L : rating.reviewCount();
+
+        return new ProductDetailResponse(
+                product.getId(),
+                product.getCategory().getId(),
+                product.getCategory().getName(),
+                product.getName(),
+                product.getSlug(),
+                product.getDescription(),
+                product.getBasePrice(),
+                imageUrls.isEmpty() ? null : imageUrls.get(0),
+                imageUrls,
+                colors,
+                sizes,
+                variants,
+                product.getViewCount() == null ? 0 : product.getViewCount(),
+                product.getSoldCount() == null ? 0 : product.getSoldCount(),
+                product.getCreatedAt(),
+                averageRating,
+                reviewCount
+        );
     }
 
     private Map<Long, String> loadPrimaryImages(List<Long> productIds) {
