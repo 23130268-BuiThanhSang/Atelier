@@ -13,7 +13,6 @@ import AuthLayout from "../components/layout/AuthLayout.jsx";
 import AdminLayout from '../components/layout/AdminLayout';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminUsers from '../pages/admin/AdminUsers';
-import AdminUserDetail from '../pages/admin/AdminUserDetail';
 import AdminProducts from '../pages/admin/AdminProducts';
 import AdminProductForm from '../pages/admin/AdminProductForm';
 import AdminOrders from '../pages/admin/AdminOrders';
@@ -63,7 +62,6 @@ export default function AppRoutes() {
             <Route element={<AdminLayout />}>
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/users/:id" element={<AdminUserDetail />} />
                 <Route path="/admin/products" element={<AdminProducts />} />
                 <Route path="/admin/products/new" element={<AdminProductForm />} />
                 <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />
