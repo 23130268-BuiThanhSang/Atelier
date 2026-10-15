@@ -34,4 +34,7 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
         WHERE product_id IN :productIds AND is_thumbnail = 1
     """, nativeQuery = true)
     List<Object[]> findThumbnailsByProductIds(@Param("productIds") List<Long> productIds);
+
+    List<ProductImage> findByProductId(Long productId);
+    void deleteByProductId(Long productId);
 }

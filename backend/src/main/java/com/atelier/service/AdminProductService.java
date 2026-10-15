@@ -1,10 +1,12 @@
 package com.atelier.service;
 
+import com.atelier.catalog.dto.AdminProductDetailDto;
 import com.atelier.catalog.dto.AdminProductSummaryResponse;
 import com.atelier.catalog.dto.AdminProductSummaryResponse.*;
 import com.atelier.catalog.entity.Category;
 import com.atelier.catalog.entity.Product;
 import com.atelier.catalog.entity.ProductImage;
+import com.atelier.catalog.entity.ProductVariant;
 import com.atelier.repository.CategoryRepository;
 import com.atelier.repository.ProductImageRepository;
 import com.atelier.repository.ProductRepository;
@@ -130,5 +132,140 @@ public class AdminProductService {
         if ("Đang ẩn".equalsIgnoreCase(rawStatus)) return "INACTIVE";
         if ("Hết hàng".equalsIgnoreCase(rawStatus)) return "OUT_OF_STOCK";
         return null;
+    }
+
+    // Lấy chi tiết sản phẩm cho trang Edit
+    @Transactional(readOnly = true)
+    public AdminProductDetailDto.Response getProductDetail(Long id) {
+        Product p = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + id));
+
+        String catName = (p.getCategory() != null) ? p.getCategory().getName() : "Chưa phân loại";
+        Long catId = (p.getCategory() != null) ? p.getCategory().getId() : null;
+
+        List<AdminProductDetailDto.ImageDto> images = productImageRepository.findByProductId(id).stream()
+                .map(img -> new AdminProductDetailDto.ImageDto(img.getId(), img.getImageUrl(), Boolean.TRUE.equals(img.getIsThumbnail())))
+                .toList();
+
+        List<AdminProductDetailDto.VariantDto> variants = productVariantRepository.findByProductId(id).stream()
+                .map(v -> new AdminProductDetailDto.VariantDto(v.getId(), v.getSize(), v.getSku(), v.getStockQuantity() != null ? v.getStockQuantity() : 0))
+                .toList();
+
+        return new AdminProductDetailDto.Response(
+                p.getId(),
+                p.getName(),
+                p.getSlug(),
+                p.getDescription(),
+                catId,
+                catName,
+                p.getBasePrice(),
+                p.getStatus(),
+                images,
+                variants
+        );
+    }
+
+    // Tạo mới sản phẩm
+    @Transactional
+    public Long createProduct(AdminProductDetailDto.UpsertRequest req) {
+        Product p = new Product();
+        p.setName(req.name());
+        p.setSlug(req.slug());
+        p.setDescription(req.description());
+        p.setBasePrice(req.basePrice());
+        p.setStatus(req.status() != null ? req.status().toUpperCase() : "ACTIVE");
+
+        if (req.categoryId() != null) {
+            categoryRepository.findById(req.categoryId()).ifPresent(p::setCategory);
+        }
+
+        Product saved = productRepository.save(p);
+
+        // Lưu variants
+        if (req.variants() != null) {
+            for (AdminProductDetailDto.VariantUpsertDto vDto : req.variants()) {
+                ProductVariant variant = new ProductVariant();
+                variant.setProduct(saved);
+                variant.setSize(vDto.size().trim().toUpperCase());
+                variant.setColor("Default");
+                variant.setPrice(saved.getBasePrice());
+                variant.setStatus("ACTIVE");
+                // Luôn sinh SKU kèm ID sản phẩm vừa tạo
+                variant.setSku("PRD" + saved.getId() + "-" + vDto.size().trim().toUpperCase());
+                variant.setStockQuantity(vDto.stockQuantity());
+                productVariantRepository.save(variant);
+            }
+        }
+
+        return saved.getId();
+    }
+
+    // Cập nhật sản phẩm
+    @Transactional
+    public void updateProduct(Long id, AdminProductDetailDto.UpsertRequest req) {
+        Product p = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm id: " + id));
+
+        p.setName(req.name());
+        p.setSlug(req.slug());
+        p.setDescription(req.description());
+        p.setBasePrice(req.basePrice());
+        p.setStatus(req.status() != null ? req.status().toUpperCase() : "ACTIVE");
+
+        if (req.categoryId() != null) {
+            categoryRepository.findById(req.categoryId()).ifPresent(p::setCategory);
+        }
+
+        productRepository.save(p);
+
+        // Cập nhật biến thể tồn kho
+        if (req.variants() != null && !req.variants().isEmpty()) {
+            List<ProductVariant> existingVariants = productVariantRepository.findByProductId(id);
+
+            for (AdminProductDetailDto.VariantUpsertDto vDto : req.variants()) {
+                if (vDto.size() == null) continue;
+
+                String targetSize = vDto.size().trim().toUpperCase();
+
+                // Tìm variant cùng size đã tồn tại trong database
+                ProductVariant matched = existingVariants.stream()
+                        .filter(v -> v.getSize() != null && v.getSize().trim().equalsIgnoreCase(targetSize))
+                        .findFirst()
+                        .orElse(null);
+
+                if (matched != null) {
+                    matched.setStockQuantity(vDto.stockQuantity());
+                    if (vDto.sku() != null && !vDto.sku().isBlank()) {
+                        matched.setSku(vDto.sku().trim());
+                    }
+                    // Nếu variant cũ bị thiếu color thì gán fallback để tránh null
+                    if (matched.getColor() == null) {
+                        matched.setColor("Default");
+                    }
+                    if (matched.getPrice() == null) {
+                        matched.setPrice(p.getBasePrice());
+                    }
+                    productVariantRepository.save(matched);
+                } else {
+                    // Nếu chưa có, tạo mới và BẮT BUỘC gán color, price, status
+                    ProductVariant newVar = new ProductVariant();
+                    newVar.setProduct(p);
+                    newVar.setSize(targetSize);
+                    newVar.setColor("Default");
+                    newVar.setPrice(p.getBasePrice());
+                    newVar.setStatus("ACTIVE");
+
+                    // Sinh SKU duy nhất theo ID sản phẩm: PRD<id>-<size> (ví dụ PRD4-S)
+                    String fallbackSku = "PRD" + p.getId() + "-" + targetSize;
+                    if (vDto.sku() != null && !vDto.sku().isBlank() && !vDto.sku().equals("SKU-" + targetSize)) {
+                        fallbackSku = vDto.sku().trim();
+                    }
+                    newVar.setSku(fallbackSku);
+                    newVar.setStockQuantity(vDto.stockQuantity());
+
+                    productVariantRepository.save(newVar);
+                }
+            }
+        }
     }
 }
