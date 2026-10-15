@@ -1,136 +1,136 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Calendar,
-    Download,
-    Shirt,
-    Flame,
-    Eye,
-    ChevronDown
+    ChevronDown,
+    Loader2
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-    const [selectedRange, setSelectedRange] = useState('30D');
-    const [activeTab, setActiveTab] = useState('revenue');
+    // 1. Quản lý khoảng thời gian (Mặc định: 30 ngày gần nhất)
+    const todayStr = new Date().toISOString().split('T')[0];
+    const thirtyDaysAgoStr = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    // DỮ LIỆU MẪU (MOCK DATA) - Sau này thay bằng hook useQuery({ queryKey: [...], queryFn: adminApi.getStats })
-    const kpis = [
-        { title: 'Tổng doanh thu', value: '184.920.000 ₫'},
-        { title: 'Tổng đơn hàng', value: '4.812'},
-        { title: 'Người dùng mới', value: '1.240'},
-        { title: 'Sản phẩm đã bán', value: '9.450'},
-    ];
+    const [startDate, setStartDate] = useState(thirtyDaysAgoStr);
+    const [endDate, setEndDate] = useState(todayStr);
+    const [activeTab, setActiveTab] = useState('revenue'); // 'revenue' | 'orders'
+    const [isLoading, setIsLoading] = useState(false);
 
-    const bestSellers = [
-        { name: 'Áo thun Vintage Mineral', sold: '1.420 đã bán', price: '380.000 ₫', img: 'https://picsum.photos/seed/tee1/100/100' },
-        { name: 'Áo hoodie nỉ dáng hộp Twill', sold: '980 đã bán', price: '840.000 ₫', img: 'https://picsum.photos/seed/hoodie1/100/100' },
-        { name: 'Áo thun thêu thủ công Chainstitch', sold: '840 đã bán', price: '440.000 ₫', img: 'https://picsum.photos/seed/tee2/100/100' },
-        { name: 'Áo nỉ cổ tròn Raw viền sờn', sold: '710 đã bán', price: '620.000 ₫', img: 'https://picsum.photos/seed/crew1/100/100' },
-        { name: 'Áo thun vai trễ nhuộm Pigment', sold: '630 đã bán', price: '400.000 ₫', img: 'https://picsum.photos/seed/tee3/100/100' },
-    ];
+    // Dữ liệu từ API Backend
+    const [dashboardData, setDashboardData] = useState(null);
 
-    const newestProducts = [
-        { name: 'Áo thun thêu Sashiko Nhật Bản', tag: 'Mới', time: 'Vừa thêm 2 giờ trước', img: 'https://picsum.photos/seed/sashiko/100/100' },
-        { name: 'Áo thun Washed Indigo dày dặn', tag: 'Tồn kho: 120', time: 'Thêm 1 ngày trước', img: 'https://picsum.photos/seed/indigo/100/100' },
-        { name: 'Túi tote Canvas nhãn dệt', tag: 'Tồn kho: 250', time: 'Thêm 3 ngày trước', img: 'https://picsum.photos/seed/tote/100/100' },
-        { name: 'Áo thun in họa tiết Acid Wash', tag: 'Tồn kho: 85', time: 'Thêm 4 ngày trước', img: 'https://picsum.photos/seed/acid/100/100' },
-        { name: 'Áo nỉ chui đầu French Terry viền thô', tag: 'Tồn kho: 64', time: 'Thêm 5 ngày trước', img: 'https://picsum.photos/seed/terry/100/100' },
-    ];
-
-    const mostViewed = [
-        { name: 'Áo thun đồ họa Retro Cyber', views: '18.4k', growth: '+24%', img: 'https://picsum.photos/seed/cyber/100/100' },
-        { name: 'Áo thun thêu viền tối giản', views: '14.2k', growth: '+18%', img: 'https://picsum.photos/seed/embroid/100/100' },
-        { name: 'Áo hoodie phai màu Distressed Sun', views: '11.9k', growth: '+11%', img: 'https://picsum.photos/seed/fade/100/100' },
-        { name: 'Áo thun Organic nhuộm thảo mộc', views: '9.8k', growth: '+31%', img: 'https://picsum.photos/seed/botanic/100/100' },
-        { name: 'Áo thun in khắc gỗ Bản giới hạn', views: '8.1k', growth: '+9%', img: 'https://picsum.photos/seed/block/100/100' },
-    ];
-
-    const suggestedPromos = [
-        { name: 'Áo sơ mi vải Selvedge Canvas', badge: 'Chuyển đổi cao', img: 'https://picsum.photos/seed/workshirt/100/100' },
-        { name: 'Áo Henley dệt kim tổ ong Waffle', badge: 'Chất liệu xu hướng', img: 'https://picsum.photos/seed/waffle/100/100' },
-        { name: 'Áo nỉ khóa đồng Brass Zip', badge: 'Xưởng đạt chuẩn', img: 'https://picsum.photos/seed/fleece/100/100' },
-        { name: 'Áo nỉ cổ tròn hạ vai màu Clay', badge: 'Tốc độ bán thấp', img: 'https://picsum.photos/seed/clay/100/100' },
-        { name: 'Mũ lưỡi trai Twill thêu thủ công', badge: 'Xu hướng mạng xã hội', img: 'https://picsum.photos/seed/cap/100/100' },
-    ];
-
-    const rangeLabels = {
-        Today: 'Hôm nay',
-        '7D': '7 ngày',
-        '30D': '30 ngày',
-        '12M': '12 tháng',
+    // 2. Hàm gọi API Backend
+    const fetchStats = async (start, end) => {
+        setIsLoading(true);
+        try {
+            const res = await fetch(`/api/v1/admin/dashboard/stats?fromDate=${start}&toDate=${end}`);
+            if (res.ok) {
+                const data = await res.json();
+                setDashboardData(data);
+            }
+        } catch (error) {
+            console.error('Lỗi lấy dữ liệu thống kê:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    useEffect(() => {
+        fetchStats(startDate, endDate);
+    }, [startDate, endDate]);
+
+    // Format tiền tệ VND
+    const formatCurrency = (val) => {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val || 0);
+    };
+
+    // Format số nguyên
+    const formatNumber = (num) => {
+        return new Intl.NumberFormat('vi-VN').format(num || 0);
+    };
+
+    // Chuẩn bị dữ liệu hiển thị (kết hợp fallback dữ liệu mẫu nếu backend chưa có dữ liệu)
+    const kpis = [
+        { title: 'TỔNG DOANH THU', value: dashboardData?.kpis ? formatCurrency(dashboardData.kpis.totalRevenue) : '' },
+        { title: 'TỔNG ĐƠN HÀNG', value: dashboardData?.kpis ? formatNumber(dashboardData.kpis.totalOrders) : '' },
+        { title: 'NGƯỜI DÙNG MỚI', value: dashboardData?.kpis ? formatNumber(dashboardData.kpis.newUsers) : '' },
+        { title: 'SẢN PHẨM ĐÃ BÁN', value: dashboardData?.kpis ? formatNumber(dashboardData.kpis.soldProducts) : '' },
+    ];
+
+    // Lấy tối đa 10 ngày có doanh thu cao nhất:
+    const topGrowthPoints = (dashboardData?.growthChart || [])
+        .slice(0, 10);
+    const categoryDistribution = dashboardData?.categoryDistribution?.items || [
+    ];
+    const totalCategoryOrders = dashboardData?.categoryDistribution?.totalCount || 0;
+
+    // Tính toán chiều cao các cột trong Biểu đồ SVG
+    const maxVal = Math.max(
+        ...topGrowthPoints.map(p => Math.max(Number(p.netRevenue || 0), Number(p.grossRevenue || 0))),
+        1
+    );
+
+    // Tính toán các cung cho biểu đồ tròn (Donut Chart)
+    const circumference = 2 * Math.PI * 58; // r = 58 -> ~364.42
+    let accumulatedOffset = 0;
 
     return (
         <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto">
-            {/* 1. Header Banner */}
+            {/* 1. Header Banner & Bộ chọn khoảng thời gian */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-xs border border-zinc-200/70">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#f0592a] animate-pulse"></span>
-                        <h1 className="text-xl font-bold text-zinc-950">Tổng quan hệ thống</h1>
-                    </div>
+                <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#f0592a] animate-pulse"></span>
+                    <h1 className="text-xl font-bold text-zinc-950">Tổng quan hệ thống</h1>
+                    {isLoading && <Loader2 className="w-4 h-4 text-[#f0592a] animate-spin ml-2" />}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-700 text-xs font-medium">
-                        <Calendar className="w-4 h-4 text-zinc-400" />
-                        <span>01/10 — 31/10/2026</span>
-                    </div>
+                {/* Bộ lọc chọn ngày thực tế */}
+                <div className="flex flex-wrap items-center gap-2 bg-zinc-50 p-2 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-700">
+                    <Calendar className="w-4 h-4 text-zinc-400 ml-1" />
+                    <span>Từ:</span>
+                    <input
+                        type="date"
+                        value={startDate}
+                        max={endDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="bg-white border border-zinc-200 px-2 py-1 rounded-lg text-zinc-900 outline-none focus:border-[#f0592a]"
+                    />
+                    <span>Đến:</span>
+                    <input
+                        type="date"
+                        value={endDate}
+                        min={startDate}
+                        max={todayStr}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="bg-white border border-zinc-200 px-2 py-1 rounded-lg text-zinc-900 outline-none focus:border-[#f0592a]"
+                    />
                 </div>
             </div>
 
             {/* 2. Bốn Card KPI */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-                {kpis.map((kpi, idx) => {
-                    return (
-                        <div key={idx} className="p-6 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <span className="text-xs uppercase font-semibold text-zinc-400 tracking-wider">
-                                        {kpi.title}
-                                    </span>
-                                    <div className="text-2xl font-bold tracking-tight text-zinc-950 mt-1.5">
-                                        {kpi.value}
-                                    </div>
-                                </div>
-                            </div>
+                {kpis.map((kpi, idx) => (
+                    <div key={idx} className="p-6 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
+                        <span className="text-xs uppercase font-semibold text-zinc-400 tracking-wider">
+                            {kpi.title}
+                        </span>
+                        <div className="text-2xl font-bold tracking-tight text-zinc-950 mt-1.5">
+                            {kpi.value}
                         </div>
-                    );
-                })}
+                    </div>
+                ))}
             </div>
 
-            {/* 3. Đồ thị Doanh thu & Phân bố danh mục (8 cột : 4 cột) */}
+            {/* 3. Đồ thị Doanh thu/Đơn hàng & Phân bổ danh mục */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                {/* Cột 8: Biểu đồ doanh thu & đơn hàng */}
+
+                {/* Cột 8: Biểu đồ cột */}
                 <div className="lg:col-span-8 p-6 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-zinc-100">
-                        <div>
-                            <h2 className="text-base font-bold text-zinc-950">Tốc độ tăng trưởng Doanh thu & Đơn hàng</h2>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <div className="inline-flex p-1 rounded-xl bg-zinc-100">
-                                <button
-                                    onClick={() => setActiveTab('revenue')}
-                                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                                        activeTab === 'revenue' ? 'bg-white text-[#f0592a] shadow-xs' : 'text-zinc-600 hover:text-zinc-950'
-                                    }`}
-                                >
-                                    Doanh thu
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('orders')}
-                                    className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                                        activeTab === 'orders' ? 'bg-white text-[#f0592a] shadow-xs' : 'text-zinc-600 hover:text-zinc-950'
-                                    }`}
-                                >
-                                    Đơn hàng
-                                </button>
-                            </div>
-                        </div>
+                        <h2 className="text-base font-bold text-zinc-950">Tốc độ tăng trưởng doanh thu</h2>
                     </div>
 
                     {/* SVG Biểu đồ cột */}
-                    <div className="relative w-full pt-2">
+                    <div className="relative w-full pt-4">
                         <svg className="w-full h-64 overflow-visible" preserveAspectRatio="none" viewBox="0 0 680 240">
                             <defs>
                                 <linearGradient id="barOrange" x1="0" y1="0" x2="0" y2="1">
@@ -142,6 +142,8 @@ export default function AdminDashboard() {
                                     <stop offset="100%" stopColor="#fefccf" />
                                 </linearGradient>
                             </defs>
+
+                            {/* Lưới ngang */}
                             <g stroke="#f4f4f5" strokeDasharray="3 3">
                                 <line x1="40" x2="670" y1="20" y2="20" />
                                 <line x1="40" x2="670" y1="70" y2="70" />
@@ -149,49 +151,30 @@ export default function AdminDashboard() {
                                 <line x1="40" x2="670" y1="170" y2="170" />
                                 <line x1="40" x2="670" y1="210" y2="210" stroke="#e4e4e7" strokeDasharray="0" />
                             </g>
-                            <g fill="#a1a1aa" fontSize="10" textAnchor="end">
-                                <text x="35" y="24">30tr</text>
-                                <text x="35" y="74">20tr</text>
-                                <text x="35" y="124">10tr</text>
-                                <text x="35" y="174">5tr</text>
-                                <text x="35" y="214">0đ</text>
-                            </g>
 
-                            {/* Cột dữ liệu */}
-                            {[
-                                { x: 60, h1: 90, h2: 70 },
-                                { x: 110, h1: 110, h2: 100 },
-                                { x: 160, h1: 130, h2: 120 },
-                                { x: 210, h1: 80, h2: 60 },
-                                { x: 260, h1: 140, h2: 150 },
-                                { x: 310, h1: 100, h2: 115 },
-                                { x: 360, h1: 120, h2: 135 },
-                                { x: 410, h1: 110, h2: 125 },
-                                { x: 460, h1: 150, h2: 165 },
-                                { x: 510, h1: 120, h2: 145 },
-                                { x: 560, h1: 180, h2: 175},
-                                { x: 610, h1: 130, h2: 145 },
-                            ].map((bar, i) => (
-                                <g key={i}>
-                                    <rect x={bar.x} y={210 - bar.h1} width="14" height={bar.h1} rx="3" fill="url(#barLight)" />
-                                    <rect
-                                        x={bar.x + 16}
-                                        y={210 - bar.h2}
-                                        width="14"
-                                        height={bar.h2}
-                                        rx="3"
-                                        fill={'url(#barOrange)'}
-                                    />
-                                </g>
-                            ))}
+                            {/* Các cột hiển thị */}
+                            {topGrowthPoints.map((pt, idx) => {
+                                // 10 cột căn đều đẹp mắt trên viewBox 680px (mỗi cột cách nhau 56px)
+                                const x = 70 + idx * 56;
+                                const val1 = Number(pt.grossRevenue || 0);
+                                const val2 = Number(pt.netRevenue || 0);
 
-                            <g fill="#71717a" fontSize="10" textAnchor="middle">
-                                {['02/10', '05/10', '08/10', '11/10', '14/10', '17/10', '20/10', '23/10', '26/10', '28/10', '30/10', 'Hôm nay'].map((label, idx) => (
-                                    <text key={idx} x={75 + idx * 50} y="228" fill={idx === 10 ? '#f0592a' : '#71717a'} fontWeight={idx === 10 ? '700' : '400'}>
-                                        {label}
-                                    </text>
-                                ))}
-                            </g>
+                                const h1 = maxVal > 0 ? Math.min(190, Math.max(10, (val1 / maxVal) * 180)) : 0;
+                                const h2 = maxVal > 0 ? Math.min(190, Math.max(10, (val2 / maxVal) * 180)) : 0;
+
+                                return (
+                                    <g key={idx}>
+                                        {/* Cột Doanh số cơ bản */}
+                                        <rect x={x} y={210 - h1} width="14" height={h1} rx="3" fill="url(#barLight)" />
+                                        {/* Cột Doanh thu thuần */}
+                                        <rect x={x + 16} y={210 - h2} width="14" height={h2} rx="3" fill="url(#barOrange)" />
+                                        {/* Nhãn ngày tương ứng */}
+                                        <text x={x + 15} y="228" fill="#71717a" fontSize="10" fontWeight="600" textAnchor="middle">
+                                            {pt.label}
+                                        </text>
+                                    </g>
+                                );
+                            })}
                         </svg>
 
                         <div className="mt-4 flex items-center justify-center gap-6 text-xs text-zinc-500 font-medium">
@@ -207,7 +190,7 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Cột 4: Biểu đồ tròn phân bổ danh mục */}
+                {/* Cột 4: Biểu đồ tròn Donut phân bổ danh mục */}
                 <div className="lg:col-span-4 p-6 rounded-2xl bg-white shadow-xs border border-zinc-200/70 space-y-4">
                     <div className="pb-3 border-b border-zinc-100">
                         <h2 className="text-base font-bold text-zinc-950">Phân bổ danh mục</h2>
@@ -216,48 +199,59 @@ export default function AdminDashboard() {
                     <div className="relative">
                         <select className="w-full h-10 px-3.5 pr-8 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-800 font-medium focus:outline-none focus:border-[#f0592a] appearance-none cursor-pointer">
                             <option>Đơn hàng theo loại sản phẩm</option>
-                            <option>Doanh thu theo danh mục</option>
-                            <option>Trạng thái & giai đoạn đơn</option>
                         </select>
                         <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                     </div>
 
-                    {/* SVG Biểu đồ Donut */}
+                    {/* SVG Biểu đồ Donut động */}
                     <div className="relative flex items-center justify-center py-2">
-                        <svg className="w-40 h-40 -rotate-90" viewBox="0 0 160 160">
-                            <circle cx="80" cy="80" r="58" fill="none" stroke="#f0592a" strokeWidth="18" strokeDasharray="167.6 196.8" />
-                            <circle cx="80" cy="80" r="58" fill="none" stroke="#18181b" strokeWidth="18" strokeDasharray="102 262.4" strokeDashoffset="-167.6" />
-                            <circle cx="80" cy="80" r="58" fill="none" stroke="#71717a" strokeWidth="18" strokeDasharray="51 313.4" strokeDashoffset="-269.6" />
-                            <circle cx="80" cy="80" r="58" fill="none" stroke="#d4d4d8" strokeWidth="18" strokeDasharray="29 335.3" strokeDashoffset="-320.6" />
-                            <circle cx="80" cy="80" r="58" fill="none" stroke="#fefccf" strokeWidth="18" strokeDasharray="14.5 349.9" strokeDashoffset="-349.7" />
+                        <svg className="w-44 h-44 -rotate-90" viewBox="0 0 160 160">
+                            {categoryDistribution.map((cat, idx) => {
+                                const strokeDash = (cat.percentage / 100) * circumference;
+                                const strokeSpace = circumference - strokeDash;
+                                const offset = -accumulatedOffset;
+                                accumulatedOffset += strokeDash;
+
+                                return (
+                                    <circle
+                                        key={idx}
+                                        cx="80"
+                                        cy="80"
+                                        r="58"
+                                        fill="none"
+                                        stroke={cat.color}
+                                        strokeWidth="18"
+                                        strokeDasharray={`${strokeDash} ${strokeSpace}`}
+                                        strokeDashoffset={offset}
+                                    />
+                                );
+                            })}
                         </svg>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                            <span className="text-xl font-bold text-zinc-950">4.812</span>
-                            <span className="text-[10px] uppercase font-semibold text-zinc-400">Tổng đơn hàng</span>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                            <span className="text-xl font-bold text-zinc-950">{formatNumber(totalCategoryOrders)}</span>
+                            <span className="text-[10px] uppercase font-semibold text-zinc-400">Tổng sản phẩm</span>
                         </div>
                     </div>
 
+                    {/* Chú giải danh mục */}
                     <div className="space-y-2.5 pt-2 border-t border-zinc-100 text-xs">
-                        {[
-                            { label: 'Áo thun Graphic', count: '2.214', pct: '46%', color: 'bg-[#f0592a]' },
-                            { label: 'Áo hoodie dày dặn', count: '1.347', pct: '28%', color: 'bg-zinc-900' },
-                            { label: 'Áo nỉ cổ tròn Organic', count: '674', pct: '14%', color: 'bg-zinc-500' },
-                            { label: 'Mũ lưỡi trai thêu', count: '385', pct: '8%', color: 'bg-zinc-300' },
-                            { label: 'Túi tote & Phụ kiện', count: '192', pct: '4%', color: 'bg-[#fefccf] border border-zinc-300' },
-                        ].map((cat, idx) => (
+                        {categoryDistribution.map((cat, idx) => (
                             <div key={idx} className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <span className={`w-2.5 h-2.5 rounded-full ${cat.color}`}></span>
+                                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }}></span>
                                     <span className="text-zinc-700 truncate">{cat.label}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-zinc-900">{cat.count}</span>
-                                    <span className="px-1.5 py-0.5 rounded-md bg-zinc-100 text-[10px] font-bold text-zinc-600">{cat.pct}</span>
+                                    <span className="font-semibold text-zinc-900">{formatNumber(cat.count)}</span>
+                                    <span className="px-1.5 py-0.5 rounded-md bg-zinc-100 text-[10px] font-bold text-zinc-600">
+                                        {cat.percentage}%
+                                    </span>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
+
             </div>
         </div>
     );
