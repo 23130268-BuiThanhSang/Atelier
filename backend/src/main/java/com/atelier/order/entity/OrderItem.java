@@ -3,15 +3,16 @@ package com.atelier.order.entity;
 import com.atelier.catalog.entity.ProductVariant;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+
+import lombok.*;
 
 @Entity
 @Table(name = "order_items")
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class OrderItem {
 
     @Id
