@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import logo from "../../assets/logo.png";
 
-const navItems = [
+const baseNavItems = [
     { to: '/', label: 'Trang chủ', end: true },
     { to: '/catalog', label: 'Sản phẩm' },
     { to: '/design-studio', label: 'Thiết kế' },
@@ -74,6 +74,7 @@ function SparkIcon() {
 export default function Header({ cartCount = 0 }) {
     const [isOpen, setIsOpen] = useState(false)
     const [userName, setUserName] = useState('')
+    const [userRole, setUserRole] = useState('')
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [isSearchPinned, setIsSearchPinned] = useState(false)
     const [searchTerm, setSearchTerm] = useState('')
@@ -141,15 +142,39 @@ export default function Header({ cartCount = 0 }) {
         searchInputRef.current?.focus()
     }
 
-    // Tự động kiểm tra xem người dùng đã đăng nhập chưa khi load trang
+    // Tự động kiểm tra xem người dùng đã đăng nhập chưa khi load trang và kiểm tra vai trò người dùng
     useEffect(() => {
         const storedName = localStorage.getItem('userName')
         if (storedName) {
             setUserName(storedName)
         }
+
+        // Lấy role từ localStorage (kiểm tra key userRole hoặc role, hoặc trong object user)
+        let role = localStorage.getItem('userRole') || localStorage.getItem('role') || ''
+        if (!role) {
+            try {
+                const storedUser = localStorage.getItem('user')
+                if (storedUser) {
+                    const parsed = JSON.parse(storedUser)
+                    role = parsed.role || (parsed.roles && parsed.roles[0]) || ''
+                }
+            } catch (e) {
+                console.error(e)
+            }
+        }
+        setUserRole(role.toUpperCase())
     }, [])
 
     const closeMenu = () => setIsOpen(false)
+
+    // Nếu role là PRODUCER thì chèn thêm mục "Bảng điều khiển" vào bên phải mục "Đơn hàng"
+    const isProducer = userRole.includes('PRODUCER')
+    const navItems = isProducer
+        ? [
+            ...baseNavItems,
+            { to: '/producer_dashboard', label: 'Bảng điều khiển' }
+        ]
+        : baseNavItems
 
     // Cấu hình linh hoạt: Đã đăng nhập thì hiện tên và link tới /profile, chưa thì hiện 'Đăng nhập' và link /login
     const accountLabel = userName || 'Đăng nhập'
