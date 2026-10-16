@@ -6,6 +6,9 @@ import Button from '../../components/ui/Button'
 import Spinner from '../../components/ui/Spinner'
 import ProductCard from '../../components/ui/ProductCard'
 import { productApi } from '../../api/productApi'
+import { cartApi } from '../../api/cartApi'
+import Toast from '../../components/ui/Toast'
+import { useCartStore } from '../../store/cartStore'
 
 function formatPrice(value) {
   return new Intl.NumberFormat('vi-VN', {
@@ -46,6 +49,7 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [toast, setToast] = useState(null)
 
   const productQuery = useQuery({
     queryKey: ['product', id],
@@ -86,17 +90,51 @@ export default function ProductDetail() {
     }
   }
 
-  const handleAddToCart = () => {
-    if (!selectedVariant) {
-      window.alert('Vui lòng chọn màu sắc và kích thước.')
+  function getUserId() {
+    if (typeof localStorage !== 'undefined') {
+      const stored = localStorage.getItem('userId')
+      if (stored) return Number(stored)
+    }
+    return null
+  }
+
+  const setItemCount = useCartStore((state) => state.setItemCount)
+
+  const showToast = (message, variant = 'success') => {
+    setToast({ open: true, message, variant })
+  }
+
+  const handleAddToCart = async () => {
+    const userId = getUserId()
+    if (!userId) {
+      showToast('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.', 'error')
       return
     }
 
-    console.log('Add to cart:', {
-      productId: product.id,
-      variantId: selectedVariant.id,
-      quantity,
-    })
+    if (!selectedVariant) {
+      showToast('Vui lòng chọn màu sắc và kích thước.', 'error')
+      return
+    }
+
+    try {
+      const response = await cartApi.addItem(
+        {
+          variantId: selectedVariant.id,
+          quantity,
+        },
+        userId
+      )
+      // Cập nhật badge giỏ hàng trên Header ngay lập tức
+      if (response?.itemCount !== undefined) {
+        setItemCount(response.itemCount)
+      }
+      showToast('Đã thêm sản phẩm vào giỏ hàng.')
+    } catch (error) {
+      showToast(
+        error.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng.',
+        'error'
+      )
+    }
   }
 
   if (productQuery.isLoading) {
@@ -397,6 +435,13 @@ export default function ProductDetail() {
 
             <BestSellingProducts currentId={product.id} />
           </section>
+
+          <Toast
+            open={toast?.open}
+            message={toast?.message || ''}
+            variant={toast?.variant || 'success'}
+            onClose={() => setToast(null)}
+          />
         </Container>
       </div>
   )

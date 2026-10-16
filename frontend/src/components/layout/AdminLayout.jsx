@@ -10,6 +10,7 @@ import {
     Bell,
     Scissors
 } from 'lucide-react';
+import logo from "../../assets/logo.png";
 
 export default function AdminLayout() {
     const location = useLocation();
@@ -28,8 +29,12 @@ export default function AdminLayout() {
                 <div>
                     {/* Logo Header */}
                     <div className="h-16 px-6 border-b border-zinc-100 flex items-center gap-3">
-                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f0592a] text-base font-black tracking-tight text-white shadow-[0_8px_18px_rgba(240,89,42,0.25)] transition-all group-hover:-translate-y-0.5">
-                            A
+                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#fefccf] to-[#f0592a] shadow-[0_4px_12px_rgba(240,89,42,0.15)] ring-1 ring-[#f0592a]/10 transition-transform duration-300 group-hover:-translate-y-0.5">
+                            <img
+                                src={logo}
+                                alt="Atelier Logo Icon"
+                                className="h-7 w-7 object-contain"
+                            />
                         </span>
                         <div className="flex flex-col min-w-0">
               <span className="font-bold text-sm tracking-wider uppercase text-zinc-950 truncate">

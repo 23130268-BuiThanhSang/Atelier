@@ -1,44 +1,58 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, ArrowRight, ShieldCheck, Eye, EyeOff, Key } from 'lucide-react';
+import { Lock, ArrowRight, ShieldCheck, Eye, EyeOff, Key, Loader2, AlertCircle } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function ResetPassword() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // 1. Lấy token từ URL (ví dụ: /reset-password?token=xyz123)
+    // Các state cơ bản
     const [token, setToken] = useState('');
-
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
-    // Quản lý trạng thái ẩn/hiện mật khẩu
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
-    // Khi component được load, tự động trích xuất token từ URL
+    const [isCheckingToken, setIsCheckingToken] = useState(true);
+    const [isTokenValid, setIsTokenValid] = useState(false);
+
     useEffect(() => {
         const queryParams = new URLSearchParams(location.search);
         const urlToken = queryParams.get('token');
 
         if (urlToken) {
             setToken(urlToken);
+            fetch(`http://localhost:8080/api/auth/check-reset-token?token=${urlToken}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.valid) {
+                        setIsTokenValid(true);
+                    } else {
+                        setIsTokenValid(false);
+                        setMessage({ type: 'error', text: data.message || 'Liên kết không hợp lệ, đã sử dụng hoặc hết hạn.' });
+                    }
+                })
+                .catch(err => {
+                    console.error("Lỗi kiểm tra token:", err);
+                    setIsTokenValid(false);
+                    setMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ để xác thực liên kết.' });
+                })
+                .finally(() => {
+                    setIsCheckingToken(false);
+                });
         } else {
+            setIsTokenValid(false);
+            setIsCheckingToken(false);
             setMessage({ type: 'error', text: 'Liên kết không hợp lệ hoặc bị thiếu mã xác thực.' });
         }
     }, [location]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Validate cơ bản
-        if (!token) {
-            setMessage({ type: 'error', text: 'Mã xác thực không tồn tại. Vui lòng thử lại link trong email.' });
-            return;
-        }
 
         if (newPassword.length < 8) {
             setMessage({ type: 'error', text: 'Mật khẩu phải có ít nhất 8 ký tự.' });
@@ -67,12 +81,9 @@ export default function ResetPassword() {
 
             if (response.ok) {
                 setMessage({ type: 'success', text: 'Mật khẩu đã được đổi thành công! Đang chuyển hướng...' });
-                // Đợi 2 giây rồi chuyển về trang đăng nhập
-                setTimeout(() => {
-                    navigate('/login');
-                }, 2000);
+                setTimeout(() => { navigate('/login'); }, 2000);
             } else {
-                setMessage({ type: 'error', text: data || 'Mã xác nhận đã hết hạn hoặc không hợp lệ.' });
+                setMessage({ type: 'error', text: data || 'Đổi mật khẩu thất bại. Vui lòng thử lại.' });
             }
         } catch (error) {
             setMessage({ type: 'error', text: 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.' });
@@ -81,6 +92,37 @@ export default function ResetPassword() {
         }
     };
 
+    if (isCheckingToken) {
+        return (
+            <div className="w-full min-h-screen flex items-center justify-center p-4">
+                <div className="flex flex-col items-center gap-3 text-zinc-500">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#f0592a]" />
+                    <p className="text-sm font-medium">Đang xác thực liên kết...</p>
+                </div>
+            </div>
+        );
+    }
+    if (!isTokenValid) {
+        return (
+            <div className="w-full min-h-screen bg-transparent flex items-center justify-center p-4 font-sans">
+                <div className="w-full max-w-[480px] bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 md:p-10 border border-zinc-100 flex flex-col items-center text-center">
+                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                        <AlertCircle className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-zinc-900 mb-2">Liên kết không khả dụng</h2>
+                    <p className="text-sm text-zinc-500 mb-8 leading-relaxed">
+                        {message.text || 'Liên kết đặt lại mật khẩu này đã hết hạn hoặc đã được sử dụng trước đó. Vì lý do bảo mật, mỗi liên kết chỉ có tác dụng một lần.'}
+                    </p>
+                    <button
+                        onClick={() => navigate('/login')}
+                        className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium py-3 rounded-lg transition-all active:scale-[0.98] shadow-sm"
+                    >
+                        Quay lại Đăng nhập
+                    </button>
+                </div>
+            </div>
+        );
+    }
     return (
         <div className="w-full min-h-screen bg-transparent flex items-center justify-center p-4 font-sans">
             <div className="w-full max-w-[480px] bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-8 md:p-10 border border-zinc-100 flex flex-col">

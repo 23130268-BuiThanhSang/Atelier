@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import React, { useState, useEffect, useRef } from 'react'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import logo from "../../assets/logo.png";
 
-const navItems = [
+const baseNavItems = [
     { to: '/', label: 'Trang chủ', end: true },
     { to: '/catalog', label: 'Sản phẩm' },
     { to: '/design-studio', label: 'Thiết kế' },
@@ -73,16 +74,107 @@ function SparkIcon() {
 export default function Header({ cartCount = 0 }) {
     const [isOpen, setIsOpen] = useState(false)
     const [userName, setUserName] = useState('')
+    const [userRole, setUserRole] = useState('')
+    const [isSearchOpen, setIsSearchOpen] = useState(false)
+    const [isSearchPinned, setIsSearchPinned] = useState(false)
+    const [searchTerm, setSearchTerm] = useState('')
+    const searchClusterRef = useRef(null)
+    const searchInputRef = useRef(null)
+    const navigate = useNavigate()
 
-    // Tự động kiểm tra xem người dùng đã đăng nhập chưa khi load trang
+    // Đóng vùng tìm kiếm khi click ra ngoài cụm nút hoặc nhấn Escape.
+    useEffect(() => {
+        const handlePointerDown = (event) => {
+            if (searchClusterRef.current && !searchClusterRef.current.contains(event.target)) {
+                setIsSearchOpen(false)
+                setIsSearchPinned(false)
+            }
+        }
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                setIsSearchOpen(false)
+                setIsSearchPinned(false)
+            }
+        }
+
+        document.addEventListener('pointerdown', handlePointerDown)
+        document.addEventListener('keydown', handleKeyDown)
+
+        return () => {
+            document.removeEventListener('pointerdown', handlePointerDown)
+            document.removeEventListener('keydown', handleKeyDown)
+        }
+    }, [])
+
+    const closeSearch = () => {
+        setIsSearchOpen(false)
+        setIsSearchPinned(false)
+    }
+
+    const handleSearchSubmit = (event) => {
+        event.preventDefault()
+        const keyword = searchTerm.trim()
+
+        if (!keyword) {
+            searchInputRef.current?.focus()
+            return
+        }
+
+        navigate(`/catalog?search=${encodeURIComponent(keyword)}`)
+        closeSearch()
+    }
+
+    const handleSearchButtonClick = () => {
+        if (!isSearchOpen || !isSearchPinned) {
+            setIsSearchOpen(true)
+            setIsSearchPinned(true)
+            searchInputRef.current?.focus()
+            return
+        }
+
+        if (searchTerm.trim()) {
+            navigate(`/catalog?search=${encodeURIComponent(searchTerm.trim())}`)
+            closeSearch()
+            return
+        }
+
+        searchInputRef.current?.focus()
+    }
+
+    // Tự động kiểm tra xem người dùng đã đăng nhập chưa khi load trang và kiểm tra vai trò người dùng
     useEffect(() => {
         const storedName = localStorage.getItem('userName')
         if (storedName) {
             setUserName(storedName)
         }
+
+        // Lấy role từ localStorage (kiểm tra key userRole hoặc role, hoặc trong object user)
+        let role = localStorage.getItem('userRole') || localStorage.getItem('role') || ''
+        if (!role) {
+            try {
+                const storedUser = localStorage.getItem('user')
+                if (storedUser) {
+                    const parsed = JSON.parse(storedUser)
+                    role = parsed.role || (parsed.roles && parsed.roles[0]) || ''
+                }
+            } catch (e) {
+                console.error(e)
+            }
+        }
+        setUserRole(role.toUpperCase())
     }, [])
 
     const closeMenu = () => setIsOpen(false)
+
+    // Nếu role là PRODUCER thì chèn thêm mục "Bảng điều khiển" vào bên phải mục "Đơn hàng"
+    const isProducer = userRole.includes('PRODUCER')
+    const navItems = isProducer
+        ? [
+            ...baseNavItems,
+            { to: '/producer_dashboard', label: 'Bảng điều khiển' }
+        ]
+        : baseNavItems
 
     // Cấu hình linh hoạt: Đã đăng nhập thì hiện tên và link tới /profile, chưa thì hiện 'Đăng nhập' và link /login
     const accountLabel = userName || 'Đăng nhập'
@@ -98,8 +190,12 @@ export default function Header({ cartCount = 0 }) {
                         className="group flex shrink-0 items-center gap-3"
                         aria-label="Atelier - Trang chủ"
                     >
-                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f0592a] text-base font-black tracking-tight text-white shadow-[0_8px_18px_rgba(240,89,42,0.25)] transition-all group-hover:-translate-y-0.5">
-                            A
+                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#fefccf] to-[#f0592a] shadow-[0_4px_12px_rgba(240,89,42,0.15)] ring-1 ring-[#f0592a]/10 transition-transform duration-300 group-hover:-translate-y-0.5">
+                            <img
+                                src={logo}
+                                alt="Atelier Logo Icon"
+                                className="h-7 w-7 object-contain"
+                            />
                         </span>
                         <span className="hidden sm:block">
                             <span className="block text-xl font-black tracking-tight text-zinc-950">Atelier</span>
@@ -117,10 +213,58 @@ export default function Header({ cartCount = 0 }) {
                         ))}
                     </nav>
 
-                    <div className="ml-auto hidden items-center gap-2 rounded-2xl bg-white/35 p-1.5 backdrop-blur-sm md:flex">
+                    <div
+                        ref={searchClusterRef}
+                        onMouseLeave={() => {
+                            if (!isSearchPinned) setIsSearchOpen(false)
+                        }}
+                        className="ml-auto hidden items-center gap-2 rounded-2xl bg-white/35 p-1.5 backdrop-blur-sm md:flex"
+                    >
+                        {/* Giữ nguyên cụm tìm kiếm mở rộng trong luồng flex; chỉ dùng nút kính lúp gốc ở bên phải. */}
+                        <form
+                            role="search"
+                            onSubmit={handleSearchSubmit}
+                            aria-hidden={!isSearchOpen}
+                            className={[
+                                'flex h-10 min-w-0 items-center overflow-hidden rounded-xl border bg-white/90 transition-all duration-300 ease-out',
+                                isSearchOpen
+                                    ? 'w-[260px] border-[#e8cf8b] px-1 opacity-100'
+                                    : 'pointer-events-none w-0 border-transparent px-0 opacity-0',
+                            ].join(' ')}
+                        >
+                            <button
+                                type="button"
+                                onClick={closeSearch}
+                                tabIndex={isSearchOpen ? 0 : -1}
+                                aria-label="Đóng tìm kiếm"
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-[#fefccf] hover:text-[#f0592a]"
+                            >
+                                <CloseIcon />
+                            </button>
+
+                            <input
+                                ref={searchInputRef}
+                                type="search"
+                                value={searchTerm}
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                                onFocus={() => {
+                                    setIsSearchOpen(true)
+                                    setIsSearchPinned(true)
+                                }}
+                                tabIndex={isSearchOpen ? 0 : -1}
+                                placeholder="Tìm sản phẩm..."
+                                aria-label="Nhập từ khóa tìm sản phẩm"
+                                className="h-full min-w-0 flex-1 bg-transparent px-2 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+                            />
+
+                        </form>
+
                         <button
                             type="button"
                             aria-label="Tìm kiếm"
+                            aria-expanded={isSearchOpen}
+                            onMouseEnter={() => setIsSearchOpen(true)}
+                            onClick={handleSearchButtonClick}
                             className="rounded-xl border border-[#e8cf8b] bg-white/80 p-2.5 text-zinc-700 transition-all hover:border-[#f0592a] hover:text-[#f0592a]"
                         >
                             <SearchIcon />
@@ -128,6 +272,7 @@ export default function Header({ cartCount = 0 }) {
 
                         <Link
                             to="/design-studio"
+                            onClick={closeSearch}
                             className="inline-flex items-center gap-2 rounded-xl bg-[#f0592a] px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_18px_rgba(240,89,42,0.20)] transition-all hover:bg-[#d94a1f] hover:-translate-y-0.5 active:scale-[0.98]"
                         >
                             <SparkIcon />
@@ -137,6 +282,7 @@ export default function Header({ cartCount = 0 }) {
                         <Link
                             to="/cart"
                             aria-label="Giỏ hàng"
+                            onClick={closeSearch}
                             className="relative rounded-xl border border-[#e8cf8b] bg-white/80 p-2.5 text-zinc-700 transition-all hover:border-[#f0592a] hover:text-[#f0592a]"
                         >
                             <CartIcon />
@@ -150,6 +296,7 @@ export default function Header({ cartCount = 0 }) {
                         <Link
                             to={accountLink}
                             aria-label={accountLabel}
+                            onClick={closeSearch}
                             className="group flex min-w-[68px] flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-zinc-700 transition-all hover:bg-white/70 hover:text-[#f0592a]"
                         >
                             <span className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-300 bg-white transition-all group-hover:border-[#f0592a]">

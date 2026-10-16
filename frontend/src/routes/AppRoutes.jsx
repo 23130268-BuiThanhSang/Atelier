@@ -13,11 +13,9 @@ import AuthLayout from "../components/layout/AuthLayout.jsx";
 import AdminLayout from '../components/layout/AdminLayout';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminUsers from '../pages/admin/AdminUsers';
-import AdminUserDetail from '../pages/admin/AdminUserDetail';
 import AdminProducts from '../pages/admin/AdminProducts';
 import AdminProductForm from '../pages/admin/AdminProductForm';
 import AdminOrders from '../pages/admin/AdminOrders';
-import AdminOrderDetail from '../pages/admin/AdminOrderDetail';
 import ForgotPassword from "../pages/Login/ForgotPassword.jsx";
 import EmailVerification from "../pages/Login/EmailVerification";
 import MyProfile from "../pages/Login/MyProfile";
@@ -47,7 +45,7 @@ export default function AppRoutes() {
                 <Route path="/term_service" element={<TermOfService />} />
                 <Route path="/security_complience" element={<SecurityCompliance />} />
                 <Route path="/help_support" element={<HelpSupport />} />
-                <Route path="/producer/dashboard" element={<ProducerDashboard />} />
+                <Route path="/producer_dashboard" element={<ProducerDashboard />} />
                 <Route path="/orders/:id/resolution" element={<OrderResolutionCenter />} />
                 <Route path="/design-studio/3d" element={<DesignStudio3D />} />
                 <Route path="/design-studio/:id/proposals" element={<DesignProposals />} />
@@ -64,12 +62,10 @@ export default function AppRoutes() {
             <Route element={<AdminLayout />}>
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/users/:id" element={<AdminUserDetail />} />
                 <Route path="/admin/products" element={<AdminProducts />} />
                 <Route path="/admin/products/new" element={<AdminProductForm />} />
                 <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />
                 <Route path="/admin/orders" element={<AdminOrders />} />
-                <Route path="/admin/orders/:id" element={<AdminOrderDetail />} />
             </Route>
         </Routes>
     )

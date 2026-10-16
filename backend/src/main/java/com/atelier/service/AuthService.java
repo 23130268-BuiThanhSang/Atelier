@@ -7,8 +7,13 @@ import com.atelier.user.entity.Role;
 import com.atelier.user.entity.User;
 import com.atelier.repository.RoleRepository;
 import com.atelier.repository.UserRepository;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,17 +32,29 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
     private final Map<String, TempUserInfo> otpCache = new ConcurrentHashMap<>(); // lưu tạm user khi đăng ký
-    private final Map<String, TempUserInfo> resetTokenCache = new ConcurrentHashMap<>(); //quên mk
+    private final Map<String, ResetTokenInfo> resetTokenCache = new ConcurrentHashMap<>(); //quên mk
+    private static final String GOOGLE_CLIENT_ID = "791448851004-7uv4pq1unmirf1pphg8d96mlfmggjql5.apps.googleusercontent.com"; // id google
 
     private static class TempUserInfo { // chứa dữ liệu tạm
-        RegisterRequest request;
-        String otp;
-        LocalDateTime expiryTime;
+        public RegisterRequest request;
+        public String otp;
+        public LocalDateTime expiryTime;
 
         public TempUserInfo(RegisterRequest request, String otp, LocalDateTime expiryTime) {
             this.request = request;
             this.otp = otp;
             this.expiryTime = expiryTime;
+        }
+    }
+    public static class ResetTokenInfo {
+        public String email;
+        public LocalDateTime expiryTime;
+        public boolean isUsed;
+
+        public ResetTokenInfo(String email, LocalDateTime expiryTime) {
+            this.email = email;
+            this.expiryTime = expiryTime;
+            this.isUsed = false;
         }
     }
 
@@ -112,6 +129,7 @@ public class AuthService {
         }
         Map<String, String> response = new HashMap<>();
         response.put("message", "Đăng nhập thành công!");
+        response.put("userId", String.valueOf(user.getId()));
         response.put("fullName", user.getFullName());
         response.put("email", user.getEmail());
         String roleName = user.getRoles().iterator().next().getName();
@@ -125,10 +143,8 @@ public class AuthService {
             throw new RuntimeException("Không tìm thấy tài khoản nào được liên kết với email này.");
         }
         String resetToken = UUID.randomUUID().toString();
-
-        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(30);
-
-        resetTokenCache.put(resetToken, new TempUserInfo(null, email, expiryTime));
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(5);
+        resetTokenCache.put(resetToken, new ResetTokenInfo(email, expiryTime));
 
         try {
             String resetLink = "http://localhost:5173/reset_password?token=" + resetToken;
@@ -140,7 +156,7 @@ public class AuthService {
             message.setText("Bạn vừa yêu cầu đặt lại mật khẩu.\n\n"
                     + "Vui lòng click vào đường link dưới đây để đổi mật khẩu mới:\n"
                     + resetLink + "\n\n"
-                    + "Liên kết này sẽ tự động hết hạn sau 30 phút.\n"
+                    + "Liên kết này sẽ tự động hết hạn sau 5 phút.\n"
                     + "Nếu bạn không yêu cầu, vui lòng bỏ qua email này.");
 
             mailSender.send(message);
@@ -155,25 +171,94 @@ public class AuthService {
     public String resetPassword(ResetPasswordRequest request) {
         String token = request.getToken();
         String newPassword = request.getNewPassword();
-
-        TempUserInfo tempInfo = resetTokenCache.get(token);
-
+        ResetTokenInfo tempInfo = resetTokenCache.get(token);
         if (tempInfo == null) {
-            throw new RuntimeException("Liên kết đặt lại mật khẩu không hợp lệ hoặc đã bị hủy.");
+            throw new RuntimeException("Liên kết đặt lại mật khẩu không hợp lệ hoặc không tồn tại.");
+        }
+        if (tempInfo.isUsed) {
+            throw new RuntimeException("Liên kết này ĐÃ ĐƯỢC SỬ DỤNG. Mỗi liên kết chỉ có hiệu lực một lần.");
         }
         if (LocalDateTime.now().isAfter(tempInfo.expiryTime)) {
-            resetTokenCache.remove(token); // Xóa token hết hạn khỏi RAM
-            throw new RuntimeException("Liên kết này đã hết hạn. Vui lòng yêu cầu cấp lại liên kết mới.");
+            resetTokenCache.remove(token);
+            throw new RuntimeException("Liên kết này đã HẾT HẠN. Vui lòng yêu cầu cấp lại liên kết mới.");
         }
 
-        String email = tempInfo.otp;
-
+        String email = tempInfo.email;
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại."));
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        resetTokenCache.remove(token);
+        tempInfo.isUsed = true;
         return "Mật khẩu đã được cập nhật thành công!";
+    }
+
+    // Chạy tự động mỗi 1 giờ để dọn rác
+    @Scheduled(fixedRate = 3600000)
+    public void cleanupExpiredTokens() {
+        LocalDateTime now = LocalDateTime.now();
+        resetTokenCache.entrySet().removeIf(entry ->
+                now.isAfter(entry.getValue().expiryTime)
+        );
+        System.out.println("Đã dọn dẹp các Token hết hạn khỏi bộ nhớ.");
+    }
+    public boolean isResetTokenValid(String token) {
+        ResetTokenInfo tempInfo = resetTokenCache.get(token);
+        return tempInfo != null && !tempInfo.isUsed && LocalDateTime.now().isBefore(tempInfo.expiryTime);
+    }
+
+    // ĐN google
+    public Map<String, String> googleLogin(String idTokenString) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
+                    .build();
+
+            // 1. Xác minh Token với máy chủ Google
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+            if (idToken == null) {
+                throw new RuntimeException("Token Google không hợp lệ hoặc đã hết hạn!");
+            }
+
+            // 2. Lấy thông tin từ Google
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+            String avatarUrl = (String) payload.get("picture");
+
+            // 3. Tìm tài khoản trong Database
+            User user = userRepository.findByEmail(email).orElse(null);
+
+            // 4. NẾU CHƯA CÓ TÀI KHOẢN -> TỰ ĐỘNG ĐĂNG KÝ
+            if (user == null) {
+                user = new User();
+                user.setEmail(email);
+                user.setFullName(name);
+                user.setAvatarUrl(avatarUrl);
+                user.setEmailVerified(true); // Của Google cấp nên chắc chắn email thật
+                user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString())); // Mật khẩu ảo ngẫu nhiên
+
+                // Cấp Role mặc định (Ví dụ: DESIGNER)
+                Role defaultRole = roleRepository.findByName("DESIGNER")
+                        .orElseThrow(() -> new RuntimeException("Lỗi cấu hình Role"));
+                user.getRoles().add(defaultRole);
+
+                userRepository.save(user);
+            }
+
+            // 5. Trả về thông tin đăng nhập thành công
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Đăng nhập Google thành công!");
+            response.put("fullName", user.getFullName());
+            // Lấy role của user
+            String roleName = user.getRoles().isEmpty() ? "DESIGNER" : user.getRoles().iterator().next().getName();
+            response.put("role", roleName);
+            response.put("email", user.getEmail());
+
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi xác thực Google: " + e.getMessage());
+        }
     }
 }
