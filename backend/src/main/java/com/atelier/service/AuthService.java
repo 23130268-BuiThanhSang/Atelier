@@ -112,6 +112,7 @@ public class AuthService {
         }
         Map<String, String> response = new HashMap<>();
         response.put("message", "Đăng nhập thành công!");
+        response.put("userId", String.valueOf(user.getId()));
         response.put("fullName", user.getFullName());
         response.put("email", user.getEmail());
         String roleName = user.getRoles().iterator().next().getName();
