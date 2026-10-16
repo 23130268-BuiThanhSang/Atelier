@@ -45,7 +45,7 @@ export default function AppRoutes() {
                 <Route path="/term_service" element={<TermOfService />} />
                 <Route path="/security_complience" element={<SecurityCompliance />} />
                 <Route path="/help_support" element={<HelpSupport />} />
-                <Route path="/producer/dashboard" element={<ProducerDashboard />} />
+                <Route path="/producer_dashboard" element={<ProducerDashboard />} />
                 <Route path="/orders/:id/resolution" element={<OrderResolutionCenter />} />
                 <Route path="/design-studio/3d" element={<DesignStudio3D />} />
                 <Route path="/design-studio/:id/proposals" element={<DesignProposals />} />

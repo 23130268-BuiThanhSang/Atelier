@@ -1,536 +1,470 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    ChevronRight,
-    ShieldCheck,
-    CheckCircle2,
-    Clock,
+    List,
     Printer,
     Minus,
     Plus,
-    Camera,
-    RotateCw,
-    Upload,
-    Layers,
-    MessageSquare,
-    AlertTriangle,
-    Download,
-    Info,
-    Lock,
-    List,
-    Truck
+    CheckCircle2,
+    ShieldCheck,
+    Truck,
+    Loader2,
+    Check,
+    Save,
+    Calendar,
+    Phone,
+    MapPin,
+    Package
 } from 'lucide-react';
 
-export default function ProducerDashboard() {
-    const [activeTab, setActiveTab] = useState('in-production');
-    const [currentUnits, setCurrentUnits] = useState(38);
-    const totalUnits = 50;
-    const [stageNotes, setStageNotes] = useState(
-        'Căn chỉnh bản in 4 màu đã hiệu chuẩn trên bàn in xoay. Đã hoàn thành sấy hầm nhiệt 160°C cho 38 áo đầu tiên. Mẫu thử độ bền màu đạt chuẩn kiểm tra ma sát.'
-    );
-    const [notifyClient, setNotifyClient] = useState(true);
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [syncSuccess, setSyncSuccess] = useState(false);
+const STATUS_TABS = [
+    { id: 'all', label: 'Tất cả đơn hoạt động' },
+    { id: 'in-production', label: 'Đang sản xuất' },
+    { id: 'pending-qc', label: 'Chờ duyệt kiểm định QC' },
+    { id: 'completed', label: 'Đã hoàn tất / Đã gửi' },
+];
 
-    // Bộ điều khiển tăng giảm số lượng sản phẩm hoàn thành
+export default function ProducerDashboard() {
+    const [activeTab, setActiveTab] = useState('all');
+    const [orders, setOrders] = useState([]);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [isLoadingList, setIsLoadingList] = useState(false);
+    const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+    // Form state điều khiển bên phải
+    const [currentUnits, setCurrentUnits] = useState(0);
+    const [currentStatus, setCurrentStatus] = useState('IN_PRODUCTION');
+    const [stageNotes, setStageNotes] = useState(
+        'Căn chỉnh bản in 4 màu đã hiệu chuẩn trên bàn in xoay. Đã hoàn thành sấy hầm nhiệt 160°C. Mẫu thử độ bền màu đạt chuẩn kiểm tra ma sát.'
+    );
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
+
+    // 1. Tải danh sách đơn hàng của xưởng
+    const fetchProducerOrders = async (targetIdToKeep = null) => {
+        setIsLoadingList(true);
+        try {
+            const res = await fetch(`http://localhost:8080/api/v1/producer/orders?tab=${activeTab}`);
+            if (res.ok) {
+                const data = await res.json();
+                setOrders(data);
+                if (data.length > 0) {
+                    const keepId = targetIdToKeep || (selectedOrder ? selectedOrder.id : data[0].id);
+                    const found = data.find(o => o.id === keepId) || data[0];
+                    fetchDetail(found.id);
+                } else {
+                    setSelectedOrder(null);
+                }
+            }
+        } catch (e) {
+            console.error('Lỗi khi fetch đơn hàng:', e);
+        } finally {
+            setIsLoadingList(false);
+        }
+    };
+
+    // 2. Tải chi tiết đơn hàng được chọn (kèm danh sách size/số lượng)
+    const fetchDetail = async (id) => {
+        setIsLoadingDetail(true);
+        try {
+            const res = await fetch(`http://localhost:8080/api/v1/producer/orders/${id}`);
+            if (res.ok) {
+                const detail = await res.json();
+                setSelectedOrder(detail);
+                setCurrentUnits(detail.completedUnits);
+                setCurrentStatus(detail.status);
+            }
+        } catch (e) {
+            console.error('Lỗi khi fetch chi tiết đơn:', e);
+        } finally {
+            setIsLoadingDetail(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProducerOrders();
+    }, [activeTab]);
+
+    // Chuyển chọn đơn hàng ở hàng đợi
+    const handleSelectOrder = (id) => {
+        setSaveSuccess(false);
+        fetchDetail(id);
+    };
+
+    // Nút tăng giảm số lượng sản phẩm hoàn thành
     const adjustCount = (delta) => {
-        setCurrentUnits((prev) => {
+        if (!selectedOrder) return;
+        const total = selectedOrder.totalUnits || 1;
+        setCurrentUnits(prev => {
             const next = prev + delta;
             if (next < 0) return 0;
-            if (next > totalUnits) return totalUnits;
+            if (next > total) return total;
             return next;
         });
     };
 
-    // Thêm nhanh thẻ ghi chú mẫu
+    // Thêm tag ghi chú mẫu nhanh
     const insertTag = (tagText) => {
-        setStageNotes((prev) => (prev ? `${prev.trim()} | ${tagText}` : tagText));
+        setStageNotes(prev => (prev ? `${prev.trim()} | ${tagText}` : tagText));
     };
 
-    // Kích hoạt đồng bộ với cổng theo dõi của khách hàng
-    const triggerSync = () => {
-        setIsSyncing(true);
-        setTimeout(() => {
-            setIsSyncing(false);
-            setSyncSuccess(true);
-            setTimeout(() => {
-                setSyncSuccess(false);
-            }, 2500);
-        }, 900);
+    // Lưu tiến độ và cập nhật trạng thái đơn
+    const handleSaveProgress = async () => {
+        if (!selectedOrder) return;
+        setIsSaving(true);
+        try {
+            const res = await fetch(`http://localhost:8080/api/v1/producer/orders/${selectedOrder.id}/progress`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: currentStatus,
+                    completedUnits: currentUnits,
+                    notes: stageNotes
+                })
+            });
+
+            if (res.ok) {
+                setSaveSuccess(true);
+                fetchProducerOrders(selectedOrder.id);
+                setTimeout(() => setSaveSuccess(false), 3000);
+            } else {
+                alert('Cập nhật tiến độ thất bại');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Lỗi kết nối máy chủ backend');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const progressPercent = Math.round((currentUnits / totalUnits) * 100);
-
-    // Dữ liệu hàng đợi đơn hàng
-    const queueOrders = [
-        {
-            id: '#TS-99420',
-            title: 'Vintage Sunburst Echo',
-            units: '50 chiếc',
-            spec: 'Cotton kem 240 GSM',
-            status: 'Đang in',
-            stage: 'In & Sấy nhiệt',
-            due: 'Hạn: 28/10',
-            progress: 76,
-            isActive: true,
-        },
-        {
-            id: '#TS-99381',
-            title: 'Tokyo Cyber Grid',
-            units: '100 chiếc',
-            spec: 'Cotton đen Onyx 280 GSM',
-            status: 'Cắt vải',
-            stage: 'Cắt phôi chính xác',
-            due: 'Hạn: 02/11',
-            progress: 32,
-        },
-        {
-            id: '#TS-99214',
-            title: 'Forest Flora Botanical',
-            units: '30 chiếc',
-            spec: 'Cotton rêu Moss 200 GSM',
-            status: 'Kiểm định',
-            stage: 'Kiểm tra chất lượng cuối',
-            due: 'Hạn: 25/10 (Gấp)',
-            progress: 88,
-            isWarning: true,
-        },
-        {
-            id: '#TS-99105',
-            title: 'Form & Axis Minimal',
-            units: '75 chiếc',
-            spec: 'Cotton mộc Natural 220 GSM',
-            status: 'Chuẩn bị in',
-            stage: 'Phơi bản & Căn khung',
-            due: 'Hạn: 05/11',
-            progress: 15,
-        },
-    ];
+    const totalUnits = selectedOrder?.totalUnits || 1;
+    const progressPercent = Math.min(100, Math.round((currentUnits / totalUnits) * 100));
 
     return (
         <div className="w-full bg-[#fefccf] min-h-screen py-6 px-4 sm:px-8 xl:px-12 space-y-6">
-            {/* 1. Header Điều hành & Chỉ số xưởng */}
+            {/* 1. Header & Tab điều hướng */}
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-xs text-zinc-500 font-medium flex-wrap">
-                            <span className="hover:text-zinc-900 cursor-pointer transition-colors">Xưởng sản xuất</span>
-                            <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-                            <span className="text-zinc-900 font-bold">Lô #TS-99420</span>
-                        </div>
-                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-zinc-950">
-                            Tiến độ sản xuất và bàn giao
-                        </h1>
-                    </div>
+                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-zinc-950">
+                        Tiến độ sản xuất và bàn giao xưởng
+                    </h1>
                 </div>
 
                 {/* Thanh lọc trạng thái đơn */}
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
-                    {[
-                        { id: 'all', label: 'Tất cả đơn hoạt động', count: 6 },
-                        { id: 'in-production', label: 'Đang sản xuất', count: 3 },
-                        { id: 'pending-qc', label: 'Chờ duyệt kiểm định QC', count: 1 },
-                        { id: 'completed', label: 'Đã hoàn tất / Đã gửi', count: 24 },
-                    ].map((tab) => {
+                    {STATUS_TABS.map((tab) => {
                         const isActive = activeTab === tab.id;
                         return (
                             <button
                                 key={tab.id}
                                 type="button"
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-2 whitespace-nowrap ${
+                                className={`px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center gap-2 whitespace-nowrap cursor-pointer ${
                                     isActive
-                                        ? 'bg-[#f0592a] text-white'
+                                        ? 'bg-[#f0592a] text-white font-bold'
                                         : 'bg-white text-zinc-600 hover:text-zinc-900 border border-zinc-200/70'
                                 }`}
                             >
                                 <span>{tab.label}</span>
-                                <span
-                                    className={`px-2 py-0.5 rounded-full text-[10px] ${
-                                        isActive ? 'bg-white/20 text-white font-bold' : 'bg-zinc-100 text-zinc-700 font-semibold'
-                                    }`}
-                                >
-                                    {tab.count}
-                                </span>
                             </button>
                         );
                     })}
                 </div>
             </div>
 
-            {/* 2. Bố cục 2 cột mở rộng: Cột trái sidebar cố định chiều ngang, Cột phải dãn hết phần còn lại */}
+            {/* 2. BỐ CỤC 2 CỘT MỞ RỘNG CÂN ĐỐI */}
             <div className="w-full flex flex-col xl:flex-row gap-6 items-start">
 
-                {/* CỘT TRÁI: Hàng đợi đơn & Ký quỹ (Độ rộng tối ưu trên màn hình lớn) */}
-                <aside className="w-full xl:w-[360px] 2xl:w-[400px] flex-shrink-0 space-y-5">
-                    {/* Hộp hàng đợi sản xuất */}
+                {/* CỘT TRÁI: Hàng đợi xưởng trực tiếp (Cố định chiều ngang) */}
+                <aside className="w-full xl:w-[380px] 2xl:w-[420px] flex-shrink-0 space-y-4">
                     <div className="bg-white rounded-2xl p-5 shadow-xs border border-zinc-200/70 space-y-4">
                         <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                             <div className="flex items-center gap-2">
                                 <List className="w-5 h-5 text-[#f0592a]" />
-                                <h2 className="text-base font-bold text-zinc-950">Hàng đợi xưởng trực tiếp</h2>
+                                <h2 className="text-base font-bold text-zinc-950">Hàng đợi sản xuất</h2>
                             </div>
                             <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600">
-                                4 Đơn chờ
+                                {orders.length} Đơn
                             </span>
                         </div>
 
                         {/* Danh sách thẻ đơn trong hàng đợi */}
-                        <div className="space-y-3">
-                            {queueOrders.map((ord, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`rounded-xl p-3.5 transition-all cursor-pointer border ${
-                                        ord.isActive
-                                            ? 'bg-[#faf8e4]/70 border-[#f0592a]/40 shadow-xs'
-                                            : 'bg-zinc-50 hover:bg-zinc-100/70 border-zinc-200/60'
-                                    }`}
-                                >
-                                    <div className="flex items-start justify-between gap-2 mb-1">
-                                        <div>
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-xs font-bold text-zinc-950">{ord.id}</span>
-                                                <span
-                                                    className={`px-2 py-0.2 rounded-full text-[9px] font-bold uppercase ${
-                                                        ord.isActive
-                                                            ? 'bg-amber-100 text-amber-900'
-                                                            : 'bg-zinc-200 text-zinc-700'
-                                                    }`}
-                                                >
-                                                    {ord.status}
+                        <div className="space-y-3 max-h-[calc(100vh-270px)] overflow-y-auto pr-1">
+                            {isLoadingList ? (
+                                <div className="py-12 text-center text-zinc-400">
+                                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#f0592a] mb-2" />
+                                    Đang nạp hàng đợi...
+                                </div>
+                            ) : orders.length === 0 ? (
+                                <div className="py-8 text-center text-zinc-400 text-xs">
+                                    Không có đơn hàng nào trong tab này.
+                                </div>
+                            ) : (
+                                orders.map((ord) => {
+                                    const isSelected = selectedOrder?.id === ord.id;
+                                    return (
+                                        <div
+                                            key={ord.id}
+                                            onClick={() => handleSelectOrder(ord.id)}
+                                            className={`rounded-xl p-4 transition-all cursor-pointer border ${
+                                                isSelected
+                                                    ? 'bg-[#faf8e4] border-[#f0592a] shadow-sm ring-1 ring-[#f0592a]'
+                                                    : 'bg-zinc-50 hover:bg-zinc-100/80 border-zinc-200/70'
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-2 mb-1.5">
+                                                <div>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className="text-xs font-bold text-zinc-950 font-mono">
+                                                            #{ord.orderCode}
+                                                        </span>
+                                                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase bg-amber-100 text-amber-900">
+                                                            {ord.status}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-xs font-semibold text-zinc-900 block mt-1 line-clamp-1">
+                                                        {ord.title}
+                                                    </span>
+                                                </div>
+
+                                                <div className="text-right shrink-0">
+                                                    <span className="text-xs font-bold text-[#f0592a] block">
+                                                        {ord.totalUnits} chiếc
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-between text-xs text-zinc-500 mt-2">
+                                                <span className={`text-[11px] font-semibold ${ord.isWarning ? 'text-red-600 font-bold' : 'text-zinc-700'}`}>
+                                                    {ord.dueDateLabel}
                                                 </span>
                                             </div>
-                                            <span className="text-xs font-semibold text-zinc-900 block mt-0.5">{ord.title}</span>
+
+                                            {/* Thanh tiến độ mini */}
+                                            <div className="w-full bg-zinc-200/70 h-1.5 rounded-full mt-2.5 overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full transition-all duration-300 ${
+                                                        ord.isWarning ? 'bg-red-500' : 'bg-[#f0592a]'
+                                                    }`}
+                                                    style={{ width: `${ord.progressPercent}%` }}
+                                                />
+                                            </div>
                                         </div>
-
-                                        <div className="text-right shrink-0">
-                                            <span className="text-xs font-bold text-[#f0592a] block">{ord.units}</span>
-                                            <p className="text-[10px] text-zinc-400">{ord.spec}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center justify-between text-xs text-zinc-500 mt-2.5">
-                                        <span className="flex items-center gap-1">
-                                            {ord.isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#f0592a] animate-ping" />}
-                                            {ord.stage}
-                                        </span>
-                                        <span className={`text-[11px] font-semibold ${ord.isWarning ? 'text-red-600' : 'text-zinc-700'}`}>
-                                            {ord.due}
-                                        </span>
-                                    </div>
-
-                                    <div className="w-full bg-zinc-200/70 h-1.5 rounded-full mt-2 overflow-hidden">
-                                        <div
-                                            className={`h-full rounded-full ${ord.isWarning ? 'bg-emerald-600' : 'bg-[#f0592a]'}`}
-                                            style={{ width: `${ord.progress}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Widget tóm tắt ký quỹ Escrow */}
-                    <div className="bg-white rounded-2xl p-5 shadow-xs border border-zinc-200/70 space-y-3">
-                        <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
-                            <span className="text-sm font-bold text-zinc-950">Ký quỹ bảo chứng xưởng</span>
-                            <Lock className="w-4 h-4 text-[#f0592a]" />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 pt-1">
-                            <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200/60">
-                                <span className="text-xs text-zinc-500 block">Tổng số áo may</span>
-                                <span className="text-lg font-bold text-zinc-950 block mt-0.5">255 chiếc</span>
-                                <span className="text-[10px] text-zinc-400 block mt-0.5">Qua 4 lượt may</span>
-                            </div>
-                            <div className="p-3 rounded-xl bg-zinc-50 border border-zinc-200/60">
-                                <span className="text-xs text-zinc-500 block">Tiền ký quỹ đã khóa</span>
-                                <span className="text-lg font-bold text-[#f0592a] block mt-0.5">96.000.000 ₫</span>
-                                <span className="text-[10px] text-emerald-700 font-semibold block mt-0.5">Tự động giải ngân</span>
-                            </div>
+                                    );
+                                })
+                            )}
                         </div>
                     </div>
                 </aside>
 
-                {/* CỘT PHẢI: Mở rộng toàn bộ chiều ngang còn lại */}
-                <div className="w-full xl:flex-1 space-y-5 min-w-0">
+                {/* CỘT PHẢI: BẢNG ĐIỀU KHIỂN CHI TIẾT SẢN XUẤT (DÃN RỘNG TOÀN DIỆN) */}
+                <main className="flex-1 w-full space-y-5">
+                    {isLoadingDetail ? (
+                        <div className="bg-white rounded-2xl p-16 text-center text-zinc-400 border border-zinc-200/70">
+                            <Loader2 className="w-7 h-7 animate-spin mx-auto text-[#f0592a] mb-2" />
+                            Đang tải chi tiết đơn hàng...
+                        </div>
+                    ) : selectedOrder ? (
+                        <div className="bg-white rounded-2xl p-6 md:p-8 shadow-xs border border-zinc-200/70 space-y-6">
 
-                    {/* Header lô đang may */}
-                    <div className="bg-white rounded-2xl p-5 shadow-xs border border-zinc-200/70 space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-zinc-100">
-                            <div className="flex items-start gap-3">
-                                <div className="w-11 h-11 rounded-xl bg-[#fefccf] text-[#f0592a] border border-[#f0592a]/20 flex items-center justify-center shrink-0">
-                                    <Printer className="w-5 h-5" />
-                                </div>
+                            {/* 1. Header chi tiết */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 pb-5">
                                 <div>
-                                    <h2 className="text-base font-bold text-zinc-950">
-                                        Đơn hàng #TS-99420: "Vintage Sunburst Echo"
-                                    </h2>
-                                    <div className="flex flex-wrap items-center gap-x-2 text-xs text-zinc-500 mt-0.5">
-                                        <span>Khách hàng: <strong className="text-zinc-900">Elena Rostova Studio</strong></span>
-                                        <span>•</span>
-                                        <span>50 Áo (Heavyweight 240 GSM)</span>
-                                        <span>•</span>
-                                        <span>Màu: Kem ấm</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Mốc ký quỹ */}
-                            <div className="sm:text-right shrink-0">
-                                <span className="text-xs text-zinc-400 block">Ký quỹ theo mốc</span>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-base font-bold text-emerald-700">11.500.000 ₫</span>
-                                    <span className="text-xs text-zinc-400">/ 23.000.000 ₫</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Quy trình 6 bước may đo */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold uppercase tracking-wider text-zinc-400">Dây chuyền sản xuất</span>
-                                <span className="text-[#f0592a] font-bold">Bước 3 / 6 Đang chạy</span>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 text-xs">
-                                {/* Bước 1 */}
-                                <div className="flex flex-col gap-0.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/60">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-emerald-800">Bước 1</span>
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                                    </div>
-                                    <span className="font-semibold text-zinc-900 mt-1">Đã xác nhận</span>
-                                    <span className="text-[10px] text-emerald-700">14/10</span>
-                                </div>
-
-                                {/* Bước 2 */}
-                                <div className="flex flex-col gap-0.5 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/60">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-emerald-800">Bước 2</span>
-                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                                    </div>
-                                    <span className="font-semibold text-zinc-900 mt-1">Giặt co rút</span>
-                                    <span className="text-[10px] text-emerald-700">16/10</span>
-                                </div>
-
-                                {/* Bước 3 (Đang chạy) */}
-                                <div className="flex flex-col gap-0.5 p-2.5 rounded-xl bg-[#faf8e4] border border-[#f0592a]/30 shadow-2xs">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-bold text-[#f0592a] uppercase">Đang in</span>
-                                        <span className="w-2 h-2 rounded-full bg-[#f0592a] animate-pulse"></span>
-                                    </div>
-                                    <span className="font-bold text-zinc-950 mt-1">In & Sấy</span>
-                                    <span className="text-[10px] text-[#f0592a] font-bold">Lô 38/50</span>
-                                </div>
-
-                                {/* Bước 4 */}
-                                <div className="flex flex-col gap-0.5 p-2.5 rounded-xl bg-zinc-50 border border-zinc-200 opacity-60">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-semibold text-zinc-500">Bước 4</span>
-                                        <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                                    </div>
-                                    <span className="font-medium text-zinc-600 mt-1">Kiểm định QC</span>
-                                    <span className="text-[10px] text-zinc-400">Đang chờ</span>
-                                </div>
-
-                                {/* Bước 5 */}
-                                <div className="flex flex-col gap-0.5 p-2.5 rounded-xl bg-zinc-50 border border-zinc-200 opacity-60">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-semibold text-zinc-500">Bước 5</span>
-                                        <Layers className="w-3.5 h-3.5 text-zinc-400" />
-                                    </div>
-                                    <span className="font-medium text-zinc-600 mt-1">Đóng gói</span>
-                                    <span className="text-[10px] text-zinc-400">Mã vạch</span>
-                                </div>
-
-                                {/* Bước 6 */}
-                                <div className="flex flex-col gap-0.5 p-2.5 rounded-xl bg-zinc-50 border border-zinc-200 opacity-60">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-semibold text-zinc-500">Bước 6</span>
-                                        <Truck className="w-3.5 h-3.5 text-zinc-400" />
-                                    </div>
-                                    <span className="font-medium text-zinc-600 mt-1">Bàn giao</span>
-                                    <span className="text-[10px] text-zinc-400">Chuyển phát</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Cập nhật trạng thái máy in & Đếm số áo */}
-                    <div className="bg-white rounded-2xl p-5 shadow-xs border border-zinc-200/70 space-y-5">
-                        <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                            <div className="flex items-center gap-2">
-                                <Printer className="w-5 h-5 text-[#f0592a]" />
-                                <h3 className="text-base font-bold text-zinc-950">Cập nhật tiến độ & Bằng chứng công đoạn</h3>
-                            </div>
-                        </div>
-
-                        {/* Bộ đếm số lượng */}
-                        <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/60 space-y-3">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                <div>
-                                    <span className="text-xs font-bold text-zinc-900 block">Số áo đã in & qua sấy nhiệt</span>
-                                    <span className="text-[11px] text-zinc-500">Bấm tăng số lượng mỗi khi áo chạy xong qua băng chuyền sấy</span>
-                                </div>
-
-                                <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-zinc-200/80 shadow-2xs">
-                                    <button
-                                        type="button"
-                                        onClick={() => adjustCount(-1)}
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-100 text-zinc-700 transition-colors"
-                                    >
-                                        <Minus className="w-4 h-4" />
-                                    </button>
-                                    <div className="flex items-center gap-1 px-3">
-                                        <span className="text-lg font-bold text-zinc-950">{currentUnits}</span>
-                                        <span className="text-xs text-zinc-400">/ {totalUnits}</span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => adjustCount(1)}
-                                        className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-zinc-100 text-zinc-700 transition-colors"
-                                    >
-                                        <Plus className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Thanh tiến độ */}
-                            <div className="space-y-1.5 pt-1">
-                                <div className="flex justify-between text-xs text-zinc-500">
-                                    <span>Mức độ hoàn thành</span>
-                                    <span className="font-bold text-zinc-900">{progressPercent}%</span>
-                                </div>
-                                <div className="w-full bg-zinc-200/70 h-2 rounded-full overflow-hidden">
-                                    <div
-                                        className="bg-[#f0592a] h-full rounded-full transition-all duration-300"
-                                        style={{ width: `${progressPercent}%` }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Ghi chú nhật ký sản xuất */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                                <label htmlFor="stage-notes" className="font-bold text-zinc-900">
-                                    Nhật ký sản xuất & Ghi chú kỹ thuật
-                                </label>
-                            </div>
-                            <textarea
-                                id="stage-notes"
-                                rows={3}
-                                value={stageNotes}
-                                onChange={(e) => setStageNotes(e.target.value)}
-                                placeholder="Nhập thông tin về mực in, nhiệt độ sấy, độ chồng màu hoặc lịch trình..."
-                                className="w-full p-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#f0592a] focus:ring-2 focus:ring-[#f0592a]/20 transition-all font-medium leading-relaxed"
-                            />
-                        </div>
-
-                        {/* Bằng chứng xác thực tại xưởng (WIP) */}
-                        <div className="space-y-3 pt-2 border-t border-zinc-100">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <span className="text-xs font-bold text-zinc-900 block">
-                                        Bằng chứng ảnh thực tế
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-3">
-                                {/* Ảnh 1 */}
-                                <div className="group rounded-xl overflow-hidden bg-zinc-50 border border-zinc-200/80 shadow-2xs flex flex-col">
-                                    <div className="relative aspect-video w-full overflow-hidden bg-zinc-100">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=600&auto=format&fit=crop&q=80"
-                                            alt="Ảnh in lụa"
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                        />
-                                        <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-white text-[9px] font-bold">
-                                            1080p
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-xl font-bold text-zinc-950 font-mono">
+                                            #{selectedOrder.orderCode}
+                                        </span>
+                                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#fefccf] text-[#f0592a] border border-[#f0592a]/20">
+                                            {currentStatus}
                                         </span>
                                     </div>
-                                    <div className="p-2.5 space-y-0.5">
-                                        <span className="text-xs font-bold text-zinc-900 block truncate">Ảnh căn chỉnh in ngực trước</span>
-                                        <span className="text-[10px] text-zinc-400 block">Tải lên 14 phút trước bởi Jin K.</span>
-                                    </div>
-                                </div>
-
-                                {/* Ảnh 2 */}
-                                <div className="group rounded-xl overflow-hidden bg-zinc-50 border border-zinc-200/80 shadow-2xs flex flex-col">
-                                    <div className="relative aspect-video w-full overflow-hidden bg-zinc-100">
-                                        <img
-                                            src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&auto=format&fit=crop&q=80"
-                                            alt="Cảm biến nhiệt"
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                        />
-                                        <span className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-white text-[9px] font-bold">
-                                            Nhật ký cảm biến
+                                    <h2 className="text-lg font-bold text-zinc-900">{selectedOrder.title}</h2>
+                                    <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-zinc-500 mt-1.5">
+                                        <span className="flex items-center gap-1 text-zinc-700 font-medium">
+                                            Khách hàng: <strong className="text-zinc-900">{selectedOrder.shippingName}</strong>
+                                        </span>
+                                        {selectedOrder.shippingPhone && (
+                                            <span className="flex items-center gap-1 font-mono">
+                                                <Phone className="w-3.5 h-3.5 text-zinc-400" />
+                                                {selectedOrder.shippingPhone}
+                                            </span>
+                                        )}
+                                        <span className="flex items-center gap-1">
+                                            <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                                            {selectedOrder.shippingAddress}
                                         </span>
                                     </div>
-                                    <div className="p-2.5 space-y-0.5">
-                                        <span className="text-xs font-bold text-zinc-900 block truncate">Nhiệt độ hầm sấy (160°C)</span>
-                                        <span className="text-[10px] text-zinc-400 block">Tải lên 35 phút trước bởi Jin K.</span>
-                                    </div>
                                 </div>
 
-                                {/* Nút tải thêm ảnh */}
-                                <div className="rounded-xl p-4 bg-zinc-50 hover:bg-[#faf8e4]/60 border-2 border-dashed border-zinc-200 hover:border-[#f0592a]/40 transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-1.5 min-h-[140px] group sm:col-span-2 2xl:col-span-1">
-                                    <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[#f0592a] group-hover:scale-110 shadow-2xs transition-all">
-                                        <Camera className="w-5 h-5" />
-                                    </div>
+                                <div className="text-left sm:text-right shrink-0 bg-zinc-50 sm:bg-transparent p-3 sm:p-0 rounded-xl">
+                                    <span className="text-sm font-bold text-zinc-900">{selectedOrder.spec}</span>
+                                </div>
+                            </div>
+
+                            {/* 2. Chi tiết phân rã số lượng theo Size */}
+                            <div className="space-y-2">
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                                    Kích cỡ & Sản lượng
+                                </h3>
+                                <div className="border border-zinc-100 rounded-xl overflow-hidden">
+                                    <table className="w-full text-left text-xs">
+                                        <thead className="bg-zinc-50 text-[11px] font-semibold text-zinc-400 uppercase">
+                                        <tr>
+                                            <th className="py-2.5 px-4">Kích thước</th>
+                                            <th className="py-2.5 px-4">Màu phôi</th>
+                                            <th className="py-2.5 px-4 text-right">Số lượng</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-zinc-100">
+                                        {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                                            selectedOrder.items.map((it, idx) => (
+                                                <tr key={idx} className="hover:bg-zinc-50/50">
+                                                    <td className="py-3 px-4 font-mono font-bold text-zinc-900">
+                                                        Size {it.sizeLabel}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-zinc-600">
+                                                        {selectedOrder.garmentColor || 'Cotton tiêu chuẩn'}
+                                                    </td>
+                                                    <td className="py-3 px-4 text-right font-bold text-[#f0592a]">
+                                                        {it.quantity} chiếc
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="3" className="py-4 text-center text-zinc-400">
+                                                    Không có phân rã size
+                                                </td>
+                                            </tr>
+                                        )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {/* 3. Bộ điều khiển số lượng may/in & Thanh tiến độ */}
+                            <div className="bg-[#fffdfa] border border-amber-200/80 rounded-2xl p-6 space-y-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div>
-                                        <span className="text-xs font-bold text-zinc-900 block">Tải thêm bằng chứng</span>
-                                        <span className="text-[10px] text-zinc-400 block">JPEG, PNG hoặc RAW đến 25MB</span>
+                                        <h3 className="text-sm font-bold text-zinc-950">
+                                            Sản lượng hoàn thành trên dây chuyền
+                                        </h3>
+                                    </div>
+
+                                    {/* Nút cộng trừ số lượng */}
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => adjustCount(-5)}
+                                            className="w-10 h-10 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 flex items-center justify-center text-zinc-700 font-bold transition-colors cursor-pointer shadow-xs"
+                                        >
+                                            <Minus className="w-4 h-4" />
+                                        </button>
+                                        <div className="px-5 py-2 rounded-xl bg-white border border-zinc-200 text-center min-w-[120px] shadow-xs">
+                                            <span className="text-xl font-bold text-zinc-950 font-mono">{currentUnits}</span>
+                                            <span className="text-xs text-zinc-400 font-normal"> / {totalUnits}</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => adjustCount(5)}
+                                            className="w-10 h-10 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 flex items-center justify-center text-zinc-700 font-bold transition-colors cursor-pointer shadow-xs"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Thanh phần trăm tiến độ */}
+                                <div className="space-y-1.5">
+                                    <div className="flex justify-between text-xs font-semibold">
+                                        <span className="text-[#f0592a] font-bold">{progressPercent}%</span>
+                                    </div>
+                                    <div className="w-full bg-zinc-200/80 h-3 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full rounded-full bg-[#f0592a] transition-all duration-300"
+                                            style={{ width: `${progressPercent}%` }}
+                                        />
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Checkbox thông báo */}
-                        <div className="flex items-center gap-3 pt-1">
-                            <input
-                                id="notify-client-toggle"
-                                type="checkbox"
-                                checked={notifyClient}
-                                onChange={(e) => setNotifyClient(e.target.checked)}
-                                className="w-4 h-4 rounded text-[#f0592a] accent-[#f0592a] cursor-pointer"
-                            />
-                            <label htmlFor="notify-client-toggle" className="text-xs text-zinc-800 cursor-pointer select-none">
-                                Gửi thông báo ngay cho khách hàng <strong className="text-zinc-950 font-bold">Elena Rostova</strong> kèm ảnh chụp thực tế và mốc thời gian
-                            </label>
-                        </div>
+                            {/* 4. Chuyển đổi trạng thái sản xuất */}
+                            <div className="space-y-3">
+                                <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">
+                                    Chuyển giao giai đoạn sản xuất
+                                </label>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    {[
+                                        { val: 'IN_PRODUCTION', label: '1. Đang sản xuất', icon: Printer },
+                                        { val: 'QC_INSPECTION', label: '2. Kiểm định QC', icon: ShieldCheck },
+                                        { val: 'SHIPPED', label: '3. Đang giao hàng', icon: Truck },
+                                        { val: 'COMPLETED', label: '4. Đã hoàn tất', icon: CheckCircle2 },
+                                    ].map((st) => {
+                                        const isChecked = currentStatus === st.val;
+                                        const Icon = st.icon;
+                                        return (
+                                            <button
+                                                key={st.val}
+                                                type="button"
+                                                onClick={() => setCurrentStatus(st.val)}
+                                                className={`p-3.5 rounded-xl border flex flex-col items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer ${
+                                                    isChecked
+                                                        ? 'bg-[#f0592a] border-[#f0592a] text-white shadow-xs'
+                                                        : 'bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700'
+                                                }`}
+                                            >
+                                                <Icon className="w-4 h-4" />
+                                                <span>{st.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
 
-                        {/* Nút hành động */}
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-                            <button
-                                type="button"
-                                disabled={isSyncing}
-                                onClick={triggerSync}
-                                className={`w-full sm:w-auto px-6 py-2.5 rounded-xl text-white text-xs font-semibold shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 ${
-                                    syncSuccess ? 'bg-emerald-600' : 'bg-[#f0592a] hover:bg-[#d94a1f]'
-                                }`}
-                            >
-                                {isSyncing ? (
-                                    <>
-                                        <RotateCw className="w-4 h-4 animate-spin" />
-                                        <span>Đang đồng bộ với cổng khách hàng...</span>
-                                    </>
-                                ) : syncSuccess ? (
-                                    <>
-                                        <CheckCircle2 className="w-4 h-4" />
-                                        <span>Đã cập nhật & Lưu nhật ký!</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Upload className="w-4 h-4" />
-                                        <span>Xuất bản tiến độ & Đồng bộ cho khách</span>
-                                    </>
-                                )}
-                            </button>
+                            {/* 5. Ghi chú xưởng & Nhật ký */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-zinc-500">
+                                        Nhật ký kỹ thuật
+                                    </label>
+                                </div>
+                                <textarea
+                                    rows={3}
+                                    value={stageNotes}
+                                    onChange={(e) => setStageNotes(e.target.value)}
+                                    placeholder="Nhập thông số mực, áp lực in, thông số nhiệt độ hoặc báo cáo sự cố..."
+                                    className="w-full p-3.5 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-900 focus:outline-none focus:border-[#f0592a] font-medium"
+                                />
+                            </div>
+
+                            {/* 6. Nút đồng bộ */}
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-zinc-100">
+                                <span className="text-xs text-zinc-400">
+                                </span>
+
+                                <button
+                                    type="button"
+                                    disabled={isSaving}
+                                    onClick={handleSaveProgress}
+                                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] disabled:opacity-50 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+                                >
+                                    {isSaving ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : saveSuccess ? (
+                                        <Check className="w-4 h-4" />
+                                    ) : (
+                                        <Save className="w-4 h-4" />
+                                    )}
+                                    <span>{saveSuccess ? 'Đã đồng bộ thành công!' : 'Đồng bộ tiến độ & Lưu trạng thái'}</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    ) : (
+                        <div className="bg-white rounded-2xl p-16 text-center text-zinc-400 border border-zinc-200/70">
+                            Vui lòng chọn một đơn hàng từ hàng đợi bên trái để quản lý tiến độ.
+                        </div>
+                    )}
+                </main>
             </div>
         </div>
     );
