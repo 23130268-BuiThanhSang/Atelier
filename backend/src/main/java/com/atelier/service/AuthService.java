@@ -7,6 +7,10 @@ import com.atelier.user.entity.Role;
 import com.atelier.user.entity.User;
 import com.atelier.repository.RoleRepository;
 import com.atelier.repository.UserRepository;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -29,6 +33,7 @@ public class AuthService {
     private final JavaMailSender mailSender;
     private final Map<String, TempUserInfo> otpCache = new ConcurrentHashMap<>(); // lưu tạm user khi đăng ký
     private final Map<String, ResetTokenInfo> resetTokenCache = new ConcurrentHashMap<>(); //quên mk
+    private static final String GOOGLE_CLIENT_ID = "791448851004-7uv4pq1unmirf1pphg8d96mlfmggjql5.apps.googleusercontent.com"; // id google
 
     private static class TempUserInfo { // chứa dữ liệu tạm
         public RegisterRequest request;
@@ -200,5 +205,60 @@ public class AuthService {
     public boolean isResetTokenValid(String token) {
         ResetTokenInfo tempInfo = resetTokenCache.get(token);
         return tempInfo != null && !tempInfo.isUsed && LocalDateTime.now().isBefore(tempInfo.expiryTime);
+    }
+
+    // ĐN google
+    public Map<String, String> googleLogin(String idTokenString) {
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                    .setAudience(Collections.singletonList(GOOGLE_CLIENT_ID))
+                    .build();
+
+            // 1. Xác minh Token với máy chủ Google
+            GoogleIdToken idToken = verifier.verify(idTokenString);
+            if (idToken == null) {
+                throw new RuntimeException("Token Google không hợp lệ hoặc đã hết hạn!");
+            }
+
+            // 2. Lấy thông tin từ Google
+            GoogleIdToken.Payload payload = idToken.getPayload();
+            String email = payload.getEmail();
+            String name = (String) payload.get("name");
+            String avatarUrl = (String) payload.get("picture");
+
+            // 3. Tìm tài khoản trong Database
+            User user = userRepository.findByEmail(email).orElse(null);
+
+            // 4. NẾU CHƯA CÓ TÀI KHOẢN -> TỰ ĐỘNG ĐĂNG KÝ
+            if (user == null) {
+                user = new User();
+                user.setEmail(email);
+                user.setFullName(name);
+                user.setAvatarUrl(avatarUrl);
+                user.setEmailVerified(true); // Của Google cấp nên chắc chắn email thật
+                user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString())); // Mật khẩu ảo ngẫu nhiên
+
+                // Cấp Role mặc định (Ví dụ: DESIGNER)
+                Role defaultRole = roleRepository.findByName("DESIGNER")
+                        .orElseThrow(() -> new RuntimeException("Lỗi cấu hình Role"));
+                user.getRoles().add(defaultRole);
+
+                userRepository.save(user);
+            }
+
+            // 5. Trả về thông tin đăng nhập thành công
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Đăng nhập Google thành công!");
+            response.put("fullName", user.getFullName());
+            // Lấy role của user
+            String roleName = user.getRoles().isEmpty() ? "DESIGNER" : user.getRoles().iterator().next().getName();
+            response.put("role", roleName);
+            response.put("email", user.getEmail());
+
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi xác thực Google: " + e.getMessage());
+        }
     }
 }

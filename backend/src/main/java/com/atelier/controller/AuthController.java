@@ -81,4 +81,15 @@ public class AuthController {
                     .body(Map.of("valid", false, "message", "Liên kết không hợp lệ, đã sử dụng hoặc hết hạn."));
         }
     }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
+        try {
+            String token = request.get("token");
+            Map<String, String> response = authService.googleLogin(token);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }
