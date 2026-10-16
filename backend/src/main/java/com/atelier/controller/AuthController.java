@@ -6,6 +6,7 @@ import com.atelier.service.AuthService;
 import com.atelier.user.dto.ResetPasswordRequest;
 import com.atelier.user.dto.VerifyOtpRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,6 +69,16 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("message", message));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+    @GetMapping("/check-reset-token")
+    public ResponseEntity<?> checkResetToken(@RequestParam String token) {
+        boolean isValid = authService.isResetTokenValid(token);
+        if (isValid) {
+            return ResponseEntity.ok(Map.of("valid", true));
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("valid", false, "message", "Liên kết không hợp lệ, đã sử dụng hoặc hết hạn."));
         }
     }
 }
