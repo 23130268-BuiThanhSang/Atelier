@@ -92,6 +92,7 @@ export default function AuthPage() {
             if (response.ok) {
                 setMessage({ type: 'success', text: 'Đăng nhập thành công! Đang chuyển hướng...' });
 
+                localStorage.setItem('userId', String(data.userId));
                 localStorage.setItem('userName', data.fullName);
                 localStorage.setItem('userEmail', data.email);
                 localStorage.setItem('userRole', data.role);
