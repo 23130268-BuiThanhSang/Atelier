@@ -1,6 +1,5 @@
 package com.atelier.service;
 
-import com.atelier.design.dto.DesignSaveDto;
 import com.atelier.design.dto.MyDesignResponse;
 import com.atelier.design.dto.SaveDesignRequest;
 import com.atelier.design.entity.Design;
@@ -18,10 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -36,17 +36,51 @@ public class DesignService {
 
     @Transactional
     public Map<String, Object> saveDesign(SaveDesignRequest request, Long currentUserId) {
+        // 1. Kích hoạt upload song song ảnh preview và tất cả layer ảnh Base64
+        CompletableFuture<String> previewUploadFuture = CompletableFuture.supplyAsync(() -> {
+            if (request.previewImageUrl() != null && request.previewImageUrl().startsWith("data:image")) {
+                try {
+                    return cloudinaryService.uploadBase64(request.previewImageUrl(), "designs");
+                } catch (Exception e) {
+                    log.error("Lỗi khi upload ảnh preview lên Cloudinary: {}", e.getMessage(), e);
+                    return request.previewImageUrl();
+                }
+            }
+            return request.previewImageUrl();
+        });
+
+        List<SaveDesignRequest.ElementDto> rawElements = request.elements() != null ? request.elements() : List.of();
+        List<CompletableFuture<String>> layerUploadFutures = new ArrayList<>();
+
+        for (SaveDesignRequest.ElementDto elDto : rawElements) {
+            if ("image".equalsIgnoreCase(elDto.elementType()) && elDto.imageUrl() != null) {
+                if (elDto.imageUrl().startsWith("data:image")) {
+                    layerUploadFutures.add(CompletableFuture.supplyAsync(() -> {
+                        try {
+                            return cloudinaryService.uploadBase64(elDto.imageUrl(), "designs/layers");
+                        } catch (Exception e) {
+                            log.error("Lỗi khi upload layer ảnh lên Cloudinary: {}", e.getMessage(), e);
+                            return elDto.imageUrl();
+                        }
+                    }));
+                } else {
+                    layerUploadFutures.add(CompletableFuture.completedFuture(elDto.imageUrl()));
+                }
+            } else {
+                layerUploadFutures.add(CompletableFuture.completedFuture(null));
+            }
+        }
+
+        // 2. Xử lý lưu hoặc cập nhật thực thể Design
         Design design;
         int nextVersionNumber = 1;
 
-        // 1. Kiểm tra xem đây là Chỉnh sửa thiết kế cũ hay Tạo mới
         if (request.designId() != null) {
             design = designRepository.findById(request.designId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy mẫu thiết kế #" + request.designId()));
             design.setName(request.name());
             designRepository.save(design);
 
-            // Tìm version_number lớn nhất hiện tại của thiết kế này và tăng lên 1
             Optional<DesignVersion> latestVerOpt = designVersionRepository
                     .findTopByDesignIdOrderByVersionNumberDesc(design.getId());
             if (latestVerOpt.isPresent() && latestVerOpt.get().getVersionNumber() != null) {
@@ -58,24 +92,14 @@ public class DesignService {
             design.setGarment(entityManager.getReference(Garment.class, request.garmentId() != null ? request.garmentId() : 1L));
             design.setName(request.name() != null ? request.name() : "Mẫu áo chưa đặt tên");
             design.setStatus("ACTIVE");
-            design.setVisibility("PRIVATE"); // Mặc định là riêng tư
+            design.setVisibility("PRIVATE");
             design = designRepository.save(design);
         }
 
-        // 2. Upload ảnh preview lên Cloudinary (giữ nguyên hàm upload Cloudinary hiện tại của bạn)
-        String uploadedPreviewUrl = null;
-        if (request.previewImageUrl() != null && request.previewImageUrl().startsWith("data:image")) {
-            try {
-                uploadedPreviewUrl = cloudinaryService.uploadBase64(request.previewImageUrl(), "designs");
-                log.info("Uploaded preview image to Cloudinary: {}", uploadedPreviewUrl);
-            } catch (Exception e) {
-                log.error("Lỗi khi upload ảnh preview lên Cloudinary: {}", e.getMessage(), e);
-            }
-        } else {
-            uploadedPreviewUrl = request.previewImageUrl();
-        }
+        // Chờ kết quả upload của ảnh preview
+        String uploadedPreviewUrl = previewUploadFuture.join();
 
-        // 3. Tạo bản ghi mới trong bảng design_versions với version_number đã tăng
+        // 3. Tạo bản ghi DesignVersion mới
         DesignVersion version = new DesignVersion();
         version.setDesign(design);
         version.setVersionNumber(nextVersionNumber);
@@ -85,45 +109,43 @@ public class DesignService {
         version.setStatus("SAVED");
         version = designVersionRepository.save(version);
 
-        // 4. Lưu các phần tử chữ & ảnh vào bảng design_elements
-        if (request.elements() != null) {
-            int zIndex = 1;
-            for (SaveDesignRequest.ElementDto elDto : request.elements()) {
-                DesignElement el = new DesignElement();
-                el.setDesignVersion(version);
-                el.setSide(elDto.side());
-                el.setElementType(elDto.elementType());
+        // 4. Lấy toàn bộ kết quả upload của các layer và lưu hàng loạt (batch save)
+        List<DesignElement> elementsToSave = new ArrayList<>();
+        int zIndex = 1;
 
-                // Nếu là text thì lưu nội dung chữ, nếu là image thì upload layer ảnh lên Cloudinary
-                if ("image".equalsIgnoreCase(elDto.elementType()) && elDto.imageUrl() != null) {
-                    try {
-                        String uploadedLayerUrl = elDto.imageUrl().startsWith("data:image")
-                                ? cloudinaryService.uploadBase64(elDto.imageUrl(), "designs/layers")
-                                : elDto.imageUrl();
-                        el.setTextContent(uploadedLayerUrl);
-                    } catch (Exception e) {
-                        log.error("Lỗi khi upload ảnh layer lên Cloudinary: {}", e.getMessage(), e);
-                        el.setTextContent(elDto.imageUrl());
-                    }
-                } else {
-                    el.setTextContent(elDto.textContent());
-                }
+        for (int i = 0; i < rawElements.size(); i++) {
+            SaveDesignRequest.ElementDto elDto = rawElements.get(i);
+            DesignElement el = new DesignElement();
+            el.setDesignVersion(version);
+            el.setSide(elDto.side());
+            el.setElementType(elDto.elementType());
 
-                if (elDto.positionX() != null) el.setPositionX(BigDecimal.valueOf(elDto.positionX()));
-                if (elDto.positionY() != null) el.setPositionY(BigDecimal.valueOf(elDto.positionY()));
-                if (elDto.width() != null) el.setWidth(BigDecimal.valueOf(elDto.width()));
-                if (elDto.height() != null) el.setHeight(BigDecimal.valueOf(elDto.height()));
-                if (elDto.rotation() != null) el.setRotation(BigDecimal.valueOf(elDto.rotation()));
-                el.setColor(elDto.color());
-                if (elDto.fontSize() != null) {
-                    el.setFontSize(BigDecimal.valueOf(elDto.fontSize()));
-                }
-                el.setFontFamily(elDto.fontFamily());
-                el.setFontWeight(elDto.fontWeight());
-                el.setZIndex(zIndex++);
-                el.setIsVisible(true);
-                designElementRepository.save(el);
+            if ("image".equalsIgnoreCase(elDto.elementType())) {
+                String uploadedLayerUrl = layerUploadFutures.get(i).join();
+                el.setTextContent(uploadedLayerUrl);
+            } else {
+                el.setTextContent(elDto.textContent());
             }
+
+            if (elDto.positionX() != null) el.setPositionX(BigDecimal.valueOf(elDto.positionX()));
+            if (elDto.positionY() != null) el.setPositionY(BigDecimal.valueOf(elDto.positionY()));
+            if (elDto.width() != null) el.setWidth(BigDecimal.valueOf(elDto.width()));
+            if (elDto.height() != null) el.setHeight(BigDecimal.valueOf(elDto.height()));
+            if (elDto.rotation() != null) el.setRotation(BigDecimal.valueOf(elDto.rotation()));
+            el.setColor(elDto.color());
+            if (elDto.fontSize() != null) {
+                el.setFontSize(BigDecimal.valueOf(elDto.fontSize()));
+            }
+            el.setFontFamily(elDto.fontFamily());
+            el.setFontWeight(elDto.fontWeight());
+            el.setZIndex(zIndex++);
+            el.setIsVisible(true);
+
+            elementsToSave.add(el);
+        }
+
+        if (!elementsToSave.isEmpty()) {
+            designElementRepository.saveAll(elementsToSave);
         }
 
         return Map.of(
@@ -164,6 +186,16 @@ public class DesignService {
     }
 
     private MyDesignResponse mapToMyDesignResponse(Design design) {
+        String designerName = "Atelier Designer";
+        if (design.getUser() != null) {
+            String fn = design.getUser().getFullName();
+            if (fn != null && !fn.trim().isEmpty()) {
+                designerName = fn.trim();
+            } else if (design.getUser().getEmail() != null) {
+                designerName = design.getUser().getEmail().split("@")[0];
+            }
+        }
+
         Optional<DesignVersion> latestVerOpt = designVersionRepository
                 .findTopByDesignIdOrderByVersionNumberDesc(design.getId());
 
@@ -171,7 +203,7 @@ public class DesignService {
             return new MyDesignResponse(
                     design.getId(), design.getName(),
                     design.getVisibility() != null ? design.getVisibility() : "PRIVATE",
-                    null, 1, "#F5F2DC", null, null, List.of()
+                    null, 1, "#F5F2DC", null,null, designerName, List.of()
             );
         }
 
@@ -206,7 +238,14 @@ public class DesignService {
                 latestVer.getGarmentColor(),
                 latestVer.getPreviewImageUrl(),
                 null,
+                designerName,
                 elementDtos
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyDesignResponse> getPublicDesigns() {
+        List<Design> publicDesigns = designRepository.findByVisibilityIgnoreCaseOrderByIdDesc("PUBLIC");
+        return publicDesigns.stream().map(this::mapToMyDesignResponse).toList();
     }
 }

@@ -34,8 +34,13 @@ public class DesignController {
         return ResponseEntity.ok(designService.getDesignById(id));
     }
 
-    @PatchMapping("/{id}/visibility")
+    @PostMapping("/{id}/visibility")
     public ResponseEntity<MyDesignResponse> toggleVisibility(@PathVariable Long id) {
         return ResponseEntity.ok(designService.toggleVisibility(id));
+    }
+
+    @GetMapping("/public")
+    public ResponseEntity<List<MyDesignResponse>> getPublicDesigns() {
+        return ResponseEntity.ok(designService.getPublicDesigns());
     }
 }

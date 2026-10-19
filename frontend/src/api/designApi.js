@@ -11,5 +11,8 @@ export const designApi = {
         axios.post('/api/v1/designs', payload).then((res) => res.data),
 
     toggleVisibility: (id) =>
-        axios.patch(`/api/v1/designs/${id}/visibility`).then((res) => res.data),
+        axios.post(`/api/v1/designs/${id}/visibility`).then((res) => res.data),
+
+    getPublicDesigns: () =>
+        axios.get('/api/v1/designs/public').then((res) => res.data),
 };

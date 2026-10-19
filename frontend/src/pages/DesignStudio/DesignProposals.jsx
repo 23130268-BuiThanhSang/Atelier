@@ -152,13 +152,6 @@ export default function DesignProposals() {
                             <PauseCircle className="w-4 h-4 text-zinc-500" />
                             <span>{rfqPaused ? 'Mở lại yêu cầu' : 'Tạm dừng nhận giá'}</span>
                         </button>
-                        <Link
-                            to="/design-studio"
-                            className="px-4 py-2 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98]"
-                        >
-                            <FileEdit className="w-4 h-4" />
-                            <span>Chỉnh sửa thiết kế</span>
-                        </Link>
                     </div>
                 </div>
             </div>
@@ -243,9 +236,6 @@ export default function DesignProposals() {
                     <div className="flex items-center justify-between bg-white rounded-2xl shadow-xs border border-zinc-200/70 p-4">
                         <div className="flex items-center gap-2">
                             <h2 className="text-sm font-bold text-zinc-950">Báo giá từ các xưởng may</h2>
-                            <span className="bg-[#f0592a] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                {sortedProposals.length} Xưởng tham gia
-                            </span>
                         </div>
                     </div>
 

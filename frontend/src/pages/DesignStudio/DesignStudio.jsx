@@ -558,7 +558,7 @@ export default function DesignStudio() {
         ctx.fillText('MẶT TRƯỚC', 200, 28);
         ctx.fillText('MẶT SAU', 600, 28);
 
-        return compositeCanvas.toDataURL('image/png', 0.95);
+        return compositeCanvas.toDataURL('image/jpeg', 0.85);
     };
 
     const handleSaveDesign = async () => {
@@ -678,11 +678,21 @@ export default function DesignStudio() {
                 <div className="flex flex-wrap items-center justify-end gap-2 w-full xl:w-auto">
                     <button
                         type="button"
+                        disabled={isSaving}
                         onClick={handleSaveDesign}
-                        className="px-4 py-2 bg-[#f0592a] hover:bg-[#d94a1f] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+                        className="px-4 py-2 bg-[#f0592a] hover:bg-[#d94a1f] disabled:bg-zinc-400 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98] cursor-pointer"
                     >
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Lưu thiết kế</span>
+                        {isSaving ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Đang lưu...</span>
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>Lưu thiết kế</span>
+                            </>
+                        )}
                     </button>
                 </div>
             </div>

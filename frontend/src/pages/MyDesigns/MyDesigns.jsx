@@ -41,21 +41,26 @@ export default function MyDesigns() {
         fetchDesigns();
     }, []);
 
-    // Xử lý bật / tắt chia sẻ (PRIVATE <-> PUBLIC)
+    // Xử lý bật / tắt chia sẻ (PRIVATE <-> PUBLIC) an toàn và chuẩn xác
     const handleToggleVisibility = async (design) => {
         setTogglingId(design.designId);
+        const currentVis = (design.visibility || 'PRIVATE').toUpperCase();
+        const nextVis = currentVis === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
+
         try {
-            const updated = await designApi.toggleVisibility(design.designId);
+            const res = await designApi.toggleVisibility(design.designId);
+            const serverVis = (res?.visibility || res?.data?.visibility || nextVis).toUpperCase();
+
             setDesigns((prev) =>
                 prev.map((item) =>
                     item.designId === design.designId
-                        ? { ...item, visibility: updated.visibility }
+                        ? { ...item, visibility: serverVis }
                         : item
                 )
             );
         } catch (err) {
             console.error('Không thể cập nhật trạng thái chia sẻ:', err);
-            alert('Không thể thay đổi trạng thái chia sẻ. Vui lòng thử lại!');
+            alert('Không thể thay đổi trạng thái chia sẻ. Vui lòng kiểm tra lại!');
         } finally {
             setTogglingId(null);
         }
@@ -157,7 +162,7 @@ export default function MyDesigns() {
             {!isLoading && !isError && designs.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                     {designs.map((design) => {
-                        const isPublic = design.visibility === 'PUBLIC';
+                        const isPublic = (design.visibility || '').toUpperCase() === 'PUBLIC';
                         const isToggling = togglingId === design.designId;
 
                         return (

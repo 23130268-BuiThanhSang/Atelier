@@ -11,4 +11,5 @@ public interface DesignRepository extends JpaRepository<Design, Long> {
     List<Design> findByUserIdOrderByUpdatedAtDesc(Long userId);
     List<Design> findByUserIdOrderByIdDesc(Long userId);
     List<Design> findAllByOrderByIdDesc();
+    List<Design> findByVisibilityIgnoreCaseOrderByIdDesc(String visibility);
 }

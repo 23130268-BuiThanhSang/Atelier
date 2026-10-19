@@ -12,5 +12,6 @@ public record MyDesignResponse(
         String garmentColor,
         String previewImageUrl,
         LocalDateTime updatedAt,
+        String designerName,
         List<SaveDesignRequest.ElementDto> elements
 ) {}
