@@ -5,7 +5,7 @@ import logo from "../../assets/logo.png";
 const baseNavItems = [
     { to: '/', label: 'Trang chủ', end: true },
     { to: '/catalog', label: 'Sản phẩm' },
-    { to: '/design-studio', label: 'Thiết kế' },
+    { to: '/my-designs', label: 'Thiết kế của tôi' },
     { to: '/my-orders', label: 'Đơn hàng' },
 ]
 
