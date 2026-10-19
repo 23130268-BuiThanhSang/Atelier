@@ -65,4 +65,51 @@ public class CloudinaryService {
         }
         return rootFolder + "/" + subFolder;
     }
+
+    /**
+     * Xóa ảnh trên Cloudinary bằng URL đầy đủ
+     */
+    public boolean deleteImageByUrl(String imageUrl) {
+        if (imageUrl == null || !imageUrl.contains("cloudinary.com")) {
+            return false; // Bỏ qua nếu là ảnh ngoài như Picsum, Unsplash
+        }
+
+        try {
+            String publicId = extractPublicId(imageUrl);
+            if (publicId != null) {
+                Map<?, ?> result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                log.info("Đã xóa ảnh Cloudinary public_id {}: {}", publicId, result.get("result"));
+                return "ok".equals(result.get("result"));
+            }
+        } catch (Exception e) {
+            log.error("Lỗi khi xóa ảnh Cloudinary {}: {}", imageUrl, e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Trích xuất public_id kèm folder từ URL Cloudinary
+     * Ví dụ: https://res.cloudinary.com/demo/image/upload/v1234567/atelier/products/sample.jpg
+     * -> atelier/products/sample
+     */
+    private String extractPublicId(String imageUrl) {
+        try {
+            int uploadIndex = imageUrl.indexOf("/upload/");
+            if (uploadIndex == -1) return null;
+
+            String pathAfterUpload = imageUrl.substring(uploadIndex + 8); // Bỏ qua "/upload/"
+            // Bỏ version nếu có (ví dụ: "v162817281/")
+            if (pathAfterUpload.startsWith("v") && pathAfterUpload.indexOf("/") != -1) {
+                pathAfterUpload = pathAfterUpload.substring(pathAfterUpload.indexOf("/") + 1);
+            }
+            // Bỏ phần đuôi mở rộng file (.jpg, .png, .webp)
+            int dotIndex = pathAfterUpload.lastIndexOf(".");
+            if (dotIndex != -1) {
+                return pathAfterUpload.substring(0, dotIndex);
+            }
+            return pathAfterUpload;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

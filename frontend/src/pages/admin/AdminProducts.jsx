@@ -311,7 +311,6 @@ export default function AdminProducts() {
                                             </div>
                                             <div className="flex items-center gap-1.5 min-w-0 max-w-xs">
                                                 <span className="font-semibold text-zinc-950 truncate">{p.name}</span>
-                                                {p.featured && <Star className="w-3.5 h-3.5 fill-[#f0592a] text-[#f0592a] shrink-0" />}
                                             </div>
                                         </div>
                                     </td>
