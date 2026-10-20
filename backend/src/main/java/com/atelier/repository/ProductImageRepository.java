@@ -3,6 +3,7 @@ package com.atelier.repository;
 import com.atelier.catalog.entity.ProductImage;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -37,4 +38,8 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
 
     List<ProductImage> findByProductId(Long productId);
     void deleteByProductId(Long productId);
+
+    @Modifying
+    @Query("DELETE FROM ProductImage pi WHERE pi.product.id = :productId")
+    void deleteByProductIdCustom(@Param("productId") Long productId);
 }

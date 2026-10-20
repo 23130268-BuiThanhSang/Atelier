@@ -19,14 +19,11 @@ import {
 } from 'lucide-react';
 
 const STATUS_MAP = {
-    PENDING: { label: 'Chờ xử lý', color: 'bg-amber-50 text-amber-800' },
     CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-50 text-blue-700' },
     IN_PRODUCTION: { label: 'Đang sản xuất', color: 'bg-emerald-50 text-emerald-700' },
-    QC_INSPECTION: { label: 'Kiểm định QC', color: 'bg-emerald-50 text-emerald-700' },
     SHIPPED: { label: 'Đang vận chuyển', color: 'bg-indigo-50 text-indigo-700' },
     COMPLETED: { label: 'Đã giao hàng', color: 'bg-emerald-50 text-emerald-700' },
     DELIVERED: { label: 'Đã giao hàng', color: 'bg-emerald-50 text-emerald-700' },
-    DISPUTED: { label: 'Tranh chấp', color: 'bg-red-50 text-red-600' },
     CANCELLED: { label: 'Đã hủy', color: 'bg-zinc-100 text-zinc-500' }
 };
 
@@ -36,7 +33,6 @@ export default function AdminOrders() {
         totalOrders: 0,
         inProductionOrders: 0,
         pendingDeliveryOrders: 0,
-        disputedOrders: 0
     });
 
     const [statusFilter, setStatusFilter] = useState('ALL');
@@ -231,18 +227,6 @@ export default function AdminOrders() {
                         <span className="text-2xl font-bold tracking-tight text-zinc-950">{kpis.pendingDeliveryOrders}</span>
                     </div>
                 </div>
-
-                <div className="p-5 rounded-2xl bg-[#fffdfa] shadow-xs border border-amber-200/80 flex flex-col justify-between">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[11px] uppercase tracking-wider font-semibold text-amber-800">Tranh chấp</span>
-                        <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
-                            <Scale className="w-4 h-4 text-amber-800" />
-                        </div>
-                    </div>
-                    <div className="mt-4 flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold tracking-tight text-zinc-950">{kpis.disputedOrders}</span>
-                    </div>
-                </div>
             </div>
 
             {/* 3. Toolbar & Table */}
@@ -270,14 +254,11 @@ export default function AdminOrders() {
                             className="w-full sm:w-48 h-11 pl-3.5 pr-8 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-700 appearance-none cursor-pointer focus:outline-none focus:border-[#f0592a]"
                         >
                             <option value="ALL">Tất cả trạng thái</option>
-                            <option value="PENDING">Chờ xử lý</option>
                             <option value="CONFIRMED">Đã xác nhận</option>
                             <option value="IN_PRODUCTION">Đang sản xuất</option>
-                            <option value="QC_INSPECTION">Kiểm định QC</option>
                             <option value="SHIPPED">Đang vận chuyển</option>
                             <option value="COMPLETED">Đã giao hàng</option>
                             <option value="CANCELLED">Đã hủy</option>
-                            <option value="DISPUTED">Tranh chấp</option>
                         </select>
                         <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                     </div>
@@ -479,14 +460,11 @@ export default function AdminOrders() {
                                     onChange={(e) => setUpdatingStatus(e.target.value)}
                                     className="w-full h-11 pl-3.5 pr-8 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-800 appearance-none focus:outline-none focus:border-[#f0592a]"
                                 >
-                                    <option value="PENDING">Chờ xử lý</option>
                                     <option value="CONFIRMED">Đã xác nhận</option>
                                     <option value="IN_PRODUCTION">Đang sản xuất</option>
-                                    <option value="QC_INSPECTION">Kiểm định QC</option>
                                     <option value="SHIPPED">Đang vận chuyển</option>
-                                    <option value="COMPLETED">Đã giao hàng (Hoàn thành)</option>
+                                    <option value="COMPLETED">Đã giao hàng</option>
                                     <option value="CANCELLED">Đã hủy</option>
-                                    <option value="DISPUTED">Tranh chấp</option>
                                 </select>
                                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                             </div>
