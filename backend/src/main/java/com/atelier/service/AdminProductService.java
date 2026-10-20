@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,10 +31,10 @@ public class AdminProductService {
     private final ProductVariantRepository productVariantRepository;
     private final ProductImageRepository productImageRepository;
     private final CategoryRepository categoryRepository;
+    private final CloudinaryService cloudinaryService; // Inject thêm CloudinaryService
 
     @Transactional(readOnly = true)
     public AdminProductSummaryResponse getAdminProducts(String keyword, String status, int page, int size) {
-        // Chuẩn hóa param
         String cleanKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
         String dbStatus = mapStatusFilter(status);
 
@@ -48,31 +49,27 @@ public class AdminProductService {
 
         List<Long> productIds = products.stream().map(Product::getId).toList();
 
-        // 1. Lấy thông tin Tồn kho của từng sản phẩm từ ProductVariant
         List<Object[]> rawStocks = productVariantRepository.sumStockByProductIds(productIds);
         Map<Long, Long> stockMap = new HashMap<>();
         for (Object[] r : rawStocks) {
             stockMap.put((Long) r[0], ((Number) r[1]).longValue());
         }
 
-        // 2. Lấy Danh mục
         Map<Long, String> categoryMap = categoryRepository.findAll().stream()
                 .collect(Collectors.toMap(Category::getId, Category::getName, (a, b) -> a));
 
-        // 3. Lấy ảnh thumbnail
         List<Object[]> rawImages = productImageRepository.findThumbnailsByProductIds(productIds);
         Map<Long, String> imageMap = new HashMap<>();
         for (Object[] r : rawImages) {
             imageMap.put(((Number) r[0]).longValue(), (String) r[1]);
         }
 
-        // 4. Map sang DTO Item
         List<ProductItem> items = products.stream().map(p -> {
             long stock = stockMap.getOrDefault(p.getId(), 0L);
             String pStatus = p.getStatus() != null ? p.getStatus() : "ACTIVE";
 
             String stockStatus;
-            int stockPercent = Math.min(100, (int) ((stock / 200.0) * 100)); // Thanh tiến trình giả định mức 200 cái là 100%
+            int stockPercent = Math.min(100, (int) ((stock / 200.0) * 100));
 
             if ("INACTIVE".equalsIgnoreCase(pStatus)) {
                 stockStatus = "hidden";
@@ -96,7 +93,7 @@ public class AdminProductService {
                     stockPercent,
                     stockStatus,
                     pStatus,
-                    p.getSoldCount() != null && p.getSoldCount() > 500, // featured nếu bán chạy
+                    p.getSoldCount() != null && p.getSoldCount() > 500,
                     imgUrl
             );
         }).toList();
@@ -134,7 +131,6 @@ public class AdminProductService {
         return null;
     }
 
-    // Lấy chi tiết sản phẩm cho trang Edit
     @Transactional(readOnly = true)
     public AdminProductDetailDto.Response getProductDetail(Long id) {
         Product p = productRepository.findById(id)
@@ -165,7 +161,7 @@ public class AdminProductService {
         );
     }
 
-    // Tạo mới sản phẩm
+    // 1. Tạo mới sản phẩm
     @Transactional
     public Long createProduct(AdminProductDetailDto.UpsertRequest req) {
         Product p = new Product();
@@ -181,7 +177,10 @@ public class AdminProductService {
 
         Product saved = productRepository.save(p);
 
-        // Lưu variants
+        // Lưu hình ảnh sản phẩm vào product_images
+        saveProductImages(saved, req.imageUrls());
+
+        // Lưu biến thể variants
         if (req.variants() != null) {
             for (AdminProductDetailDto.VariantUpsertDto vDto : req.variants()) {
                 ProductVariant variant = new ProductVariant();
@@ -190,7 +189,6 @@ public class AdminProductService {
                 variant.setColor("Default");
                 variant.setPrice(saved.getBasePrice());
                 variant.setStatus("ACTIVE");
-                // Luôn sinh SKU kèm ID sản phẩm vừa tạo
                 variant.setSku("PRD" + saved.getId() + "-" + vDto.size().trim().toUpperCase());
                 variant.setStockQuantity(vDto.stockQuantity());
                 productVariantRepository.save(variant);
@@ -200,7 +198,7 @@ public class AdminProductService {
         return saved.getId();
     }
 
-    // Cập nhật sản phẩm
+    // 2. Cập nhật sản phẩm & tự động dọn dẹp ảnh cũ trên Cloudinary
     @Transactional
     public void updateProduct(Long id, AdminProductDetailDto.UpsertRequest req) {
         Product p = productRepository.findById(id)
@@ -218,6 +216,36 @@ public class AdminProductService {
 
         productRepository.save(p);
 
+        // Đồng bộ hình ảnh và dọn dẹp ảnh bị xóa trên Cloudinary
+        if (req.imageUrls() != null) {
+            // Lấy danh sách ảnh hiện tại trong Database trước khi cập nhật
+            List<ProductImage> oldImages = productImageRepository.findByProductId(id);
+            List<String> newUrlList = req.imageUrls();
+
+            // Tìm các URL ảnh có trong DB nhưng không còn nằm trong danh sách mới
+            List<String> urlsToDelete = oldImages.stream()
+                    .map(ProductImage::getImageUrl)
+                    .filter(oldUrl -> oldUrl != null && !newUrlList.contains(oldUrl))
+                    .toList();
+
+            // Cập nhật lại Database
+            productImageRepository.deleteByProductId(id);
+            saveProductImages(p, req.imageUrls());
+
+            // Xóa ảnh thừa trên Cloudinary bất đồng bộ (chạy ngầm, không block request)
+            if (!urlsToDelete.isEmpty()) {
+                CompletableFuture.runAsync(() -> {
+                    for (String delUrl : urlsToDelete) {
+                        try {
+                            cloudinaryService.deleteImageByUrl(delUrl);
+                        } catch (Exception e) {
+                            log.error("Không thể xóa ảnh thừa trên Cloudinary: {}", delUrl, e);
+                        }
+                    }
+                });
+            }
+        }
+
         // Cập nhật biến thể tồn kho
         if (req.variants() != null && !req.variants().isEmpty()) {
             List<ProductVariant> existingVariants = productVariantRepository.findByProductId(id);
@@ -227,7 +255,6 @@ public class AdminProductService {
 
                 String targetSize = vDto.size().trim().toUpperCase();
 
-                // Tìm variant cùng size đã tồn tại trong database
                 ProductVariant matched = existingVariants.stream()
                         .filter(v -> v.getSize() != null && v.getSize().trim().equalsIgnoreCase(targetSize))
                         .findFirst()
@@ -238,7 +265,6 @@ public class AdminProductService {
                     if (vDto.sku() != null && !vDto.sku().isBlank()) {
                         matched.setSku(vDto.sku().trim());
                     }
-                    // Nếu variant cũ bị thiếu color thì gán fallback để tránh null
                     if (matched.getColor() == null) {
                         matched.setColor("Default");
                     }
@@ -247,7 +273,6 @@ public class AdminProductService {
                     }
                     productVariantRepository.save(matched);
                 } else {
-                    // Nếu chưa có, tạo mới và BẮT BUỘC gán color, price, status
                     ProductVariant newVar = new ProductVariant();
                     newVar.setProduct(p);
                     newVar.setSize(targetSize);
@@ -255,7 +280,6 @@ public class AdminProductService {
                     newVar.setPrice(p.getBasePrice());
                     newVar.setStatus("ACTIVE");
 
-                    // Sinh SKU duy nhất theo ID sản phẩm: PRD<id>-<size> (ví dụ PRD4-S)
                     String fallbackSku = "PRD" + p.getId() + "-" + targetSize;
                     if (vDto.sku() != null && !vDto.sku().isBlank() && !vDto.sku().equals("SKU-" + targetSize)) {
                         fallbackSku = vDto.sku().trim();
@@ -266,6 +290,27 @@ public class AdminProductService {
                     productVariantRepository.save(newVar);
                 }
             }
+        }
+    }
+
+    private void saveProductImages(Product product, List<String> imageUrls) {
+        if (imageUrls == null || imageUrls.isEmpty()) return;
+
+        List<ProductImage> imageEntities = new ArrayList<>();
+        for (int i = 0; i < imageUrls.size(); i++) {
+            String url = imageUrls.get(i);
+            if (url != null && !url.isBlank()) {
+                ProductImage img = new ProductImage();
+                img.setProduct(product);
+                img.setImageUrl(url);
+                img.setDisplayOrder(i);
+                img.setIsThumbnail(i == 0);
+                imageEntities.add(img);
+            }
+        }
+
+        if (!imageEntities.isEmpty()) {
+            productImageRepository.saveAll(imageEntities);
         }
     }
 }
