@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft,
@@ -8,17 +8,15 @@ import {
     Bold,
     Italic,
     List,
-    Link2,
     ChevronDown,
     Image as ImageIcon,
-    GripVertical,
     Trash2,
     UploadCloud,
-    Palette,
-    PlusCircle,
     ToggleRight,
     DollarSign,
-    Loader2
+    Loader2,
+    Plus,
+    Star
 } from 'lucide-react';
 
 const DEFAULT_SIZES = ['S', 'M', 'L', 'XL', '2XL'];
@@ -27,9 +25,11 @@ export default function AdminProductForm() {
     const { id } = useParams();
     const isEditMode = Boolean(id);
     const navigate = useNavigate();
+    const fileInputRef = useRef(null);
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     // Form states
     const [name, setName] = useState('');
@@ -39,7 +39,7 @@ export default function AdminProductForm() {
     const [status, setStatus] = useState('ACTIVE');
     const [basePrice, setBasePrice] = useState('');
 
-    // Hình ảnh
+    // Danh sách hình ảnh: [{ id, url, isCover }]
     const [images, setImages] = useState([]);
 
     // Ma trận size & tồn kho
@@ -70,7 +70,6 @@ export default function AdminProductForm() {
     // 1. Tải dữ liệu khi ở chế độ Edit
     useEffect(() => {
         if (!isEditMode) {
-            // Chế độ New: reset về trạng thái trống
             setName('');
             setSlug('');
             setDescription('');
@@ -103,23 +102,21 @@ export default function AdminProductForm() {
                     // Map danh sách ảnh từ DTO
                     if (data.images && data.images.length > 0) {
                         setImages(data.images.map((img, i) => ({
-                            id: img.id || i,
-                            url: img.imageUrl,              // DTO trả về imageUrl
+                            id: img.id || `img-${Date.now()}-${i}`,
+                            url: img.imageUrl || img.url,
                             title: `Ảnh ${i + 1}`,
-                            isCover: img.isThumbnail        // DTO trả về isThumbnail
+                            isCover: img.isThumbnail ?? (i === 0)
                         })));
                     }
 
                     // Map tồn kho từng size
                     if (data.variants && data.variants.length > 0) {
                         setVariants(prev => prev.map(row => {
-                            // So sánh không phân biệt hoa thường và trim khoảng trắng
                             const found = data.variants.find(
                                 v => String(v.size).trim().toUpperCase() === String(row.size).trim().toUpperCase()
                             );
 
                             if (found) {
-                                // Lấy stockQuantity từ backend (hoặc stock nếu backend trả key là stock)
                                 const qty = found.stockQuantity !== undefined ? found.stockQuantity : (found.stock ?? 0);
                                 return {
                                     ...row,
@@ -142,6 +139,88 @@ export default function AdminProductForm() {
         fetchDetail();
     }, [id, isEditMode]);
 
+    // Xử lý chọn file ảnh từ máy tính & tải lên Cloudinary
+    const handleFileSelect = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        setIsUploadingImage(true);
+
+        // Đọc từng file sang Base64
+        const readFileAsBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = (err) => reject(err);
+                reader.readAsDataURL(file);
+            });
+        };
+
+        try {
+            const uploadedUrls = [];
+
+            for (const file of files) {
+                const base64Data = await readFileAsBase64(file);
+
+                // Gửi request upload lên backend Cloudinary
+                const res = await fetch('http://localhost:8080/api/v1/admin/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Data })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.url) {
+                        uploadedUrls.push(data.url);
+                    }
+                } else {
+                    // Dự phòng nếu endpoint riêng chưa bật: tạm lưu dạng Base64 để backend xử lý lúc lưu
+                    uploadedUrls.push(base64Data);
+                }
+            }
+
+            if (uploadedUrls.length > 0) {
+                setImages((prev) => {
+                    const newImages = uploadedUrls.map((url, idx) => ({
+                        id: `uploaded-${Date.now()}-${idx}`,
+                        url: url,
+                        isCover: prev.length === 0 && idx === 0 // Nếu danh sách đang trống thì ảnh đầu tiên làm bìa
+                    }));
+                    return [...prev, ...newImages];
+                });
+            }
+        } catch (err) {
+            console.error('Lỗi khi upload ảnh:', err);
+            alert('Có lỗi xảy ra khi tải ảnh lên Cloudinary.');
+        } finally {
+            setIsUploadingImage(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    // Đặt 1 ảnh làm ảnh bìa
+    const handleSetCover = (targetId) => {
+        setImages(prev => prev.map(img => ({
+            ...img,
+            isCover: img.id === targetId
+        })));
+    };
+
+    // Xóa ảnh khỏi danh sách
+    const handleRemoveImage = (targetId) => {
+        setImages(prev => {
+            const filtered = prev.filter(img => img.id !== targetId);
+            // Nếu ảnh bị xóa là ảnh bìa, tự động gán ảnh đầu tiên còn lại làm bìa
+            if (filtered.length > 0 && !filtered.some(img => img.isCover)) {
+                filtered[0].isCover = true;
+            }
+            return filtered;
+        });
+    };
+
     // Thay đổi số lượng tồn kho theo từng Size
     const handleStockChange = (size, qty) => {
         const val = Math.max(0, parseInt(qty, 10) || 0);
@@ -156,7 +235,10 @@ export default function AdminProductForm() {
         }
 
         setIsSaving(true);
-        const currentProductId = id || Date.now(); // Dùng id hiện tại hoặc timestamp nếu tạo mới
+        const currentProductId = id || Date.now();
+
+        // Đảm bảo ảnh bìa được sắp xếp lên đầu danh sách
+        const sortedImages = [...images].sort((a, b) => (b.isCover ? 1 : 0) - (a.isCover ? 1 : 0));
 
         const payload = {
             name: name.trim(),
@@ -165,9 +247,8 @@ export default function AdminProductForm() {
             categoryId: categoryId ? Number(categoryId) : 1,
             basePrice: parseFloat(basePrice) || 0,
             status: status ? status.toUpperCase() : 'ACTIVE',
-            imageUrls: images.map(img => img.url),
+            imageUrls: sortedImages.map(img => img.url),
             variants: variants.map(v => {
-                // Đảm bảo SKU luôn gắn liền với ID sản phẩm để không trùng nhau
                 const uniqueSku = (v.sku && !v.sku.startsWith('SKU-'))
                     ? v.sku
                     : `PRD${currentProductId}-${v.size.toUpperCase()}`;
@@ -217,6 +298,16 @@ export default function AdminProductForm() {
 
     return (
         <div className="p-6 md:p-8 space-y-6 max-w-[1600px] mx-auto">
+            {/* Input file ẩn dùng chung */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                multiple
+                accept="image/png, image/jpeg, image/webp"
+                className="hidden"
+            />
+
             {/* 1. Header Điều hướng */}
             <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-zinc-500 font-medium">
@@ -355,35 +446,98 @@ export default function AdminProductForm() {
                         </div>
                     </section>
 
-                    {/* Hình ảnh sản phẩm */}
+                    {/* Hình ảnh sản phẩm (Đã hoàn thiện thêm ảnh, đặt ảnh bìa, xóa ảnh) */}
                     <section className="bg-white rounded-2xl p-6 shadow-xs border border-zinc-200/70 space-y-4">
-                        <div>
-                            <h2 className="text-base font-bold text-zinc-950 flex items-center gap-2">
-                                <ImageIcon className="w-4 h-4 text-[#f0592a]" />
-                                <span>Hình ảnh sản phẩm</span>
-                            </h2>
-                            <p className="text-xs text-zinc-500">Ảnh đại diện và các góc chụp chi tiết.</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-3">
+                            <div>
+                                <h2 className="text-base font-bold text-zinc-950 flex items-center gap-2">
+                                    <ImageIcon className="w-4 h-4 text-[#f0592a]" />
+                                    <span>Hình ảnh sản phẩm ({images.length})</span>
+                                </h2>
+                                <p className="text-xs text-zinc-500">Ảnh đầu tiên hoặc ảnh được gắn sao là ảnh bìa.</p>
+                            </div>
+
+                            <button
+                                type="button"
+                                disabled={isUploadingImage}
+                                onClick={() => fileInputRef.current?.click()}
+                                className="px-3.5 py-2 bg-[#fefccf] hover:bg-[#faee9c] text-[#f0592a] border border-[#f0592a]/20 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer self-start sm:self-auto"
+                            >
+                                {isUploadingImage ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>Đang tải lên...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Plus className="w-4 h-4" />
+                                        <span>Tải thêm ảnh</span>
+                                    </>
+                                )}
+                            </button>
                         </div>
 
                         {images.length > 0 ? (
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                {images.map((img, idx) => (
-                                    <div key={idx} className="group relative rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200 aspect-square flex flex-col justify-between">
+                                {images.map((img) => (
+                                    <div
+                                        key={img.id}
+                                        className="group relative rounded-xl overflow-hidden bg-zinc-100 border border-zinc-200 aspect-square flex flex-col justify-between"
+                                    >
                                         <img src={img.url} alt="" className="w-full h-full object-cover" />
+
+                                        {/* Tag ảnh bìa */}
                                         {img.isCover && (
-                                            <div className="absolute top-2 left-2">
-                                                <span className="px-2 py-0.5 rounded-full bg-[#f0592a] text-white text-[9px] uppercase font-bold">
+                                            <div className="absolute top-2 left-2 z-10">
+                                                <span className="px-2 py-0.5 rounded-full bg-[#f0592a] text-white text-[9px] uppercase font-bold shadow-2xs flex items-center gap-1">
+                                                    <Star className="w-2.5 h-2.5 fill-current" />
                                                     Ảnh bìa
                                                 </span>
                                             </div>
                                         )}
+
+                                        {/* Thanh tác vụ khi hover */}
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-2">
+                                            {!img.isCover && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSetCover(img.id)}
+                                                    title="Đặt làm ảnh bìa"
+                                                    className="w-8 h-8 rounded-lg bg-white/90 hover:bg-white text-zinc-800 flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                                >
+                                                    <Star className="w-4 h-4 text-amber-500" />
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveImage(img.id)}
+                                                title="Xóa ảnh này"
+                                                className="w-8 h-8 rounded-lg bg-red-600/90 hover:bg-red-600 text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
+
+                                {/* Ô bấm thêm ảnh nhanh */}
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="rounded-xl border-2 border-dashed border-zinc-200 hover:border-[#f0592a] bg-zinc-50/50 hover:bg-[#faf8e4]/40 aspect-square flex flex-col items-center justify-center text-zinc-400 hover:text-[#f0592a] transition-all cursor-pointer"
+                                >
+                                    <Plus className="w-6 h-6 mb-1" />
+                                    <span className="text-[11px] font-bold">Thêm ảnh</span>
+                                </button>
                             </div>
                         ) : (
-                            <div className="rounded-xl p-6 text-center bg-[#faf8e4]/60 border-2 border-dashed border-[#f0592a]/30 flex flex-col items-center justify-center">
-                                <UploadCloud className="w-6 h-6 text-[#f0592a] mb-2" />
-                                <p className="text-xs font-bold text-zinc-900">Chưa có ảnh nào được tải lên</p>
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="rounded-xl p-8 text-center bg-[#faf8e4]/60 border-2 border-dashed border-[#f0592a]/30 flex flex-col items-center justify-center cursor-pointer hover:bg-[#faf8e4] transition-colors"
+                            >
+                                <UploadCloud className="w-8 h-8 text-[#f0592a] mb-2" />
+                                <p className="text-xs font-bold text-zinc-900">Bấm vào đây để tải ảnh lên</p>
+                                <p className="text-[10px] text-zinc-500 mt-1">Hỗ trợ định dạng PNG, JPG, WEBP (chọn nhiều ảnh cùng lúc)</p>
                             </div>
                         )}
                     </section>
@@ -407,9 +561,9 @@ export default function AdminProductForm() {
                                 {variants.map((v) => (
                                     <tr key={v.size} className="hover:bg-zinc-50/70">
                                         <td className="py-2.5 px-3 font-bold text-zinc-900">
-                                                <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-zinc-100 font-bold">
-                                                    {v.size}
-                                                </span>
+                                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-zinc-100 font-bold">
+                                                {v.size}
+                                            </span>
                                         </td>
                                         <td className="py-2.5 px-3 font-mono text-zinc-600">{v.sku}</td>
                                         <td className="py-2.5 px-3 text-right">

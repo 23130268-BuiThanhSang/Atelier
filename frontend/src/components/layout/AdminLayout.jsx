@@ -1,19 +1,67 @@
-import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutGrid,
     Shirt,
     ReceiptText,
     Users,
     LogOut,
-    Search,
-    Bell,
-    Scissors
+    AlertTriangle,
+    X
 } from 'lucide-react';
 import logo from "../../assets/logo.png";
 
 export default function AdminLayout() {
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const [adminUser, setAdminUser] = useState({
+        name: 'Quản trị viên',
+        roleTitle: 'Quản trị viên',
+        initialLetter: 'A'
+    });
+
+    // Quản lý trạng thái mở modal xác nhận đăng xuất
+    const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+
+    // 1. Tải thông tin tài khoản admin từ localStorage khi mở trang
+    useEffect(() => {
+        let fullName = localStorage.getItem('userName') || '';
+
+        try {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const parsed = JSON.parse(storedUser);
+                fullName = parsed.fullName || parsed.name || parsed.username || fullName;
+            }
+        } catch (e) {
+            console.error('Không thể đọc dữ liệu user từ localStorage:', e);
+        }
+
+        const displayName = fullName.trim() || 'Quản trị viên';
+        const initial = displayName.charAt(0).toUpperCase();
+
+        setAdminUser({
+            name: displayName,
+            roleTitle: 'Quản trị viên',
+            initialLetter: initial
+        });
+    }, []);
+
+    // 2. Thực hiện đăng xuất khi người dùng bấm xác nhận trên Modal
+    const confirmLogout = () => {
+        setIsLogoutModalOpen(false);
+
+        // Dọn sạch toàn bộ token và thông tin session đăng nhập
+        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('role');
+
+        navigate('/login', { replace: true });
+    };
 
     const navItems = [
         { label: 'Bảng điều khiển', path: '/admin', icon: LayoutGrid },
@@ -37,9 +85,9 @@ export default function AdminLayout() {
                             />
                         </span>
                         <div className="flex flex-col min-w-0">
-              <span className="font-bold text-sm tracking-wider uppercase text-zinc-950 truncate">
-                Quản trị viên
-              </span>
+                            <span className="font-bold text-sm tracking-wider uppercase text-zinc-950 truncate">
+                                Quản trị viên
+                            </span>
                         </div>
                     </div>
 
@@ -72,17 +120,23 @@ export default function AdminLayout() {
                 <div className="p-3 border-t border-zinc-100 bg-white">
                     <div className="flex items-center justify-between p-2 rounded-xl bg-zinc-50 border border-zinc-200/60">
                         <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-[#f0592a] text-white flex items-center justify-center font-bold text-xs shrink-0">
-                                M
+                            <div className="w-8 h-8 rounded-full bg-[#f0592a] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                                {adminUser.initialLetter}
                             </div>
                             <div className="flex flex-col min-w-0">
-                                <span className="text-xs font-semibold text-zinc-900 truncate">Mai Thất Nghiệp</span>
-                                <span className="text-[10px] text-zinc-500 truncate">Quản trị viên</span>
+                                <span className="text-xs font-semibold text-zinc-900 truncate" title={adminUser.name}>
+                                    {adminUser.name}
+                                </span>
+                                <span className="text-[10px] text-zinc-500 truncate">
+                                    {adminUser.roleTitle}
+                                </span>
                             </div>
                         </div>
                         <button
+                            type="button"
+                            onClick={() => setIsLogoutModalOpen(true)}
                             title="Đăng xuất"
-                            className="p-1.5 text-zinc-400 hover:text-[#f0592a] hover:bg-zinc-100 rounded-lg transition-colors"
+                            className="p-1.5 text-zinc-400 hover:text-[#f0592a] hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
                         >
                             <LogOut className="w-4 h-4" />
                         </button>
@@ -99,10 +153,12 @@ export default function AdminLayout() {
                     <div className="flex items-center gap-4">
                         <div className="h-5 w-px bg-zinc-200"></div>
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-[#f0592a] text-white flex items-center justify-center font-bold text-xs">
-                                M
+                            <div className="w-8 h-8 rounded-full bg-[#f0592a] text-white flex items-center justify-center font-bold text-xs shadow-2xs">
+                                {adminUser.initialLetter}
                             </div>
-                            <span className="text-xs font-semibold text-zinc-800 hidden md:inline">Mai Thất Nghiệp</span>
+                            <span className="text-xs font-semibold text-zinc-800 hidden md:inline">
+                                {adminUser.name}
+                            </span>
                         </div>
                     </div>
                 </header>
@@ -112,6 +168,57 @@ export default function AdminLayout() {
                     <Outlet />
                 </main>
             </div>
+
+            {/* MODAL XÁC NHẬN ĐĂNG XUẤT NẰM GIỮA MÀN HÌNH */}
+            {isLogoutModalOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/45 backdrop-blur-xs p-4 animate-fadeIn"
+                    onClick={() => setIsLogoutModalOpen(false)}
+                >
+                    <div
+                        className="bg-white rounded-3xl shadow-2xl border border-zinc-200/80 max-w-sm w-full p-6 relative overflow-hidden flex flex-col items-center text-center transform transition-all animate-scaleUp"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Nút X đóng góc phải */}
+                        <button
+                            type="button"
+                            onClick={() => setIsLogoutModalOpen(false)}
+                            className="absolute top-4 right-4 w-8 h-8 rounded-xl text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 flex items-center justify-center transition-colors cursor-pointer"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+
+                        {/* Icon cảnh báo */}
+                        <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200/80 flex items-center justify-center mb-3.5 shadow-2xs">
+                            <AlertTriangle className="w-7 h-7" />
+                        </div>
+
+                        {/* Tiêu đề & Nội dung */}
+                        <h3 className="text-base font-bold text-zinc-950">
+                            Xác nhận đăng xuất?
+                        </h3>
+
+                        {/* Cụm nút hành động */}
+                        <div className="w-full grid grid-cols-2 gap-2.5 mt-6">
+                            <button
+                                type="button"
+                                onClick={() => setIsLogoutModalOpen(false)}
+                                className="w-full py-2.5 px-3 rounded-xl border border-zinc-200 text-zinc-700 hover:bg-zinc-100 text-xs font-bold transition-all active:scale-[0.98] cursor-pointer"
+                            >
+                                Hủy bỏ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmLogout}
+                                className="w-full py-2.5 px-3 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                                <span>Đăng xuất</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

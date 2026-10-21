@@ -21,14 +21,14 @@ public class AdminProductDetailDto {
     public record ImageDto(
             Long id,
             String imageUrl,
-            boolean isThumbnail
+            Boolean isThumbnail
     ) {}
 
     public record VariantDto(
             Long id,
             String size,
             String sku,
-            int stockQuantity
+            Integer stockQuantity
     ) {}
 
     public record UpsertRequest(
@@ -45,6 +45,6 @@ public class AdminProductDetailDto {
     public record VariantUpsertDto(
             String size,
             String sku,
-            int stockQuantity
+            Integer stockQuantity
     ) {}
 }
