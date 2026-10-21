@@ -12,7 +12,8 @@ import {
     Layers,
     Loader2,
     AlertCircle,
-    Sparkles
+    Sparkles,
+    FileText
 } from 'lucide-react';
 import { designApi } from '../../api/designApi';
 
@@ -27,7 +28,25 @@ export default function MyDesigns() {
         setIsLoading(true);
         setIsError(false);
         try {
-            const data = await designApi.getMyDesigns();
+            // Lấy ID người dùng đang đăng nhập từ localStorage
+            let currentUserId = null;
+            try {
+                const storedUser = localStorage.getItem('user');
+                if (storedUser) {
+                    const parsed = JSON.parse(storedUser);
+                    currentUserId = parsed.id || parsed.userId;
+                }
+            } catch (e) {
+                console.error('Không thể đọc user từ localStorage', e);
+            }
+
+            // Nếu lưu trực tiếp userId ở key riêng:
+            if (!currentUserId) {
+                currentUserId = localStorage.getItem('userId');
+            }
+
+            // Gọi API với đúng ID tài khoản đang xem
+            const data = await designApi.getMyDesigns(currentUserId);
             setDesigns(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error('Lỗi khi tải danh sách thiết kế:', err);
@@ -101,13 +120,26 @@ export default function MyDesigns() {
                     </div>
                 </div>
 
-                <Link
-                    to="/design-studio"
-                    className="px-4 py-2.5 bg-[#f0592a] hover:bg-[#d94a1f] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-[0.98] shrink-0"
-                >
-                    <Plus className="w-4 h-4" />
-                    <span>Tạo mẫu thiết kế mới</span>
-                </Link>
+                {/* KHU VỰC CÁC NÚT ĐIỀU HƯỚNG */}
+                <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+                    {/* NÚT XEM ĐƠN THIẾT KẾ (NẰM BÊN TRÁI NÚT TẠO MỚI) */}
+                    <Link
+                        to="/my-production-requests"
+                        className="px-4 py-2.5 bg-white hover:bg-zinc-50 text-zinc-800 border border-zinc-200/80 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all active:scale-[0.98]"
+                    >
+                        <FileText className="w-4 h-4 text-[#f0592a]" />
+                        <span>Xem đơn thiết kế</span>
+                    </Link>
+
+                    {/* NÚT TẠO MẪU THIẾT KẾ MỚI */}
+                    <Link
+                        to="/design-studio"
+                        className="px-4 py-2.5 bg-[#f0592a] hover:bg-[#d94a1f] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-[0.98] shrink-0"
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span>Tạo mẫu thiết kế mới</span>
+                    </Link>
+                </div>
             </div>
 
             {/* TRẠNG THÁI ĐANG TẢI */}
