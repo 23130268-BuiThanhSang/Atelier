@@ -99,33 +99,33 @@ export default function Home() {
 
   return (
       <div className="overflow-hidden bg-[#fefccf]">
-        {/* HERO: tương phản tối-sáng rõ rệt để không hòa màu với Header màu vàng/cam. */}
-        <section className="relative isolate overflow-hidden border-b border-zinc-800 bg-zinc-950 text-white">
+        {/* HERO: nền sáng cùng hệ màu vàng kem, được phân tách với Header bằng đường viền dịu. */}
+        <section className="relative isolate overflow-hidden border-b border-[#eadb9b] bg-gradient-to-br from-white via-[#fffdf0] to-[#fefccf] text-zinc-950">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -right-28 -top-36 h-[28rem] w-[28rem] rounded-full bg-[#f0592a]/25 blur-3xl motion-safe:animate-pulse" />
-            <div className="absolute -bottom-44 left-[28%] h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.08)_1px,transparent_0)] bg-[size:28px_28px] opacity-30" />
+            <div className="absolute -right-28 -top-36 h-[28rem] w-[28rem] rounded-full bg-[#f0592a]/15 blur-3xl motion-safe:animate-pulse" />
+            <div className="absolute -bottom-44 left-[28%] h-96 w-96 rounded-full bg-amber-300/25 blur-3xl" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(120,80,20,0.08)_1px,transparent_0)] bg-[size:28px_28px] opacity-50" />
           </div>
 
           <Container className="relative py-12 sm:py-16 lg:py-20">
             <div className="grid items-center gap-12 lg:grid-cols-[1.03fr_0.97fr] lg:gap-14">
               <div className="atelier-fade-up relative z-10">
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#f0592a]/40 bg-[#f0592a]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.17em] text-[#ffb297] shadow-lg shadow-[#f0592a]/10">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#f0592a]/30 bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.17em] text-[#c94a1f] shadow-sm shadow-[#f0592a]/10 backdrop-blur">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff9d75] opacity-70" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-[#f0592a]" />
                 </span>
-                  Custom Apparel Production Marketplace
+                  THIẾT KẾ VÀ SẢN XUẤT TRANG PHỤC
                 </div>
 
-                <h1 className="max-w-3xl text-4xl font-black leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                <h1 className="max-w-3xl text-4xl font-black leading-[1.08] tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl">
                   Từ ý tưởng đến
-                  <span className="mt-1 block bg-gradient-to-r from-[#ff8b62] via-[#ffb36b] to-amber-200 bg-clip-text text-transparent">
+                  <span className="mt-1 block bg-gradient-to-r from-[#d94a1f] via-[#f0592a] to-[#b45309] bg-clip-text text-transparent">
                   sản phẩm thực tế.
                 </span>
                 </h1>
 
-                <p className="mt-6 max-w-xl text-base leading-7 text-zinc-300 sm:text-lg sm:leading-8">
+                <p className="mt-6 max-w-xl text-base leading-7 text-zinc-600 sm:text-lg sm:leading-8">
                   Tự do sáng tạo trang phục, xem trước ý tưởng và khám phá sản phẩm — tất cả bắt đầu từ Atelier.
                 </p>
 
@@ -136,24 +136,24 @@ export default function Home() {
                     </Button>
                   </Link>
                   <Link to="/catalog" className="group">
-                    <Button variant="outline" size="lg" className="w-full rounded-xl border-white bg-white px-6 py-3.5 font-bold text-zinc-950 shadow-md shadow-black/10 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#fefccf] hover:bg-[#fefccf] hover:text-zinc-950 hover:shadow-lg sm:w-auto">
+                    <Button variant="outline" size="lg" className="w-full rounded-xl border-[#e3d49b] bg-white px-6 py-3.5 font-bold text-zinc-950 shadow-md shadow-zinc-900/5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#f0592a] hover:bg-[#fff7db] hover:text-zinc-950 hover:shadow-lg sm:w-auto">
                       Khám phá sản phẩm <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">↗</span>
                     </Button>
                   </Link>
                 </div>
 
-                <div className="mt-10 grid max-w-lg grid-cols-3 gap-3 border-t border-white/10 pt-6">
+                <div className="mt-10 grid max-w-lg grid-cols-3 gap-3 border-t border-[#e6d9a2] pt-6">
                   <div>
-                    <p className="text-xl font-black text-white sm:text-2xl">01</p>
-                    <p className="mt-1 text-xs leading-5 text-zinc-400 sm:text-sm">Tạo ý tưởng</p>
+                    <p className="text-xl font-black text-zinc-950 sm:text-2xl">01</p>
+                    <p className="mt-1 text-xs leading-5 text-zinc-600 sm:text-sm">Tạo ý tưởng</p>
                   </div>
                   <div>
-                    <p className="text-xl font-black text-white sm:text-2xl">02</p>
-                    <p className="mt-1 text-xs leading-5 text-zinc-400 sm:text-sm">Xem trước</p>
+                    <p className="text-xl font-black text-zinc-950 sm:text-2xl">02</p>
+                    <p className="mt-1 text-xs leading-5 text-zinc-600 sm:text-sm">Xem trước</p>
                   </div>
                   <div>
-                    <p className="text-xl font-black text-white sm:text-2xl">03</p>
-                    <p className="mt-1 text-xs leading-5 text-zinc-400 sm:text-sm">Tìm sản phẩm</p>
+                    <p className="text-xl font-black text-zinc-950 sm:text-2xl">03</p>
+                    <p className="mt-1 text-xs leading-5 text-zinc-600 sm:text-sm">Tìm sản phẩm</p>
                   </div>
                 </div>
               </div>
@@ -178,13 +178,13 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="absolute -left-3 top-8 hidden rounded-2xl border border-white/15 bg-zinc-900/90 px-4 py-3 shadow-xl backdrop-blur transition-transform duration-300 hover:-translate-y-1 sm:block lg:-left-8">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-400">Your idea</p>
-                  <p className="mt-1 text-sm font-bold text-white">Your signature</p>
+                <div className="absolute -left-3 top-8 hidden rounded-2xl border border-[#eadb9b] bg-white/95 px-4 py-3 shadow-xl backdrop-blur transition-transform duration-300 hover:-translate-y-1 sm:block lg:-left-8">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-zinc-500">Ý tưởng của bạn</p>
+                  <p className="mt-1 text-sm font-bold text-zinc-950">Dấu ấn riêng</p>
                 </div>
                 <div className="absolute -bottom-4 right-5 rounded-2xl border border-white/20 bg-white px-4 py-3 text-zinc-950 shadow-xl transition-transform duration-300 hover:translate-y-1 sm:right-8">
-                  <p className="text-xs font-semibold text-zinc-500">From concept to creation</p>
-                  <p className="mt-1 flex items-center gap-2 text-sm font-extrabold"><span className="text-[#f0592a]">✦</span> Made for your vision</p>
+                  <p className="text-xs font-semibold text-zinc-500">Từ ý tưởng đến thành phẩm</p>
+                  <p className="mt-1 flex items-center gap-2 text-sm font-extrabold"><span className="text-[#f0592a]">✦</span> Hiện thực hóa ý tưởng</p>
                 </div>
               </div>
             </div>
