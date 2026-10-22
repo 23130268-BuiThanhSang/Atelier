@@ -19,8 +19,9 @@ public class DesignController {
     private final DesignService designService;
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> saveDesign(@RequestBody SaveDesignRequest req) {
-        return ResponseEntity.ok(designService.saveDesign(req, 1L));
+    public ResponseEntity<?> saveDesign(@RequestBody SaveDesignRequest request, @RequestParam(required = false) Long userId) {
+        Long actualUserId = (request.userId() != null) ? request.userId() : userId;
+        return ResponseEntity.ok(designService.saveDesign(request, actualUserId));
     }
 
     @GetMapping("/my-designs")

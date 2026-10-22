@@ -594,8 +594,17 @@ export default function DesignStudio() {
         // Tạo ảnh ghép Mặt Trước (Trái) + Mặt Sau (Phải) để tải lên Cloudinary
         const previewDataUrl = await generateCombinedPreviewImage();
 
+        // Lấy id user đang đăng nhập từ localStorage
+        let currentUserId = null;
+
+        try {
+            const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+            currentUserId = storedUser.id || storedUser.userId || null;
+        } catch (e) {}
+
         const payload = {
             designId: editingDesignId ? Number(editingDesignId) : null, // Gửi designId để tăng version_number
+            userId: currentUserId,
             name: designTitle || "Mẫu áo chưa đặt tên",
             garmentId: 1,
             garmentColor: garmentColor,

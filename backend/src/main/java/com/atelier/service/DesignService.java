@@ -158,10 +158,13 @@ public class DesignService {
 
     @Transactional(readOnly = true)
     public List<MyDesignResponse> getMyDesigns(Long userId) {
-        List<Design> designs = (userId != null)
-                ? designRepository.findByUserIdOrderByIdDesc(userId)
-                : designRepository.findAllByOrderByIdDesc();
+        if (userId == null) {
+            log.warn("getMyDesigns: userId bị null, không thể tải thiết kế cá nhân.");
+            return List.of(); // Trả về mảng rỗng thay vì nạp tất cả thiết kế của người khác
+        }
 
+        // Chỉ tìm các thiết kế thuộc sở hữu của chính User này
+        List<Design> designs = designRepository.findByUserIdOrderByIdDesc(userId);
         return designs.stream().map(this::mapToMyDesignResponse).toList();
     }
 
