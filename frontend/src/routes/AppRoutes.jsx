@@ -51,7 +51,7 @@ export default function AppRoutes() {
                 <Route path="/design-studio/:id/proposals" element={<DesignProposals />} />
                 <Route path="/my_profile" element={<MyProfile />} />
                 <Route path="/community-designs" element={<PublicDesigns />} />
-                <Route path="/order_detail" element={<OrderDetail />} />
+                <Route path="/order_detail/:id" element={<OrderDetail />} />
             </Route>
 
             <Route element={<AuthLayout />}>

@@ -14,29 +14,22 @@ export default function OrderDetail() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // GỌI API THẬT: fetch(`http://localhost:8080/api/orders/${id}`)
+        if (!id) return;
 
-        // Hiện tại dùng MOCK DATA để xem giao diện
-        setTimeout(() => {
-            setOrder({
-                id: id || "ORD-261020-001",
-                orderCode: "ATL-88392-XC",
-                status: "IN_PROGRESS", // Các trạng thái: PENDING, IN_PROGRESS, DELIVERING, COMPLETED, CANCELLED
-                subtotal: 15000000,
-                shippingFee: 500000,
-                totalAmount: 15500000,
-                shippingName: "Phạm Thanh An",
-                shippingPhone: "0901234567",
-                shippingAddress: "Tòa nhà Bitexco, Số 2 Hải Triều, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
-                createdAt: "2026-10-20T10:30:00",
-                partnerName: "Xưởng May Vina",
-                items: [
-                    { id: 1, name: "Gia công Áo sơ mi nam cao cấp", quantity: 100, price: 120000, total: 12000000, image: "https://placehold.co/100x100/f6eed2/f0592a?text=Shirt" },
-                    { id: 2, name: "In lụa Logo họa tiết 3D", quantity: 100, price: 30000, total: 3000000, image: "https://placehold.co/100x100/f6eed2/f0592a?text=Print" }
-                ]
+        // GỌI API THẬT LẤY CHI TIẾT
+        fetch(`http://localhost:8080/api/orders/${id}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Không tìm thấy đơn hàng");
+                return res.json();
+            })
+            .then(data => {
+                setOrder(data); // Đưa Object JSON thật vào State
+                setIsLoading(false);
+            })
+            .catch(err => {
+                console.error("Lỗi lấy chi tiết đơn hàng:", err);
+                setIsLoading(false);
             });
-            setIsLoading(false);
-        }, 800);
     }, [id]);
 
     const formatCurrency = (amount) => {

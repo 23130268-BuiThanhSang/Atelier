@@ -17,23 +17,27 @@ export default function MyOrder() {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        // Lấy Role từ LocalStorage để biết là Designer hay Producer
         const role = localStorage.getItem('userRole') || 'DESIGNER';
         setUserRole(role);
 
-        // GỌI API LẤY DANH SÁCH ĐƠN HÀNG (Thay thế URL bằng API thật của bạn)
-        // fetch(`http://localhost:8080/api/orders/user/${localStorage.getItem('userEmail')}`)
+        const userEmail = localStorage.getItem('userEmail');
+        if (!userEmail) return;
 
-        // MOCK DATA MẪU
-        setTimeout(() => {
-            setOrders([
-                { id: 'ORD-261020-001', orderCode: 'ATL-88392-XC', date: '2026-10-20T10:30:00', status: 'COMPLETED', total: 15500000, partnerName: 'Xưởng May Vina', itemsCount: 2 },
-                { id: 'ORD-260915-002', orderCode: 'ATL-55110-AB', date: '2026-09-15T09:15:00', status: 'IN_PROGRESS', total: 45000000, partnerName: 'In Lụa Cao Cấp', itemsCount: 1 },
-                { id: 'ORD-260905-003', orderCode: 'ATL-99221-ZZ', date: '2026-09-05T14:45:00', status: 'PENDING', total: 8500000, partnerName: 'Công ty TNHH Vải Đẹp', itemsCount: 3 },
-                { id: 'ORD-260801-004', orderCode: 'ATL-11002-MM', date: '2026-08-01T16:20:00', status: 'CANCELLED', total: 12000000, partnerName: 'Xưởng Phụ Liệu Kim', itemsCount: 5 }
-            ]);
-            setIsLoading(false);
-        }, 600);
+        // GỌI API THẬT
+        fetch(`http://localhost:8080/api/orders/user?email=${userEmail}`)
+            .then(res => {
+                if (!res.ok) throw new Error("Lỗi khi tải danh sách đơn hàng");
+                return res.json();
+            })
+            .then(data => {
+                setOrders(data); // Đưa mảng JSON thật vào State
+                setIsLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setIsLoading(false);
+                // Báo lỗi cho người dùng nếu cần
+            });
     }, []);
 
     // Format tiền tệ và ngày tháng
@@ -133,7 +137,7 @@ export default function MyOrder() {
                                 {filteredOrders.map(order => (
                                     <div
                                         key={order.id}
-                                        onClick={() => navigate(`/order_detail/`)} // ${order.id}
+                                        onClick={() => navigate(`/order_detail/${order.id}`)}
                                         className="flex flex-col md:flex-row md:items-center justify-between p-5 rounded-xl border border-zinc-200 bg-white hover:border-[#f0592a] hover:shadow-md transition-all cursor-pointer group"
                                     >
 
