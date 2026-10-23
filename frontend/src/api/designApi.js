@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 export const designApi = {
-    getMyDesigns: (userId) =>
-        axios.get('/api/v1/designs/my-designs', { params: { userId } }).then((res) => res.data),
+    getMyDesigns: (userId) => {
+        const url = userId ? `/api/v1/designs/my-designs?userId=${userId}` : '/api/v1/designs/my-designs';
+        return axios.get(url).then((res) => res.data);
+    },
 
     getById: (id) =>
         axios.get(`/api/v1/designs/${id}`).then((res) => res.data),

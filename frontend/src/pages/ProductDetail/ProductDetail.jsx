@@ -118,11 +118,11 @@ export default function ProductDetail() {
 
     try {
       const response = await cartApi.addItem(
-        {
-          variantId: selectedVariant.id,
-          quantity,
-        },
-        userId
+          {
+            variantId: selectedVariant.id,
+            quantity,
+          },
+          userId
       )
       // Cập nhật badge giỏ hàng trên Header ngay lập tức
       if (response?.itemCount !== undefined) {
@@ -131,8 +131,8 @@ export default function ProductDetail() {
       showToast('Đã thêm sản phẩm vào giỏ hàng.')
     } catch (error) {
       showToast(
-        error.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng.',
-        'error'
+          error.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng.',
+          'error'
       )
     }
   }
@@ -315,10 +315,12 @@ export default function ProductDetail() {
                 {selectedVariant && (
                     <div className="rounded-xl bg-[#faf7ee] p-4 text-sm">
                       <p className="font-semibold text-zinc-950">SKU: {selectedVariant.sku}</p>
-                      <p className="mt-1 text-zinc-600">
-                        {selectedVariant.stockQuantity > 0
-                            ? `Còn ${selectedVariant.stockQuantity} sản phẩm`
-                            : 'Hết hàng'}
+                      <p className={`mt-1 font-medium ${Number(selectedVariant.stockQuantity) <= 0 ? 'text-red-600' : Number(selectedVariant.stockQuantity) < 5 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                        {Number(selectedVariant.stockQuantity) <= 0
+                            ? 'Hết hàng'
+                            : Number(selectedVariant.stockQuantity) < 5
+                                ? 'Sắp hết hàng'
+                                : 'Còn hàng'}
                       </p>
                     </div>
                 )}
@@ -437,10 +439,10 @@ export default function ProductDetail() {
           </section>
 
           <Toast
-            open={toast?.open}
-            message={toast?.message || ''}
-            variant={toast?.variant || 'success'}
-            onClose={() => setToast(null)}
+              open={toast?.open}
+              message={toast?.message || ''}
+              variant={toast?.variant || 'success'}
+              onClose={() => setToast(null)}
           />
         </Container>
       </div>

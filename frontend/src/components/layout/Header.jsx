@@ -5,7 +5,6 @@ import logo from "../../assets/logo.png";
 const baseNavItems = [
     { to: '/', label: 'Trang chủ', end: true },
     { to: '/catalog', label: 'Sản phẩm' },
-    { to: '/community-designs', label: 'Cộng đồng' },
     { to: '/my-orders', label: 'Đơn hàng' },
 ]
 
@@ -169,12 +168,15 @@ export default function Header({ cartCount = 0 }) {
 
     // Nếu role là PRODUCER thì chèn thêm mục "Bảng điều khiển" vào bên phải mục "Đơn hàng"
     const isProducer = userRole.includes('PRODUCER')
-    const isDesigner = userRole.includes('DESIGNER')
     const dynamicItem = isProducer
         ? { to: '/producer_dashboard', label: 'Bảng điều khiển' }
         : { to: '/my-designs', label: 'Thiết kế của tôi' }
 
-    const navItems = [...baseNavItems, dynamicItem]
+    const lastItem = isProducer
+        ? { to: '/producer-requests', label: 'Yêu cầu sản xuất' }
+        : { to: '/community-designs', label: 'Cộng đồng' }
+
+    const navItems = [...baseNavItems, dynamicItem, lastItem]
 
     // Cấu hình linh hoạt: Đã đăng nhập thì hiện tên và link tới /profile, chưa thì hiện 'Đăng nhập' và link /login
     const accountLabel = userName || 'Đăng nhập'

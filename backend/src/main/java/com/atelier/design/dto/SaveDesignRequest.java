@@ -4,6 +4,7 @@ import java.util.List;
 
 public record SaveDesignRequest(
         Long designId, // null nếu tạo mới, có giá trị nếu đang chỉnh sửa thiết kế cũ
+        Long userId,
         String name,
         Long garmentId,
         String garmentColor,

@@ -32,6 +32,15 @@ const PRODUCTS_PER_PAGE = 12
 
 const DEFAULT_SORT = 'recommended'
 
+function normalizePriceFilterValue(value) {
+    if (value === '' || value == null) return ''
+
+    const price = Number(value)
+    if (!Number.isFinite(price)) return ''
+
+    return String(Math.max(0, price))
+}
+
 const SORT_OPTIONS = [
     {
         value: 'recommended',
@@ -114,10 +123,12 @@ export default function Catalog() {
     const [filters, setFilters] = useState({
         categoryId:
             searchParams.get('category') || '',
-        minPrice:
+        minPrice: normalizePriceFilterValue(
             searchParams.get('minPrice') || '',
-        maxPrice:
+        ),
+        maxPrice: normalizePriceFilterValue(
             searchParams.get('maxPrice') || '',
+        ),
         color:
             searchParams.get('color') || '',
         size:
@@ -485,10 +496,14 @@ export default function Catalog() {
         name,
         value,
     ) => {
+        const nextValue = ['minPrice', 'maxPrice'].includes(name)
+            ? normalizePriceFilterValue(value)
+            : value
+
         setFilters(
             (previous) => ({
                 ...previous,
-                [name]: value,
+                [name]: nextValue,
             }),
         )
 
@@ -729,6 +744,8 @@ export default function Catalog() {
                             <div className="mt-2 grid grid-cols-2 gap-2">
                                 <Input
                                     type="number"
+                                    min={0}
+                                    step={100000}
                                     placeholder={`Từ ${filterOptions.minPrice.toLocaleString(
                                         'vi-VN',
                                     )}`}
@@ -748,6 +765,8 @@ export default function Catalog() {
 
                                 <Input
                                     type="number"
+                                    min={0}
+                                    step={100000}
                                     placeholder={`Đến ${filterOptions.maxPrice.toLocaleString(
                                         'vi-VN',
                                     )}`}

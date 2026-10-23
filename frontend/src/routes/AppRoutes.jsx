@@ -28,6 +28,9 @@ import OrderResolutionCenter from '../pages/Producer/OrderResolutionCenter';
 import DesignProposals from '../pages/DesignStudio/DesignProposals.jsx';
 import ResetPassword from "../pages/Login/ResetPassword.jsx";
 import PublicDesigns from '../pages/DesignStudio/PublicDesigns.jsx';
+import OrderDetail from "../pages/MyOrders/OrderDetail.jsx";
+import ProducerRequests from "../pages/Producer/ProducerRequests.jsx";
+import MyProductionRequests from '../pages/DesignStudio/MyProductionRequests';
 
 export default function AppRoutes() {
     return (
@@ -50,6 +53,9 @@ export default function AppRoutes() {
                 <Route path="/design-studio/:id/proposals" element={<DesignProposals />} />
                 <Route path="/my_profile" element={<MyProfile />} />
                 <Route path="/community-designs" element={<PublicDesigns />} />
+                <Route path="/order_detail/:id" element={<OrderDetail />} />
+                <Route path="/producer-requests" element={<ProducerRequests />} />
+                <Route path="/my-production-requests" element={<MyProductionRequests />} />
             </Route>
 
             <Route element={<AuthLayout />}>
