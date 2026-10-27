@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import {
     Sliders,
     Layers,
@@ -17,7 +17,13 @@ import {
 import { proposalApi } from '../../api/proposalApi';
 
 export default function DesignProposals() {
-    const { id: designId } = useParams();
+    const params = useParams();
+    const location = useLocation();
+
+    // Hỗ trợ bắt cả params :id lẫn :designId hoặc từ state điều hướng
+    const rawDesignId = params.id || params.designId || location.state?.designId;
+    const designId = rawDesignId && rawDesignId !== 'undefined' ? Number(rawDesignId) : null;
+
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [data, setData] = useState(null);
@@ -31,13 +37,35 @@ export default function DesignProposals() {
         { sizeLabel: '2XL', quantity: 0 },
     ]);
 
+    const getLoggedInUserId = () => {
+        try {
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const parsed = JSON.parse(storedUser);
+                const id = parsed.id || parsed.userId;
+                if (id) return Number(id);
+            }
+        } catch (e) {}
+        const directId = localStorage.getItem('userId') || localStorage.getItem('currentUserId');
+        return directId ? Number(directId) : null;
+    };
+
     const loadData = async () => {
+        if (!designId) {
+            console.warn('Không xác định được designId hợp lệ trên URL.');
+            setIsLoading(false);
+            return;
+        }
+
         setIsLoading(true);
         try {
-            const res = await proposalApi.getDetailForDesigner(designId);
-            setData(res);
-            if (res.sizeBreakdown && res.sizeBreakdown.length > 0) {
-                setSizeBreakdown(res.sizeBreakdown);
+            const currentUserId = getLoggedInUserId();
+            const res = await proposalApi.getDetailForDesigner(designId, currentUserId);
+            if (res) {
+                setData(res);
+                if (res.sizeBreakdown && res.sizeBreakdown.length > 0) {
+                    setSizeBreakdown(res.sizeBreakdown);
+                }
             }
         } catch (err) {
             console.error('Không thể nạp dữ liệu báo giá:', err);
@@ -65,25 +93,23 @@ export default function DesignProposals() {
             return;
         }
 
+        const currentUserId = getLoggedInUserId();
+
         setIsSubmitting(true);
         try {
-            // Lấy currentUserId từ localStorage
-            let currentUserId = null;
-            try {
-                const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-                currentUserId = storedUser.id || storedUser.userId;
-            } catch (e) {}
-
             const payload = {
                 designId: Number(designId),
-                designVersionId: data?.designVersionId || null,
-                garmentColor: data?.garmentColor || '#77C1F9',
+                designVersionId: data?.designVersionId || location.state?.versionId || null,
+                userId: currentUserId,
+                garmentColor: data?.garmentColor || location.state?.garmentColor || '#77C1F9',
                 printSides: data?.printSides || 'In Kỹ thuật số DTF 2 Mặt',
                 sizeQuantities: sizeBreakdown
             };
 
             const updated = await proposalApi.toggleStatus(payload, currentUserId);
-            setData(updated);
+            if (updated) {
+                setData(updated);
+            }
         } catch (err) {
             console.error('Lỗi cập nhật trạng thái nhận giá:', err);
             alert('Có lỗi xảy ra khi cập nhật trạng thái nhận giá. Vui lòng kiểm tra lại log Backend.');
@@ -104,6 +130,9 @@ export default function DesignProposals() {
     }
 
     const isOpen = data?.status === 'OPEN';
+    const displayTitle = data?.designName || location.state?.title || 'Mẫu thiết kế';
+    const displayPreview = data?.previewImageUrl || location.state?.previewUrl;
+    const displayColor = data?.garmentColor || location.state?.garmentColor || '#77C1F9';
 
     return (
         <div className="w-full bg-[#fefccf] min-h-screen py-6 px-3 sm:px-6 xl:px-12 space-y-6">
@@ -116,7 +145,7 @@ export default function DesignProposals() {
                         <span className="text-zinc-800">Nhận báo giá</span>
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950">
-                        {data?.designName || 'Mẫu thiết kế'}
+                        {displayTitle}
                     </h1>
                 </div>
 
@@ -146,7 +175,7 @@ export default function DesignProposals() {
             {/* 2. NỘI DUNG CHÍNH (TRÁI: THÔNG SỐ - PHẢI: BÁO GIÁ PRODUCER) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-                {/* CỘT TRÁI: QUY CÁCH THIẾT KẾ & SỐ LƯỢNG TỪNG SIZE (5 CỘT) */}
+                {/* CỘT TRÁI: QUY CÁCH THIẾT KẾ & SỐ LƯỢNG TỪNG SIZE */}
                 <div className="lg:col-span-5 bg-white rounded-3xl p-6 shadow-xs border border-zinc-200/70 space-y-6">
                     <div className="flex items-center gap-2 border-b border-zinc-100 pb-3">
                         <Sliders className="w-4 h-4 text-[#f0592a]" />
@@ -158,10 +187,10 @@ export default function DesignProposals() {
                     {/* Ảnh phôi phối cảnh 2 mặt */}
                     <div className="rounded-2xl border border-zinc-200/80 p-4 bg-zinc-50/50 flex flex-col items-center">
                         <div className="w-full h-56 rounded-xl overflow-hidden bg-white border border-zinc-100 flex items-center justify-center p-2">
-                            {data?.previewImageUrl ? (
+                            {displayPreview ? (
                                 <img
-                                    src={data.previewImageUrl}
-                                    alt="Phối cảnh 2 mặt"
+                                    src={displayPreview}
+                                    alt={displayTitle}
                                     className="w-full h-full object-contain"
                                 />
                             ) : (
@@ -180,9 +209,9 @@ export default function DesignProposals() {
                             <div className="flex items-center gap-1.5 font-bold text-zinc-800">
                                 <span
                                     className="w-4 h-4 rounded-full border border-black/10 inline-block"
-                                    style={{ backgroundColor: data?.garmentColor || '#77C1F9' }}
+                                    style={{ backgroundColor: displayColor }}
                                 />
-                                <span>{data?.garmentColor || '#77C1F9'}</span>
+                                <span>{displayColor}</span>
                             </div>
                         </div>
 
@@ -211,7 +240,7 @@ export default function DesignProposals() {
                     </div>
                 </div>
 
-                {/* CỘT PHẢI: DANH SÁCH BÁO GIÁ TỪ CÁC XƯỞNG MAY (7 CỘT) */}
+                {/* CỘT PHẢI: DANH SÁCH BÁO GIÁ TỪ CÁC XƯỞNG MAY */}
                 <div className="lg:col-span-7 space-y-4">
                     <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-900">
                         Báo giá từ các xưởng may ({data?.quotations?.length || 0})
@@ -242,7 +271,7 @@ export default function DesignProposals() {
                                         </div>
                                     )}
 
-                                    {/* Header của Báo giá: Profile xưởng & Đơn giá */}
+                                    {/* Header Báo giá */}
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
                                         <div className="flex items-center gap-3">
                                             <div className="w-12 h-12 rounded-2xl bg-zinc-100 overflow-hidden shrink-0 border border-zinc-200">
@@ -283,12 +312,12 @@ export default function DesignProposals() {
                                         </span>
                                     </div>
 
-                                    {/* Lời nhắn / Ghi chú kỹ thuật từ xưởng */}
+                                    {/* Ghi chú */}
                                     <div className="p-3.5 rounded-2xl bg-[#faf8e4]/60 border border-[#f0592a]/15 text-xs text-zinc-700 leading-relaxed italic">
                                         "{q.note}"
                                     </div>
 
-                                    {/* Thanh tác vụ: BỎ NÚT NHẮN TIN, NÚT CHẤP THUẬN GIỮ NGUYÊN GIAO DIỆN */}
+                                    {/* Thao tác Chấp thuận */}
                                     <div className="flex justify-end pt-1">
                                         <button
                                             type="button"

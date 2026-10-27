@@ -29,13 +29,19 @@ public class ProductionProposalService {
     private final UserRepository userRepository;
 
     /**
-     * 1. Lấy thông tin trang nhận báo giá cho Designer
+     * 1. Lấy thông tin trang nhận báo giá cho Designer (/design-studio/:id/proposals)
+     * Đảm bảo load trọn vẹn: Tên thiết kế, Ảnh xem trước, Màu áo, Trạng thái (OPEN/PAUSED) và Danh sách Báo giá
      */
     @Transactional(readOnly = true)
     public DesignerProposalDetailResponse getProposalDetailForDesigner(Long designId, Long currentUserId) {
+        if (designId == null || designId <= 0) {
+            throw new RuntimeException("Mã thiết kế (designId) không hợp lệ.");
+        }
+
         Design design = designRepository.findById(designId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thiết kế #" + designId));
 
+        // Lấy phiên bản mới nhất của thiết kế
         Optional<DesignVersion> latestVerOpt = designVersionRepository
                 .findTopByDesignIdOrderByVersionNumberDesc(designId);
 
@@ -60,71 +66,86 @@ public class ProductionProposalService {
         List<SizeQuantityDto> sizeList = defaultSizes;
         List<ProducerQuotationItemResponse> quotations = new ArrayList<>();
 
-        if (versionId != null) {
-            try {
-                // Khớp chính xác với cột request_code và requester_id
-                String findReqSql = "SELECT id, request_code, garment_color, print_sides, total_quantity, status " +
-                        "FROM production_requests WHERE design_version_id = ? ORDER BY id DESC LIMIT 1";
+        try {
+            // Truy vấn an toàn qua design_id: Không bao giờ bị mất đơn khi version nhảy số
+            String findReqSql = "SELECT r.id, r.request_code, r.garment_color, r.print_sides, r.total_quantity, r.status, " +
+                    "dv.id as matched_version_id, dv.version_number, dv.preview_image_url " +
+                    "FROM production_requests r " +
+                    "JOIN design_versions dv ON r.design_version_id = dv.id " +
+                    "WHERE dv.design_id = ? " +
+                    "ORDER BY r.id DESC LIMIT 1";
 
-                List<Map<String, Object>> reqRows = jdbcTemplate.queryForList(findReqSql, versionId);
+            List<Map<String, Object>> reqRows = jdbcTemplate.queryForList(findReqSql, designId);
 
-                if (!reqRows.isEmpty()) {
-                    Map<String, Object> reqRow = reqRows.get(0);
-                    requestId = ((Number) reqRow.get("id")).longValue();
-                    requestCode = (String) reqRow.get("request_code");
-                    status = reqRow.get("status") != null ? (String) reqRow.get("status") : "DRAFT";
-                    totalQty = reqRow.get("total_quantity") != null ? ((Number) reqRow.get("total_quantity")).intValue() : 0;
+            if (!reqRows.isEmpty()) {
+                Map<String, Object> reqRow = reqRows.get(0);
+                requestId = ((Number) reqRow.get("id")).longValue();
+                requestCode = (String) reqRow.get("request_code");
+                status = reqRow.get("status") != null ? (String) reqRow.get("status") : "DRAFT";
+                totalQty = reqRow.get("total_quantity") != null ? ((Number) reqRow.get("total_quantity")).intValue() : 0;
 
-                    // Lấy số lượng từng size từ production_request_items (cột request_id)
-                    try {
-                        String sizeSql = "SELECT size_label, quantity FROM production_request_items WHERE request_id = ?";
-                        List<SizeQuantityDto> dbSizes = jdbcTemplate.query(sizeSql, (rs, rowNum) ->
-                                new SizeQuantityDto(rs.getString("size_label"), rs.getInt("quantity")), requestId
-                        );
-                        if (!dbSizes.isEmpty()) {
-                            sizeList = dbSizes;
-                        }
-                    } catch (Exception e) {
-                        log.warn("Chưa đọc được production_request_items: {}", e.getMessage());
-                    }
-
-                    // Lấy danh sách báo giá theo thứ tự SỚM NHẤT (created_at ASC)
-                    try {
-                        String quoteSql = "SELECT q.id, q.producer_id, q.unit_price, q.total_amount, q.lead_time_days, " +
-                                "COALESCE(q.additional_conditions, '') as note, q.created_at, " +
-                                "COALESCE(p.business_name, u.full_name, 'Xưởng May Atelier') as producer_name, " +
-                                "p.logo_url, p.province " +
-                                "FROM quotations q " +
-                                "LEFT JOIN producer_profiles p ON q.producer_id = p.id " +
-                                "LEFT JOIN users u ON p.user_id = u.id " +
-                                "WHERE q.request_id = ? " +
-                                "ORDER BY q.created_at ASC";
-
-                        quotations = jdbcTemplate.query(quoteSql, (rs, rowNum) -> {
-                            Timestamp ts = rs.getTimestamp("created_at");
-                            return new ProducerQuotationItemResponse(
-                                    rs.getLong("id"),
-                                    rs.getLong("producer_id"),
-                                    rs.getString("producer_name"),
-                                    rs.getString("logo_url"),
-                                    "ĐÃ XÁC MINH",
-                                    4.9,
-                                    340,
-                                    rs.getString("province") != null ? "Trạm xưởng " + rs.getString("province") : "Trạm xưởng Atelier",
-                                    rs.getInt("lead_time_days") > 0 ? rs.getInt("lead_time_days") : 7,
-                                    rs.getBigDecimal("unit_price"),
-                                    rs.getBigDecimal("total_amount"),
-                                    rs.getString("note"),
-                                    ts != null ? ts.toLocalDateTime() : LocalDateTime.now()
-                            );
-                        }, requestId);
-                    } catch (Exception e) {
-                        log.warn("Chưa tải được quotations: {}", e.getMessage());
-                    }
+                if (reqRow.get("garment_color") != null) {
+                    garmentColor = (String) reqRow.get("garment_color");
                 }
-            } catch (Exception e) {
-                log.error("Lỗi getProposalDetail: {}", e.getMessage(), e);
+                if (previewUrl == null && reqRow.get("preview_image_url") != null) {
+                    previewUrl = (String) reqRow.get("preview_image_url");
+                }
+                if (reqRow.get("matched_version_id") != null) {
+                    versionId = ((Number) reqRow.get("matched_version_id")).longValue();
+                }
+                if (reqRow.get("version_number") != null) {
+                    versionNumber = ((Number) reqRow.get("version_number")).intValue();
+                }
+
+                // Lấy số lượng từng size từ production_request_items
+                try {
+                    String sizeSql = "SELECT size_label, quantity FROM production_request_items WHERE request_id = ?";
+                    List<SizeQuantityDto> dbSizes = jdbcTemplate.query(sizeSql, (rs, rowNum) ->
+                            new SizeQuantityDto(rs.getString("size_label"), rs.getInt("quantity")), requestId
+                    );
+                    if (!dbSizes.isEmpty()) {
+                        sizeList = dbSizes;
+                    }
+                } catch (Exception e) {
+                    log.warn("Chưa đọc được production_request_items: {}", e.getMessage());
+                }
+
+                // Lấy danh sách báo giá theo thứ tự SỚM NHẤT (created_at ASC)
+                try {
+                    String quoteSql = "SELECT q.id, q.producer_id, q.unit_price, q.total_amount, q.lead_time_days, " +
+                            "COALESCE(q.additional_conditions, '') as note, q.created_at, " +
+                            "COALESCE(p.business_name, u.full_name, 'Xưởng May Atelier') as producer_name, " +
+                            "p.logo_url, p.province " +
+                            "FROM quotations q " +
+                            "LEFT JOIN producer_profiles p ON q.producer_id = p.id " +
+                            "LEFT JOIN users u ON p.user_id = u.id " +
+                            "WHERE q.request_id = ? " +
+                            "ORDER BY q.created_at ASC";
+
+                    quotations = jdbcTemplate.query(quoteSql, (rs, rowNum) -> {
+                        Timestamp ts = rs.getTimestamp("created_at");
+                        return new ProducerQuotationItemResponse(
+                                rs.getLong("id"),
+                                rs.getLong("producer_id"),
+                                rs.getString("producer_name"),
+                                rs.getString("logo_url"),
+                                "ĐÃ XÁC MINH",
+                                4.9,
+                                340,
+                                rs.getString("province") != null ? "Trạm xưởng " + rs.getString("province") : "Trạm xưởng Atelier",
+                                rs.getInt("lead_time_days") > 0 ? rs.getInt("lead_time_days") : 7,
+                                rs.getBigDecimal("unit_price"),
+                                rs.getBigDecimal("total_amount"),
+                                rs.getString("note"),
+                                ts != null ? ts.toLocalDateTime() : LocalDateTime.now()
+                        );
+                    }, requestId);
+                } catch (Exception e) {
+                    log.warn("Chưa tải được quotations: {}", e.getMessage());
+                }
             }
+        } catch (Exception e) {
+            log.error("Lỗi getProposalDetail: {}", e.getMessage(), e);
         }
 
         return new DesignerProposalDetailResponse(
@@ -136,19 +157,30 @@ public class ProductionProposalService {
 
     /**
      * 2. Bật / Tắt nhận báo giá (Chuyển trạng thái giữa OPEN <-> PAUSED)
-     * Đã khớp chính xác 100% cột trong bảng production_requests & production_request_items
      */
     @Transactional
     public DesignerProposalDetailResponse toggleProposalStatus(StartProposalRequest req, Long currentUserId) {
-        Long userId = currentUserId != null ? currentUserId : 1L;
+        Long actualUserId = (currentUserId != null && currentUserId > 0)
+                ? currentUserId
+                : (req.userId() != null && req.userId() > 0 ? req.userId() : null);
 
-        // Lấy thông tin user để gán shipping_name, phone mặc định không bị null
-        User user = userRepository.findById(userId).orElse(null);
-        String shippingName = (user != null && user.getFullName() != null) ? user.getFullName() : "Designer Atelier";
-        String shippingPhone = (user != null && user.getPhone() != null) ? user.getPhone() : "0900000000";
+        // Lấy chủ nhân thực tế của thiết kế nếu chưa có actualUserId
+        if (actualUserId == null) {
+            try {
+                actualUserId = jdbcTemplate.queryForObject(
+                        "SELECT user_id FROM designs WHERE id = ?", Long.class, req.designId()
+                );
+            } catch (Exception ignored) {}
+        }
+        if (actualUserId == null) actualUserId = 1L;
+
+        User user = userRepository.findById(actualUserId).orElse(null);
+        String shippingName = (user != null && user.getFullName() != null && !user.getFullName().isBlank())
+                ? user.getFullName() : "Designer Atelier";
+        String shippingPhone = (user != null && user.getPhone() != null && !user.getPhone().isBlank())
+                ? user.getPhone() : "0900000000";
         String shippingAddress = "Xác nhận sau khi chốt xưởng";
 
-        // Tìm Design và Version
         Design design = designRepository.findById(req.designId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thiết kế #" + req.designId()));
 
@@ -162,9 +194,12 @@ public class ProductionProposalService {
 
         Long garmentId = (design.getGarment() != null) ? design.getGarment().getId() : 1L;
 
-        // Kiểm tra xem đơn đã tồn tại trong production_requests chưa
-        String checkSql = "SELECT id, status FROM production_requests WHERE design_version_id = ? ORDER BY id DESC LIMIT 1";
-        List<Map<String, Object>> rows = jdbcTemplate.queryForList(checkSql, targetVersionId);
+        // Tìm production_requests hiện có của thiết kế này
+        String checkSql = "SELECT r.id, r.status FROM production_requests r " +
+                "JOIN design_versions dv ON r.design_version_id = dv.id " +
+                "WHERE dv.design_id = ? " +
+                "ORDER BY r.id DESC LIMIT 1";
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList(checkSql, req.designId());
 
         Long requestId;
         String nextStatus;
@@ -174,21 +209,19 @@ public class ProductionProposalService {
                 : 0;
 
         String garmentColor = req.garmentColor() != null ? req.garmentColor() : "#77C1F9";
-        // Cột print_sides trong DB là varchar(10), dùng "BOTH" (cho 2 mặt) hoặc "FRONT"
         String dbPrintSides = "BOTH";
 
         if (rows.isEmpty()) {
             nextStatus = "OPEN";
             String code = "REQ" + (System.currentTimeMillis() % 10000000);
 
-            // INSERT đúng tên cột: request_code, requester_id, và kèm đủ shipping info
             String insertSql = "INSERT INTO production_requests " +
                     "(request_code, requester_id, design_version_id, garment_id, garment_color, print_sides, total_quantity, " +
                     "shipping_name, shipping_phone, shipping_address, status, created_at, updated_at) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
 
             jdbcTemplate.update(insertSql,
-                    code, userId, targetVersionId, garmentId, garmentColor, dbPrintSides, totalQty,
+                    code, actualUserId, targetVersionId, garmentId, garmentColor, dbPrintSides, totalQty,
                     shippingName, shippingPhone, shippingAddress, nextStatus
             );
 
@@ -199,12 +232,12 @@ public class ProductionProposalService {
             nextStatus = "OPEN".equalsIgnoreCase(currentStatus) ? "PAUSED" : "OPEN";
 
             String updateSql = "UPDATE production_requests " +
-                    "SET status = ?, total_quantity = ?, garment_color = ?, print_sides = ?, updated_at = NOW() " +
+                    "SET status = ?, total_quantity = ?, garment_color = ?, print_sides = ?, design_version_id = ?, updated_at = NOW() " +
                     "WHERE id = ?";
-            jdbcTemplate.update(updateSql, nextStatus, totalQty, garmentColor, dbPrintSides, requestId);
+            jdbcTemplate.update(updateSql, nextStatus, totalQty, garmentColor, dbPrintSides, targetVersionId, requestId);
         }
 
-        // Lưu chi tiết số lượng vào production_request_items (cột request_id)
+        // Lưu chi tiết số lượng vào production_request_items
         if (req.sizeQuantities() != null && !req.sizeQuantities().isEmpty()) {
             jdbcTemplate.update("DELETE FROM production_request_items WHERE request_id = ?", requestId);
 
@@ -218,7 +251,7 @@ public class ProductionProposalService {
             }
         }
 
-        return getProposalDetailForDesigner(req.designId(), userId);
+        return getProposalDetailForDesigner(req.designId(), actualUserId);
     }
 
     /**
