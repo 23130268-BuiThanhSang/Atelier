@@ -266,4 +266,117 @@ public class DesignService {
         List<Design> publicDesigns = designRepository.findByVisibilityIgnoreCaseOrderByIdDesc("PUBLIC");
         return publicDesigns.stream().map(this::mapToMyDesignResponse).toList();
     }
+
+    /**
+     * Xóa hoàn toàn một thiết kế trong Database:
+     * Dọn sạch toàn bộ các bảng liên đới (quotations, production_orders, production_requests, elements, versions, design)
+     * Đảm bảo không bị lỗi khóa ngoại khi thiết kế đã nhận báo giá hoặc đã lên đơn.
+     */
+    @Transactional
+    public void deleteDesign(Long designId, Long currentUserId) {
+        // 1. Kiểm tra tồn tại và quyền sở hữu
+        Design design = designRepository.findById(designId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thiết kế #" + designId));
+
+        if (currentUserId != null && currentUserId > 0) {
+            if (design.getUser() != null && !design.getUser().getId().equals(currentUserId)) {
+                throw new RuntimeException("Bạn không có quyền xóa thiết kế này!");
+            }
+        }
+
+        // 2. Lấy danh sách ID của các version thuộc thiết kế này
+        @SuppressWarnings("unchecked")
+        List<Long> versionIds = entityManager.createNativeQuery(
+                "SELECT id FROM design_versions WHERE design_id = ?"
+        ).setParameter(1, designId).getResultList();
+
+        try {
+            // Tạm thời tắt kiểm tra khóa ngoại trên connection hiện tại
+            entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
+
+            if (versionIds != null && !versionIds.isEmpty()) {
+                for (Object vIdObj : versionIds) {
+                    Long vId = ((Number) vIdObj).longValue();
+
+                    // 3.1 Xóa toàn bộ ảnh tiến độ sản xuất
+                    entityManager.createNativeQuery(
+                            "DELETE photo FROM production_progress_photos photo " +
+                                    "JOIN production_progress_updates up ON photo.progress_update_id = up.id " +
+                                    "JOIN production_orders po ON up.production_order_id = po.id " +
+                                    "WHERE po.design_version_id = ? OR po.request_id IN (" +
+                                    "   SELECT id FROM production_requests WHERE design_version_id = ?" +
+                                    ")"
+                    ).setParameter(1, vId).setParameter(2, vId).executeUpdate();
+
+                    // 3.2 Xóa cập nhật tiến độ
+                    entityManager.createNativeQuery(
+                            "DELETE up FROM production_progress_updates up " +
+                                    "JOIN production_orders po ON up.production_order_id = po.id " +
+                                    "WHERE po.design_version_id = ? OR po.request_id IN (" +
+                                    "   SELECT id FROM production_requests WHERE design_version_id = ?" +
+                                    ")"
+                    ).setParameter(1, vId).setParameter(2, vId).executeUpdate();
+
+                    // 3.3 Xóa chi tiết size của đơn sản xuất
+                    entityManager.createNativeQuery(
+                            "DELETE poi FROM production_order_items poi " +
+                                    "JOIN production_orders po ON poi.production_order_id = po.id " +
+                                    "WHERE po.design_version_id = ? OR po.request_id IN (" +
+                                    "   SELECT id FROM production_requests WHERE design_version_id = ?" +
+                                    ")"
+                    ).setParameter(1, vId).setParameter(2, vId).executeUpdate();
+
+                    // 3.4 Xóa đơn sản xuất (production_orders)
+                    entityManager.createNativeQuery(
+                            "DELETE FROM production_orders WHERE design_version_id = ? OR request_id IN (" +
+                                    "   SELECT id FROM production_requests WHERE design_version_id = ?" +
+                                    ")"
+                    ).setParameter(1, vId).setParameter(2, vId).executeUpdate();
+
+                    // 3.5 Xóa toàn bộ báo giá (quotations) gắn với các yêu cầu của thiết kế này
+                    entityManager.createNativeQuery(
+                            "DELETE FROM quotations WHERE request_id IN (" +
+                                    "   SELECT id FROM production_requests WHERE design_version_id = ?" +
+                                    ")"
+                    ).setParameter(1, vId).executeUpdate();
+
+                    // 3.6 Xóa chi tiết size yêu cầu (production_request_items)
+                    entityManager.createNativeQuery(
+                            "DELETE FROM production_request_items WHERE request_id IN (" +
+                                    "   SELECT id FROM production_requests WHERE design_version_id = ?" +
+                                    ")"
+                    ).setParameter(1, vId).executeUpdate();
+
+                    // 3.7 Xóa các yêu cầu sản xuất (production_requests)
+                    entityManager.createNativeQuery(
+                            "DELETE FROM production_requests WHERE design_version_id = ?"
+                    ).setParameter(1, vId).executeUpdate();
+
+                    // 3.8 Xóa các layer thiết kế (design_elements)
+                    entityManager.createNativeQuery(
+                            "DELETE FROM design_elements WHERE design_version_id = ?"
+                    ).setParameter(1, vId).executeUpdate();
+                }
+
+                // 3.9 Xóa toàn bộ các phiên bản thiết kế (design_versions)
+                entityManager.createNativeQuery(
+                        "DELETE FROM design_versions WHERE design_id = ?"
+                ).setParameter(1, designId).executeUpdate();
+            }
+
+            // 4. Xóa bản ghi gốc trong bảng designs
+            entityManager.createNativeQuery(
+                    "DELETE FROM designs WHERE id = ?"
+            ).setParameter(1, designId).executeUpdate();
+
+        } finally {
+            // Luôn bật lại kiểm tra khóa ngoại sau khi xóa xong
+            entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
+        }
+
+        // 5. Làm sạch bộ nhớ đệm Hibernate Session để tránh xung đột
+        entityManager.clear();
+
+        log.info("Đã xóa dọn sạch toàn bộ dữ liệu thiết kế #{} và các báo giá/đơn hàng liên quan.", designId);
+    }
 }

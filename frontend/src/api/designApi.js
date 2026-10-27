@@ -17,4 +17,7 @@ export const designApi = {
 
     getPublicDesigns: () =>
         axios.get('/api/v1/designs/public').then((res) => res.data),
+
+    deleteDesign: (designId, userId) =>
+        axios.delete(`/api/v1/designs/${designId}${userId ? `?userId=${userId}` : ''}`).then(res => res.data),
 };
