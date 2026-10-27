@@ -30,7 +30,8 @@ public class ProductionProposalController {
             @RequestBody StartProposalRequest request,
             @RequestParam(required = false) Long userId
     ) {
-        return ResponseEntity.ok(proposalService.toggleProposalStatus(request, userId));
+        Long actualUserId = (request.userId() != null && request.userId() > 0) ? request.userId() : userId;
+        return ResponseEntity.ok(proposalService.toggleProposalStatus(request, actualUserId));
     }
 
     // 3. Producer xem các đơn thiết kế đang mở nhận báo giá (OPEN)

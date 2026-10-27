@@ -594,17 +594,32 @@ export default function DesignStudio() {
         // Tạo ảnh ghép Mặt Trước (Trái) + Mặt Sau (Phải) để tải lên Cloudinary
         const previewDataUrl = await generateCombinedPreviewImage();
 
-        // Lấy id user đang đăng nhập từ localStorage
+        // 1. Đọc userId chính xác từ localStorage theo tất cả các kịch bản lưu
         let currentUserId = null;
-
         try {
-            const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-            currentUserId = storedUser.id || storedUser.userId || null;
-        } catch (e) {}
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const parsed = JSON.parse(storedUser);
+                currentUserId = parsed.id || parsed.userId;
+            }
+        } catch (e) {
+            console.error('Lỗi parse user từ localStorage:', e);
+        }
+
+        if (!currentUserId) {
+            currentUserId = localStorage.getItem('userId') || localStorage.getItem('currentUserId');
+        }
+
+        if (!currentUserId) {
+            alert('Không tìm thấy phiên đăng nhập. Vui lòng đăng nhập lại để lưu thiết kế!');
+            return;
+        }
+
+        const numericUserId = Number(currentUserId);
 
         const payload = {
-            designId: editingDesignId ? Number(editingDesignId) : null, // Gửi designId để tăng version_number
-            userId: currentUserId,
+            designId: editingDesignId ? Number(editingDesignId) : null,
+            userId: numericUserId, // Gửi đúng ID dạng số trong JSON body
             name: designTitle || "Mẫu áo chưa đặt tên",
             garmentId: 1,
             garmentColor: garmentColor,
@@ -614,7 +629,8 @@ export default function DesignStudio() {
 
         setIsSaving(true);
         try {
-            const response = await fetch('/api/v1/designs', {
+            // Gửi kèm ?userId= lên URL để Controller fallback chắc chắn nhận được
+            const response = await fetch(`/api/v1/designs?userId=${numericUserId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -622,22 +638,23 @@ export default function DesignStudio() {
 
             if (response.ok) {
                 const data = await response.json();
-                setEditingDesignId(data.designId); // Giữ lại designId cho các lần bấm Lưu tiếp theo
+                setEditingDesignId(data.designId);
                 setSaveDialog({
                     isOpen: true,
                     type: 'success',
                     title: 'Lưu mẫu thiết kế thành công!',
                     message: 'Bản thiết kế của bạn đã được lưu vào "Thiết kế của tôi"',
                     designId: data.designId,
-                    versionId: data.versionNumber || data.versionId, // Hiển thị đúng số version_number đã tăng
+                    versionId: data.versionNumber || data.versionId,
                     previewUrl: previewDataUrl,
                 });
             } else {
+                const errData = await response.json().catch(() => ({}));
                 setSaveDialog({
                     isOpen: true,
                     type: 'error',
                     title: 'Lưu thiết kế thất bại',
-                    message: 'Vui lòng kiểm tra lại kết nối.',
+                    message: errData.message || 'Vui lòng kiểm tra lại kết nối.',
                 });
             }
         } catch (error) {

@@ -10,6 +10,7 @@ public class ProductionProposalDtos {
     public record StartProposalRequest(
             Long designId,
             Long designVersionId,
+            Long userId,
             String garmentColor,
             String printSides, // "2 Mặt" hoặc "Mặt trước"
             List<SizeQuantityDto> sizeQuantities

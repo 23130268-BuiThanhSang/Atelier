@@ -9,6 +9,7 @@ import com.atelier.design.entity.Garment;
 import com.atelier.repository.DesignElementRepository;
 import com.atelier.repository.DesignRepository;
 import com.atelier.repository.DesignVersionRepository;
+import com.atelier.repository.UserRepository;
 import com.atelier.user.entity.User;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -31,11 +32,20 @@ public class DesignService {
     private final DesignRepository designRepository;
     private final DesignVersionRepository designVersionRepository;
     private final DesignElementRepository designElementRepository;
+    private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
     private final EntityManager entityManager;
 
     @Transactional
     public Map<String, Object> saveDesign(SaveDesignRequest request, Long currentUserId) {
+        // Kiểm tra chặt chẽ userId: Không được phép lưu vô danh hoặc tự ý gán về user khác
+        if (currentUserId == null || currentUserId <= 0) {
+            throw new RuntimeException("Không tìm thấy thông tin tài khoản đăng nhập. Vui lòng đăng nhập lại để lưu thiết kế.");
+        }
+
+        User user = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new RuntimeException("Tài khoản người dùng #" + currentUserId + " không tồn tại trong hệ thống."));
+
         // 1. Kích hoạt upload song song ảnh preview và tất cả layer ảnh Base64
         CompletableFuture<String> previewUploadFuture = CompletableFuture.supplyAsync(() -> {
             if (request.previewImageUrl() != null && request.previewImageUrl().startsWith("data:image")) {
@@ -71,13 +81,19 @@ public class DesignService {
             }
         }
 
-        // 2. Xử lý lưu hoặc cập nhật thực thể Design
+        // 2. Xử lý lưu hoặc cập nhật thực thể Design với đúng User
         Design design;
         int nextVersionNumber = 1;
 
         if (request.designId() != null) {
             design = designRepository.findById(request.designId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy mẫu thiết kế #" + request.designId()));
+
+            // Nếu thiết kế trước đây chưa có user hoặc user bị lệch, cập nhật lại đúng user hiện tại
+            if (design.getUser() == null || !design.getUser().getId().equals(currentUserId)) {
+                design.setUser(user);
+            }
+
             design.setName(request.name());
             designRepository.save(design);
 
@@ -88,7 +104,7 @@ public class DesignService {
             }
         } else {
             design = new Design();
-            design.setUser(entityManager.getReference(User.class, currentUserId != null ? currentUserId : 1L));
+            design.setUser(user); // Gắn chính xác user đang login
             design.setGarment(entityManager.getReference(Garment.class, request.garmentId() != null ? request.garmentId() : 1L));
             design.setName(request.name() != null ? request.name() : "Mẫu áo chưa đặt tên");
             design.setStatus("ACTIVE");
@@ -160,10 +176,9 @@ public class DesignService {
     public List<MyDesignResponse> getMyDesigns(Long userId) {
         if (userId == null) {
             log.warn("getMyDesigns: userId bị null, không thể tải thiết kế cá nhân.");
-            return List.of(); // Trả về mảng rỗng thay vì nạp tất cả thiết kế của người khác
+            return List.of();
         }
 
-        // Chỉ tìm các thiết kế thuộc sở hữu của chính User này
         List<Design> designs = designRepository.findByUserIdOrderByIdDesc(userId);
         return designs.stream().map(this::mapToMyDesignResponse).toList();
     }
@@ -206,7 +221,7 @@ public class DesignService {
             return new MyDesignResponse(
                     design.getId(), design.getName(),
                     design.getVisibility() != null ? design.getVisibility() : "PRIVATE",
-                    null, 1, "#F5F2DC", null,null, designerName, List.of()
+                    null, 1, "#F5F2DC", null, null, designerName, List.of()
             );
         }
 
