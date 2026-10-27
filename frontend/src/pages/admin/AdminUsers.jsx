@@ -289,7 +289,6 @@ export default function AdminUsers() {
                             <th className="py-3 px-6">Ảnh & Họ tên</th>
                             <th className="py-3 px-4">Email</th>
                             <th className="py-3 px-4">Vai trò</th>
-                            <th className="py-3 px-4">Đơn hàng / Lô may</th>
                             <th className="py-3 px-4">Ngày tham gia</th>
                             <th className="py-3 px-4">Trạng thái</th>
                             <th className="py-3 px-6 text-right">Thao tác</th>
@@ -340,12 +339,6 @@ export default function AdminUsers() {
                                         <td className="py-4 px-4 text-zinc-500 font-medium">{u.email}</td>
 
                                         <td className="py-4 px-4">{renderRoleBadge(u.role)}</td>
-
-                                        <td className="py-4 px-4 text-zinc-800 font-semibold">
-                                            {u.role?.toUpperCase() === 'ADMIN'
-                                                ? '—'
-                                                : `${u.orderCount} ${isProducer ? 'lô sản xuất' : 'đơn hàng'}`}
-                                        </td>
 
                                         <td className="py-4 px-4 text-zinc-400 text-[11px]">{formatDate(u.createdAt)}</td>
 

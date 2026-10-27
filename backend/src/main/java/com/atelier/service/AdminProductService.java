@@ -161,7 +161,7 @@ public class AdminProductService {
         );
     }
 
-    // 1. Tạo mới sản phẩm
+    // 1. Tạo mới sản phẩm: Đồng bộ price của tất cả variant theo basePrice
     @Transactional
     public Long createProduct(AdminProductDetailDto.UpsertRequest req) {
         Product p = new Product();
@@ -180,17 +180,19 @@ public class AdminProductService {
         // Lưu hình ảnh sản phẩm vào product_images
         saveProductImages(saved, req.imageUrls());
 
-        // Lưu biến thể variants
+        // Lưu biến thể variants: Cột price của tất cả size luôn bằng basePrice
         if (req.variants() != null) {
             for (AdminProductDetailDto.VariantUpsertDto vDto : req.variants()) {
+                if (vDto.size() == null || vDto.size().isBlank()) continue;
+
                 ProductVariant variant = new ProductVariant();
                 variant.setProduct(saved);
                 variant.setSize(vDto.size().trim().toUpperCase());
                 variant.setColor("Default");
-                variant.setPrice(saved.getBasePrice());
+                variant.setPrice(saved.getBasePrice()); // Đồng bộ giá theo basePrice
                 variant.setStatus("ACTIVE");
                 variant.setSku("PRD" + saved.getId() + "-" + vDto.size().trim().toUpperCase());
-                variant.setStockQuantity(vDto.stockQuantity());
+                variant.setStockQuantity(vDto.stockQuantity() != null ? vDto.stockQuantity() : 0);
                 productVariantRepository.save(variant);
             }
         }
@@ -198,7 +200,7 @@ public class AdminProductService {
         return saved.getId();
     }
 
-    // 2. Cập nhật sản phẩm & tự động dọn dẹp ảnh cũ trên Cloudinary
+    // 2. Cập nhật sản phẩm: Luôn đồng bộ price của tất cả size theo basePrice mới
     @Transactional
     public void updateProduct(Long id, AdminProductDetailDto.UpsertRequest req) {
         Product p = productRepository.findById(id)
@@ -207,7 +209,7 @@ public class AdminProductService {
         p.setName(req.name());
         p.setSlug(req.slug());
         p.setDescription(req.description());
-        p.setBasePrice(req.basePrice());
+        p.setBasePrice(req.basePrice()); // Cập nhật basePrice mới cho Product
         p.setStatus(req.status() != null ? req.status().toUpperCase() : "ACTIVE");
 
         if (req.categoryId() != null) {
@@ -218,21 +220,17 @@ public class AdminProductService {
 
         // Đồng bộ hình ảnh và dọn dẹp ảnh bị xóa trên Cloudinary
         if (req.imageUrls() != null) {
-            // Lấy danh sách ảnh hiện tại trong Database trước khi cập nhật
             List<ProductImage> oldImages = productImageRepository.findByProductId(id);
             List<String> newUrlList = req.imageUrls();
 
-            // Tìm các URL ảnh có trong DB nhưng không còn nằm trong danh sách mới
             List<String> urlsToDelete = oldImages.stream()
                     .map(ProductImage::getImageUrl)
                     .filter(oldUrl -> oldUrl != null && !newUrlList.contains(oldUrl))
                     .toList();
 
-            // Cập nhật lại Database
             productImageRepository.deleteByProductId(id);
             saveProductImages(p, req.imageUrls());
 
-            // Xóa ảnh thừa trên Cloudinary bất đồng bộ (chạy ngầm, không block request)
             if (!urlsToDelete.isEmpty()) {
                 CompletableFuture.runAsync(() -> {
                     for (String delUrl : urlsToDelete) {
@@ -246,12 +244,12 @@ public class AdminProductService {
             }
         }
 
-        // Cập nhật biến thể tồn kho
-        if (req.variants() != null && !req.variants().isEmpty()) {
-            List<ProductVariant> existingVariants = productVariantRepository.findByProductId(id);
+        // Cập nhật biến thể tồn kho & Luôn ép giá price = basePrice mới cho toàn bộ các size
+        List<ProductVariant> existingVariants = productVariantRepository.findByProductId(id);
 
+        if (req.variants() != null && !req.variants().isEmpty()) {
             for (AdminProductDetailDto.VariantUpsertDto vDto : req.variants()) {
-                if (vDto.size() == null) continue;
+                if (vDto.size() == null || vDto.size().isBlank()) continue;
 
                 String targetSize = vDto.size().trim().toUpperCase();
 
@@ -261,22 +259,22 @@ public class AdminProductService {
                         .orElse(null);
 
                 if (matched != null) {
-                    matched.setStockQuantity(vDto.stockQuantity());
+                    matched.setStockQuantity(vDto.stockQuantity() != null ? vDto.stockQuantity() : 0);
                     if (vDto.sku() != null && !vDto.sku().isBlank()) {
                         matched.setSku(vDto.sku().trim());
                     }
                     if (matched.getColor() == null) {
                         matched.setColor("Default");
                     }
-                    if (matched.getPrice() == null) {
-                        matched.setPrice(p.getBasePrice());
-                    }
+                    // LUÔN CẬP NHẬT LẠI GIÁ BẰNG BASE_PRICE MỚI CỦA SẢN PHẨM
+                    matched.setPrice(p.getBasePrice());
                     productVariantRepository.save(matched);
                 } else {
                     ProductVariant newVar = new ProductVariant();
                     newVar.setProduct(p);
                     newVar.setSize(targetSize);
                     newVar.setColor("Default");
+                    // ĐỒNG BỘ GIÁ BẰNG BASE_PRICE
                     newVar.setPrice(p.getBasePrice());
                     newVar.setStatus("ACTIVE");
 
@@ -285,10 +283,18 @@ public class AdminProductService {
                         fallbackSku = vDto.sku().trim();
                     }
                     newVar.setSku(fallbackSku);
-                    newVar.setStockQuantity(vDto.stockQuantity());
+                    newVar.setStockQuantity(vDto.stockQuantity() != null ? vDto.stockQuantity() : 0);
 
                     productVariantRepository.save(newVar);
                 }
+            }
+        }
+
+        // Đảm bảo an toàn: cập nhật giá cho tất cả các biến thể còn lại của sản phẩm này
+        for (ProductVariant v : existingVariants) {
+            if (!p.getBasePrice().equals(v.getPrice())) {
+                v.setPrice(p.getBasePrice());
+                productVariantRepository.save(v);
             }
         }
     }
