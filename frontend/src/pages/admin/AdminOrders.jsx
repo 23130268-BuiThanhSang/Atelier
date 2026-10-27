@@ -270,7 +270,7 @@ export default function AdminOrders() {
                         <thead>
                         <tr className="bg-[#faf8e4]/60 text-zinc-400 font-semibold text-[11px] uppercase tracking-wider border-y border-zinc-100">
                             <th className="py-3.5 pl-6 pr-3">Mã đơn</th>
-                            <th className="py-3.5 px-4">Khách hàng</th>
+                            <th className="py-3.5 px-4">Người nhận hàng</th>
                             <th className="py-3.5 px-4">Sản phẩm</th>
                             <th className="py-3.5 px-4 text-right">Tổng tiền</th>
                             <th className="py-3.5 px-4">Trạng thái</th>
