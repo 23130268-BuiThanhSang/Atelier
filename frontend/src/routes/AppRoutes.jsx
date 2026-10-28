@@ -31,6 +31,7 @@ import PublicDesigns from '../pages/DesignStudio/PublicDesigns.jsx';
 import OrderDetail from "../pages/MyOrders/OrderDetail.jsx";
 import ProducerRequests from "../pages/Producer/ProducerRequests.jsx";
 import MyProductionRequests from '../pages/DesignStudio/MyProductionRequests';
+import MyProductionOrders from '../pages/DesignStudio/MyProductionOrders';
 
 export default function AppRoutes() {
     return (
@@ -56,6 +57,7 @@ export default function AppRoutes() {
                 <Route path="/order_detail/:id" element={<OrderDetail />} />
                 <Route path="/producer-requests" element={<ProducerRequests />} />
                 <Route path="/my-production-requests" element={<MyProductionRequests />} />
+                <Route path="/my-production-orders" element={<MyProductionOrders />} />
             </Route>
 
             <Route element={<AuthLayout />}>

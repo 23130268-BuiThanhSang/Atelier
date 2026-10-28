@@ -11,6 +11,7 @@ public class ProducerOrderDto {
             Long id,
             String orderCode,
             String title,
+            String previewImageUrl,
             String garmentColor,
             String spec,
             int totalUnits,
@@ -27,6 +28,7 @@ public class ProducerOrderDto {
             Long id,
             String orderCode,
             String title,
+            String previewImageUrl,
             String garmentColor,
             String spec,
             String printSides,
@@ -63,6 +65,7 @@ public class ProducerOrderDto {
     public record UpdateProgressRequest(
             String status,
             Integer completedUnits,
-            String notes
+            String notes,
+            String trackingCode
     ) {}
 }
