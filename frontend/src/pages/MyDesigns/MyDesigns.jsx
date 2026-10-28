@@ -193,6 +193,15 @@ export default function MyDesigns() {
                         <span>Xem đơn thiết kế</span>
                     </Link>
 
+                    {/* NÚT XEM ĐƠN GIA CÔNG */}
+                    <Link
+                        to="/my-production-orders"
+                        className="px-4 py-2.5 bg-white hover:bg-zinc-50 text-zinc-800 border border-zinc-200/80 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all active:scale-[0.98]"
+                    >
+                        <Layers className="w-4 h-4 text-[#f0592a]" />
+                        <span>Xem đơn gia công</span>
+                    </Link>
+
                     <Link
                         to="/design-studio"
                         className="px-4 py-2.5 bg-[#f0592a] hover:bg-[#d94a1f] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-[0.98] shrink-0"

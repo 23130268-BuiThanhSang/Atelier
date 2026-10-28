@@ -59,4 +59,32 @@ public class ProductionProposalController {
     ) {
         return ResponseEntity.ok(proposalService.getMyProductionRequests(userId));
     }
+
+    // 6. Designer chấp thuận báo giá và xác nhận đặt cọc 50%
+    @PostMapping("/accept-and-deposit")
+    public ResponseEntity<AcceptQuotationResponse> acceptAndDeposit(
+            @RequestBody AcceptQuotationRequest request,
+            @RequestParam(required = false) Long userId
+    ) {
+        Long actualUserId = (request.userId() != null && request.userId() > 0) ? request.userId() : userId;
+        return ResponseEntity.ok(proposalService.acceptQuotationAndDeposit(request, actualUserId));
+    }
+
+    // 7. Designer xem danh sách các đơn đặt may gia công của mình (Bước 4)
+    @GetMapping("/my-production-orders")
+    public ResponseEntity<List<DesignerProductionOrderSummary>> getMyProductionOrders(
+            @RequestParam(required = false) Long userId
+    ) {
+        return ResponseEntity.ok(proposalService.getMyProductionOrders(userId));
+    }
+
+    // 8. Designer thanh toán 50% còn lại (Bước 5)
+    @PostMapping("/pay-remaining")
+    public ResponseEntity<PayRemainingResponse> payRemaining(
+            @RequestBody PayRemainingRequest request,
+            @RequestParam(required = false) Long userId
+    ) {
+        Long actualUserId = (request.userId() != null && request.userId() > 0) ? request.userId() : userId;
+        return ResponseEntity.ok(proposalService.payRemainingAmount(request, actualUserId));
+    }
 }
