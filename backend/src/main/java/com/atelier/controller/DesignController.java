@@ -44,4 +44,13 @@ public class DesignController {
     public ResponseEntity<List<MyDesignResponse>> getPublicDesigns() {
         return ResponseEntity.ok(designService.getPublicDesigns());
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteDesign(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long userId
+    ) {
+        designService.deleteDesign(id, userId);
+        return ResponseEntity.ok(Map.of("message", "Xóa thiết kế thành công"));
+    }
 }

@@ -15,4 +15,13 @@ export const proposalApi = {
 
     getMyRequests: (userId) =>
         axios.get(`/api/v1/proposals/my-requests${userId ? `?userId=${userId}` : ''}`).then(res => res.data),
+
+    acceptAndDeposit: (payload, userId) =>
+        axios.post(`/api/v1/proposals/accept-and-deposit${userId ? `?userId=${userId}` : ''}`, payload).then(res => res.data),
+
+    getMyOrders: (userId) =>
+        axios.get(`/api/v1/proposals/my-production-orders${userId ? `?userId=${userId}` : ''}`).then(res => res.data),
+
+    payRemaining: (payload, userId) =>
+        axios.post(`/api/v1/proposals/pay-remaining${userId ? `?userId=${userId}` : ''}`, payload).then(res => res.data),
 };
