@@ -716,6 +716,67 @@ Muốn đổi cấu trúc này thì **tăng `version`** và báo cả nhóm.
 
 - `paymentMethod`: tạm thời chỉ có `COD` (thanh toán khi nhận hàng).
 - `status` nhận một trong các giá trị: `PENDING`, `CONFIRMED`, `IN_PRODUCTION`, `SHIPPING`, `COMPLETED`, `CANCELLED`.
+### 10.6. Đánh giá sản phẩm
+
+Đánh giá **chỉ dành cho sản phẩm**. Chỉ người dùng **đã mua và nhận hàng** mới được đánh giá: cần có đơn hàng
+ở trạng thái `COMPLETED` hoặc `DELIVERED` chứa sản phẩm đó. Mỗi người dùng chỉ được **một đánh giá cho mỗi sản phẩm**.
+Giai đoạn hiện tại xác định người dùng qua header `X-User-ID` (giống API giỏ hàng), chưa dùng JWT.
+
+| API | Gửi lên | Trả về |
+|---|---|---|
+| `GET /api/v1/products/{productId}/reviews?page=0&size=5&rating=&sort=newest` | (không) | `{ summary, items, page, size, totalItems, totalPages }` |
+| `GET /api/v1/products/{productId}/reviews/me` | header `X-User-ID` (không bắt buộc) | `{ canReview, reason, review }` |
+| `POST /api/v1/products/{productId}/reviews` | `{ "rating": 1..5, "comment": "..." }` | 201: một đánh giá (như `items`) |
+| `PUT /api/v1/reviews/{id}` | `{ "rating", "comment" }` | 200: đánh giá sau khi sửa |
+| `DELETE /api/v1/reviews/{id}` | (không) | 204 |
+| `GET /api/v1/admin/reviews?page&size&keyword&rating&status` | (không) | `{ items, page, size, totalItems, totalPages }` |
+| `PATCH /api/v1/admin/reviews/{id}/status` | `{ "status": "VISIBLE" \| "HIDDEN" }` | 200: đánh giá sau khi đổi trạng thái |
+| `DELETE /api/v1/admin/reviews/{id}` | (không) | 204 |
+
+- `sort`: `newest` (mặc định), `oldest`, `rating_desc`, `rating_asc`. Giá trị khác sẽ dùng `newest`.
+- `rating` (bộ lọc): số nguyên 1–5, bỏ trống để lấy tất cả.
+- `reason` của `reviews/me`: `CAN_REVIEW`, `NOT_LOGGED_IN`, `NOT_PURCHASED`, `ALREADY_REVIEWED`.
+- `comment` tối đa **1200 ký tự**, được phép để trống.
+- Chỉ đánh giá `VISIBLE` xuất hiện trong danh sách công khai và được tính vào điểm trung bình.
+  Đánh giá `HIDDEN` vẫn trả về cho chính tác giả ở `reviews/me` nhưng tác giả không sửa/xóa được.
+- Lỗi trả về theo dạng chung `{ "code", "message" }`, ví dụ:
+  `401 LOGIN_REQUIRED`, `404 REVIEW_NOT_FOUND`, `403 REVIEW_NOT_OWNED`,
+  `403 REVIEW_NOT_ELIGIBLE` (chưa mua sản phẩm), `409 REVIEW_ALREADY_EXISTS`, `409 REVIEW_NOT_EDITABLE`.
+
+Dạng dữ liệu:
+
+```json
+{
+  "summary": {
+    "averageRating": 4.6,
+    "totalReviews": 23,
+    "distribution": { "5": 12, "4": 6, "3": 3, "2": 1, "1": 1 }
+  },
+  "items": [
+    {
+      "id": 10,
+      "rating": 5,
+      "comment": "Chất vải đẹp, form chuẩn.",
+      "authorName": "Nguyễn A",
+      "authorAvatarUrl": null,
+      "status": "VISIBLE",
+      "createdAt": "2026-10-29T08:30:00",
+      "updatedAt": null,
+      "mine": false
+    }
+  ],
+  "page": 0,
+  "size": 5,
+  "totalItems": 23,
+  "totalPages": 5
+}
+```
+
+Điểm trung bình **không lưu cứng** trên bảng `products`; backend tính lại từ `product_reviews` mỗi lần trả
+Catalog/ProductDetail, nên chỉ cần làm mới dữ liệu ở frontend sau khi thêm/sửa/xóa/ẩn.
+
+> Migration của bảng `product_reviews` (cho `order_id` rỗng + unique theo `user_id, product_id`) được ghi lại trong
+> `backend/db/product_reviews.sql`.
 
 ---
 

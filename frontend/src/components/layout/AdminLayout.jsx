@@ -5,6 +5,7 @@ import {
     Shirt,
     ReceiptText,
     Users,
+    MessageSquareText,
     LogOut,
     AlertTriangle,
     X
@@ -67,6 +68,7 @@ export default function AdminLayout() {
         { label: 'Bảng điều khiển', path: '/admin', icon: LayoutGrid },
         { label: 'Sản phẩm', path: '/admin/products', icon: Shirt },
         { label: 'Đơn hàng', path: '/admin/orders', icon: ReceiptText },
+        { label: 'Đánh giá', path: '/admin/reviews', icon: MessageSquareText },
         { label: 'Người dùng', path: '/admin/users', icon: Users },
     ];
 

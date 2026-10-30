@@ -12,7 +12,15 @@ public enum ErrorCode {
     CART_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy giỏ hàng"),
     CART_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm trong giỏ hàng"),
     VARIANT_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy biến thể sản phẩm"),
-    INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "Số lượng tồn kho không đủ");
+    INSUFFICIENT_STOCK(HttpStatus.BAD_REQUEST, "Số lượng tồn kho không đủ"),
+    LOGIN_REQUIRED(HttpStatus.UNAUTHORIZED, "Vui lòng đăng nhập để thực hiện"),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy người dùng"),
+    REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, "Không tìm thấy đánh giá"),
+    REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, "Bạn đã đánh giá sản phẩm này rồi"),
+    REVIEW_NOT_OWNED(HttpStatus.FORBIDDEN, "Bạn không có quyền thay đổi đánh giá này"),
+    REVIEW_NOT_EDITABLE(HttpStatus.CONFLICT, "Đánh giá đang bị ẩn nên không thể chỉnh sửa"),
+    REVIEW_NOT_ELIGIBLE(HttpStatus.FORBIDDEN, "Bạn cần mua và nhận sản phẩm này trước khi đánh giá"),
+    INVALID_REVIEW_STATUS(HttpStatus.BAD_REQUEST, "Trạng thái đánh giá không hợp lệ");
 
     private final HttpStatus status;
     private final String message;

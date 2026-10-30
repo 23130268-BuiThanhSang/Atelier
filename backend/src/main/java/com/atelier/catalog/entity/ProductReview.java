@@ -1,6 +1,5 @@
 package com.atelier.catalog.entity;
 
-import com.atelier.order.entity.Order;
 import com.atelier.user.entity.User;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -12,7 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 @Entity
 @Table(name = "product_reviews",
-       uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "order_id", "product_id"})})
+       uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "product_id"})})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,10 +25,6 @@ public class ProductReview {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "order_id", nullable = false)
-    private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
