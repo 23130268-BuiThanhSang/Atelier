@@ -316,12 +316,10 @@ export default function ProductDetail() {
                 {selectedVariant && (
                     <div className="rounded-xl bg-[#faf7ee] p-4 text-sm">
                       <p className="font-semibold text-zinc-950">SKU: {selectedVariant.sku}</p>
-                      <p className={`mt-1 font-medium ${Number(selectedVariant.stockQuantity) <= 0 ? 'text-red-600' : Number(selectedVariant.stockQuantity) < 5 ? 'text-amber-700' : 'text-emerald-700'}`}>
-                        {Number(selectedVariant.stockQuantity) <= 0
-                            ? 'Hết hàng'
-                            : Number(selectedVariant.stockQuantity) < 5
-                                ? 'Sắp hết hàng'
-                                : 'Còn hàng'}
+                      <p className="mt-1 text-zinc-600">
+                        {selectedVariant.stockQuantity > 0
+                            ? `Còn ${selectedVariant.stockQuantity} sản phẩm`
+                            : 'Hết hàng'}
                       </p>
                     </div>
                 )}
@@ -377,15 +375,20 @@ export default function ProductDetail() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#f0592a]">Tiếp tục khám phá</p>
-                <h2 className="mt-2 text-2xl font-bold text-zinc-950">Khám phá sản phẩm khác</h2>
-                <p className="mt-1 text-sm text-zinc-600">Những sản phẩm được khách hàng lựa chọn nhiều nhất.</p>
+                <h2 className="mt-2 text-2xl font-bold text-zinc-950">Các sản phẩm liên quan</h2>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Khám phá thêm sản phẩm thuộc danh mục {product.categoryName || 'hiện tại'}.
+                </p>
               </div>
               <Link to="/catalog" className="text-sm font-semibold text-[#f0592a] hover:underline">
                 Xem tất cả
               </Link>
             </div>
 
-            <BestSellingProducts currentId={product.id} />
+            <RelatedProductsByCategory
+                currentId={product.id}
+                categoryId={product.categoryId}
+            />
           </section>
 
           <Toast
@@ -399,12 +402,17 @@ export default function ProductDetail() {
   )
 }
 
-function BestSellingProducts({ currentId }) {
+function RelatedProductsByCategory({ currentId, categoryId }) {
   const relatedQuery = useQuery({
-    queryKey: ['products', 'best-selling'],
+    queryKey: ['products', 'catalog'],
     queryFn: productApi.getAll,
+    enabled: categoryId !== null && categoryId !== undefined,
     staleTime: 60 * 1000,
   })
+
+  if (categoryId === null || categoryId === undefined) {
+    return <p role="status" className="mt-5 text-sm text-zinc-500">Chưa xác định được danh mục sản phẩm.</p>
+  }
 
   if (relatedQuery.isLoading) {
     return (
@@ -421,16 +429,20 @@ function BestSellingProducts({ currentId }) {
   }
 
   if (relatedQuery.isError) {
-    return <p role="status" className="mt-5 text-sm text-zinc-500">Chưa thể tải danh sách sản phẩm bán chạy.</p>
+    return <p role="status" className="mt-5 text-sm text-zinc-500">Chưa thể tải sản phẩm cùng danh mục.</p>
   }
 
   const products = (Array.isArray(relatedQuery.data) ? relatedQuery.data : [])
-      .filter((item) => String(item.id) !== String(currentId))
+      .filter((item) => (
+          String(item.id) !== String(currentId)
+          && String(item.categoryId) === String(categoryId)
+      ))
+      // Ưu tiên sản phẩm bán chạy hơn trong cùng danh mục.
       .sort((a, b) => (Number(b.soldCount) || 0) - (Number(a.soldCount) || 0))
       .slice(0, 4)
 
   if (!products.length) {
-    return <p className="mt-5 text-sm text-zinc-500">Chưa có dữ liệu sản phẩm bán chạy.</p>
+    return <p className="mt-5 text-sm text-zinc-500">Chưa có sản phẩm khác trong cùng danh mục.</p>
   }
 
   return (
