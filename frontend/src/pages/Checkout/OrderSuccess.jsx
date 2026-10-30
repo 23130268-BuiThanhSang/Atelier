@@ -7,7 +7,8 @@ import Button from "../../components/ui/Button";
 export default function OrderSuccess() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const orderId = searchParams.get('orderId');
+    const orderId = searchParams.get('id');
+    const orderCode = searchParams.get('code');
 
     return (
         <div className="min-h-[calc(100vh-80px)] bg-[#fdfbf4] flex flex-col items-center justify-center py-12 font-sans px-4">
@@ -32,14 +33,14 @@ export default function OrderSuccess() {
                 </p>
 
                 {/* Box hiển thị mã đơn (nếu có) */}
-                {orderId && (
+                {(orderCode || orderId) && (
                     <div className="bg-white border border-zinc-200 rounded-xl p-4 inline-flex items-center gap-3 mb-8 shadow-sm">
                         <div className="w-10 h-10 bg-zinc-50 rounded-lg flex items-center justify-center text-zinc-400">
                             <FileText className="w-5 h-5" />
                         </div>
                         <div className="text-left pr-4">
                             <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-0.5">Mã tra cứu đơn hàng</p>
-                            <p className="text-lg font-bold text-zinc-900">#{orderId}</p>
+                            <p className="text-lg font-bold text-zinc-900">#{orderCode || orderId}</p>
                         </div>
                     </div>
                 )}
