@@ -33,4 +33,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     long countPendingDelivery();
 
     List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    boolean existsByOrderCode(String orderCode);
 }
