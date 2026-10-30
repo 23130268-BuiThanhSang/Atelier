@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -449,5 +450,346 @@ public class ProductionProposalService {
                     ts != null ? ts.toLocalDateTime() : LocalDateTime.now()
             );
         }, targetUserId);
+    }
+
+    /**
+     * BƯỚC 1: Designer chấp thuận báo giá và đặt cọc 50%
+     * - Cập nhật trạng thái quotation: ACCEPTED (các quotation khác thành REJECTED)
+     * - Đóng production_requests: CLOSED
+     * - Tạo đơn sản xuất chính thức: production_orders (status = DEPOSITED)
+     * - Sao chép số lượng size sang production_order_items
+     * - Ghi nhận mốc tiến độ đầu tiên vào production_progress_updates
+     */
+    @Transactional
+    public AcceptQuotationResponse acceptQuotationAndDeposit(AcceptQuotationRequest req, Long currentUserId) {
+        Long actualUserId = (currentUserId != null && currentUserId > 0)
+                ? currentUserId
+                : (req.userId() != null && req.userId() > 0 ? req.userId() : null);
+
+        if (actualUserId == null) {
+            throw new RuntimeException("Vui lòng đăng nhập để thực hiện đặt cọc.");
+        }
+
+        // 1. Kiểm tra Báo giá tồn tại
+        String quoteSql = "SELECT q.id, q.request_id, q.producer_id, q.unit_price, q.total_amount, " +
+                "q.deposit_amount, q.lead_time_days, r.design_version_id, r.garment_id, r.garment_color, " +
+                "r.print_sides, r.total_quantity " +
+                "FROM quotations q " +
+                "JOIN production_requests r ON q.request_id = r.id " +
+                "WHERE q.id = ?";
+
+        List<Map<String, Object>> quoteRows = jdbcTemplate.queryForList(quoteSql, req.quotationId());
+        if (quoteRows.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy thông tin báo giá #" + req.quotationId());
+        }
+
+        Map<String, Object> quoteData = quoteRows.get(0);
+        Long requestId = ((Number) quoteData.get("request_id")).longValue();
+        Long producerId = ((Number) quoteData.get("producer_id")).longValue();
+        Long designVersionId = quoteData.get("design_version_id") != null ? ((Number) quoteData.get("design_version_id")).longValue() : null;
+        Long garmentId = quoteData.get("garment_id") != null ? ((Number) quoteData.get("garment_id")).longValue() : 1L;
+        String garmentColor = (String) quoteData.get("garment_color");
+        String printSides = (String) quoteData.get("print_sides");
+        Integer totalQuantity = ((Number) quoteData.get("total_quantity")).intValue();
+        BigDecimal unitPrice = (BigDecimal) quoteData.get("unit_price");
+        BigDecimal totalAmount = (BigDecimal) quoteData.get("total_amount");
+
+        BigDecimal depositAmount = quoteData.get("deposit_amount") != null
+                ? (BigDecimal) quoteData.get("deposit_amount")
+                : totalAmount.multiply(new BigDecimal("0.50"));
+
+        int leadTimeDays = quoteData.get("lead_time_days") != null ? ((Number) quoteData.get("lead_time_days")).intValue() : 7;
+        LocalDateTime deadline = LocalDateTime.now().plusDays(leadTimeDays);
+
+        // LẤY CHÍNH XÁC THÔNG TIN NGƯỜI DÙNG NHẬP TRONG MODAL
+        String shipName = (req.shippingName() != null && !req.shippingName().trim().isEmpty())
+                ? req.shippingName().trim() : "Designer Atelier";
+        String shipPhone = (req.shippingPhone() != null && !req.shippingPhone().trim().isEmpty())
+                ? req.shippingPhone().trim() : "0900000000";
+        String shipAddress = (req.shippingAddress() != null && !req.shippingAddress().trim().isEmpty())
+                ? req.shippingAddress().trim() : "Địa chỉ nhận hàng mặc định";
+
+        // 2. Kiểm tra xem quotation_id này đã được tạo đơn trong production_orders trước đó chưa
+        String checkOrderSql = "SELECT id, order_code, status FROM production_orders WHERE quotation_id = ? LIMIT 1";
+        List<Map<String, Object>> existingOrders = jdbcTemplate.queryForList(checkOrderSql, req.quotationId());
+
+        if (!existingOrders.isEmpty()) {
+            Long existingOrderId = ((Number) existingOrders.get(0).get("id")).longValue();
+            String existingCode = (String) existingOrders.get(0).get("order_code");
+            String existingStatus = (String) existingOrders.get(0).get("status");
+
+            // CẬP NHẬT LẠI 3 CỘT THÔNG TIN GIAO HÀNG TỪ MODAL VÀO ĐƠN HIỆN CÓ
+            String updateShippingSql = "UPDATE production_orders SET " +
+                    "shipping_name = ?, shipping_phone = ?, shipping_address = ?, updated_at = NOW() " +
+                    "WHERE id = ?";
+            jdbcTemplate.update(updateShippingSql, shipName, shipPhone, shipAddress, existingOrderId);
+
+            jdbcTemplate.update("UPDATE quotations SET status = 'ACCEPTED' WHERE id = ?", req.quotationId());
+            jdbcTemplate.update("UPDATE production_requests SET status = 'CLOSED' WHERE id = ?", requestId);
+
+            return new AcceptQuotationResponse(
+                    existingOrderId,
+                    existingCode,
+                    totalAmount,
+                    depositAmount,
+                    existingStatus,
+                    "Đơn gia công đã được cập nhật thông tin nhận hàng và ghi nhận đặt cọc thành công!"
+            );
+        }
+
+        // 3. Cập nhật Quotations: Bản này ACCEPTED, các bản khác cùng request thành REJECTED
+        jdbcTemplate.update("UPDATE quotations SET status = 'ACCEPTED' WHERE id = ?", req.quotationId());
+        jdbcTemplate.update("UPDATE quotations SET status = 'REJECTED' WHERE request_id = ? AND id != ?", requestId, req.quotationId());
+
+        // 4. Đóng yêu cầu nhận báo giá
+        jdbcTemplate.update("UPDATE production_requests SET status = 'CLOSED', updated_at = NOW() WHERE id = ?", requestId);
+
+        // 5. Tạo mới đơn sản xuất trong production_orders với đúng 3 thông tin từ Modal
+        String orderCode = "PO" + (System.currentTimeMillis() % 100000000);
+        String initialStatus = "CONFIRMED";
+        String initialStage = "Đã xác nhận";
+
+        String insertOrderSql = "INSERT INTO production_orders (" +
+                "order_code, customer_id, producer_id, request_id, quotation_id, design_version_id, " +
+                "garment_id, garment_color, print_sides, quantity, unit_price, subtotal, " +
+                "shipping_fee, discount_amount, total_amount, deposit_amount, deadline, " +
+                "shipping_name, shipping_phone, shipping_address, status, current_stage, created_at, updated_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+
+        jdbcTemplate.update(insertOrderSql,
+                orderCode, actualUserId, producerId, requestId, req.quotationId(), designVersionId,
+                garmentId, garmentColor, printSides, totalQuantity, unitPrice, totalAmount,
+                totalAmount, depositAmount, Timestamp.valueOf(deadline),
+                shipName, shipPhone, shipAddress, initialStatus, initialStage
+        );
+
+        Long productionOrderId = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
+
+        // 6. Sao chép số lượng size sang production_order_items
+        String copyItemsSql = "INSERT INTO production_order_items (production_order_id, size_label, quantity) " +
+                "SELECT ?, size_label, quantity FROM production_request_items WHERE request_id = ?";
+        jdbcTemplate.update(copyItemsSql, productionOrderId, requestId);
+
+        // 7. Ghi nhận nhật ký tiến độ đầu tiên
+        String insertProgressSql = "INSERT INTO production_progress_updates (production_order_id, stage, note, created_by, created_at) " +
+                "VALUES (?, ?, ?, ?, NOW())";
+        jdbcTemplate.update(insertProgressSql,
+                productionOrderId,
+                initialStage,
+                "Đơn hàng đã được đặt cọc 50%. Đã xác nhận đơn gia công.",
+                actualUserId // Thay chữ "Hệ thống" bằng actualUserId (kiểu Long)
+        );
+
+        return new AcceptQuotationResponse(
+                productionOrderId,
+                orderCode,
+                totalAmount,
+                depositAmount,
+                initialStatus,
+                "Đặt cọc thành công! Đơn gia công đã được chuyển đến xưởng may."
+        );
+    }
+
+    /**
+     * BƯỚC 4: Lấy danh sách các đơn đặt may gia công của Designer đang đăng nhập
+     * Đã bọc an toàn kiểu dữ liệu Date/Timestamp và mở rộng điều kiện khớp tài khoản
+     */
+    @Transactional(readOnly = true)
+    public List<DesignerProductionOrderSummary> getMyProductionOrders(Long currentUserId) {
+        Long targetUserId = (currentUserId != null && currentUserId > 0) ? currentUserId : 1L;
+
+        // Lấy tên người dùng hiện tại để làm điều kiện fallback an toàn
+        String currentUserName = "";
+        try {
+            currentUserName = jdbcTemplate.queryForObject(
+                    "SELECT full_name FROM users WHERE id = ?", String.class, targetUserId
+            );
+        } catch (Exception ignored) {}
+
+        String ordersSql = """
+            SELECT po.id, po.order_code, po.quotation_id, po.garment_color, po.print_sides,
+                   po.quantity, po.unit_price, po.total_amount, po.deposit_amount,
+                   po.status, po.current_stage, po.deadline, po.shipping_name, po.shipping_phone,
+                   po.shipping_address, po.tracking_code, po.created_at,
+                   dv.design_id, dv.preview_image_url,
+                   COALESCE(d.name, 'Mẫu thiết kế áo') AS design_name,
+                   COALESCE(pp.business_name, u_prod.full_name, 'Xưởng May Atelier') AS producer_name,
+                   COALESCE(pp.contact_phone, u_prod.phone, '0900000000') AS producer_phone,
+                   COALESCE(pp.address, 'Trạm xưởng Atelier') AS producer_address
+            FROM production_orders po
+            LEFT JOIN design_versions dv ON po.design_version_id = dv.id
+            LEFT JOIN designs d ON dv.design_id = d.id
+            LEFT JOIN producer_profiles pp ON po.producer_id = pp.id
+            LEFT JOIN users u_prod ON pp.user_id = u_prod.id
+            WHERE po.customer_id = ? 
+               OR po.shipping_name = ?
+               OR po.request_id IN (SELECT id FROM production_requests WHERE requester_id = ?)
+            ORDER BY po.created_at DESC, po.id DESC
+        """;
+
+        List<Map<String, Object>> rows;
+        try {
+            rows = jdbcTemplate.queryForList(ordersSql, targetUserId, currentUserName, targetUserId);
+        } catch (Exception e) {
+            log.error("Lỗi khi truy vấn danh sách đơn gia công: {}", e.getMessage(), e);
+            return Collections.emptyList();
+        }
+
+        if (rows.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<DesignerProductionOrderSummary> result = new ArrayList<>();
+
+        for (Map<String, Object> r : rows) {
+            Long orderId = ((Number) r.get("id")).longValue();
+
+            // Chuyển đổi an toàn ngày tháng không lo bị ClassCastException
+            LocalDateTime deadlineLdt = toLocalDateTimeSafe(r.get("deadline"));
+            LocalDateTime createdLdt = toLocalDateTimeSafe(r.get("created_at"));
+            if (createdLdt == null) createdLdt = LocalDateTime.now();
+
+            BigDecimal totalAmount = r.get("total_amount") != null ? (BigDecimal) r.get("total_amount") : BigDecimal.ZERO;
+            BigDecimal depositAmount = r.get("deposit_amount") != null ? (BigDecimal) r.get("deposit_amount") : BigDecimal.ZERO;
+            BigDecimal remainingAmount = totalAmount.subtract(depositAmount);
+
+            // 1. Lấy phân bổ size từ production_order_items
+            List<DesignerProductionOrderItemDto> items = Collections.emptyList();
+            try {
+                String itemsSql = "SELECT size_label, quantity FROM production_order_items WHERE production_order_id = ?";
+                items = jdbcTemplate.query(
+                        itemsSql,
+                        (rs, i) -> new DesignerProductionOrderItemDto(rs.getString("size_label"), rs.getInt("quantity")),
+                        orderId
+                );
+            } catch (Exception ex) {
+                log.warn("Không thể tải items cho đơn #{}: {}", orderId, ex.getMessage());
+            }
+
+            // 2. Lấy toàn bộ nhật ký công đoạn từ production_progress_updates
+            List<DesignerProgressUpdateDto> progressHistory = Collections.emptyList();
+            try {
+                String historySql = "SELECT stage, note, created_at FROM production_progress_updates WHERE production_order_id = ? ORDER BY id DESC";
+                progressHistory = jdbcTemplate.query(
+                        historySql,
+                        (rs, i) -> new DesignerProgressUpdateDto(
+                                rs.getString("stage"),
+                                rs.getString("note"),
+                                toLocalDateTimeSafe(rs.getTimestamp("created_at"))
+                        ),
+                        orderId
+                );
+            } catch (Exception ex) {
+                log.warn("Không thể tải lịch sử tiến độ cho đơn #{}: {}", orderId, ex.getMessage());
+            }
+
+            result.add(new DesignerProductionOrderSummary(
+                    orderId,
+                    (String) r.get("order_code"),
+                    r.get("quotation_id") != null ? ((Number) r.get("quotation_id")).longValue() : null,
+                    r.get("design_id") != null ? ((Number) r.get("design_id")).longValue() : null,
+                    (String) r.get("design_name"),
+                    (String) r.get("preview_image_url"),
+                    (String) r.get("garment_color"),
+                    (String) r.get("print_sides"),
+                    r.get("quantity") != null ? ((Number) r.get("quantity")).intValue() : 0,
+                    (BigDecimal) r.get("unit_price"),
+                    totalAmount,
+                    depositAmount,
+                    remainingAmount,
+                    (String) r.get("status"),
+                    (String) r.get("current_stage"),
+                    deadlineLdt,
+                    (String) r.get("producer_name"),
+                    (String) r.get("producer_phone"),
+                    (String) r.get("producer_address"),
+                    (String) r.get("shipping_name"),
+                    (String) r.get("shipping_phone"),
+                    (String) r.get("shipping_address"),
+                    (String) r.get("tracking_code"),
+                    createdLdt,
+                    items,
+                    progressHistory
+            ));
+        }
+
+        return result;
+    }
+
+    /**
+     * Hàm helper parse linh hoạt an toàn: chấp nhận Date, Timestamp, LocalDate, LocalDateTime
+     */
+    private LocalDateTime toLocalDateTimeSafe(Object dateObj) {
+        if (dateObj == null) return null;
+        if (dateObj instanceof Timestamp ts) {
+            return ts.toLocalDateTime();
+        }
+        if (dateObj instanceof java.sql.Date d) {
+            return d.toLocalDate().atStartOfDay();
+        }
+        if (dateObj instanceof LocalDateTime ldt) {
+            return ldt;
+        }
+        if (dateObj instanceof LocalDate ld) {
+            return ld.atStartOfDay();
+        }
+        return null;
+    }
+
+    /**
+     * BƯỚC 5: Designer thanh toán 50% còn lại để tất toán đơn gia công
+     * Cập nhật status = 'PAID_IN_FULL', ghi nhận mốc kết thúc vào production_progress_updates
+     */
+    @Transactional
+    public PayRemainingResponse payRemainingAmount(PayRemainingRequest req, Long currentUserId) {
+        Long actualUserId = (currentUserId != null && currentUserId > 0)
+                ? currentUserId
+                : (req.userId() != null && req.userId() > 0 ? req.userId() : null);
+
+        if (actualUserId == null) {
+            throw new RuntimeException("Vui lòng đăng nhập để thực hiện thanh toán.");
+        }
+
+        // 1. Kiểm tra đơn gia công tồn tại
+        String orderSql = "SELECT id, order_code, total_amount, deposit_amount, status FROM production_orders WHERE id = ?";
+        List<Map<String, Object>> orders = jdbcTemplate.queryForList(orderSql, req.productionOrderId());
+        if (orders.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy đơn gia công #" + req.productionOrderId());
+        }
+
+        Map<String, Object> order = orders.get(0);
+        String orderCode = (String) order.get("order_code");
+        String currentStatus = (String) order.get("status");
+        BigDecimal totalAmount = (BigDecimal) order.get("total_amount");
+        BigDecimal depositAmount = order.get("deposit_amount") != null ? (BigDecimal) order.get("deposit_amount") : BigDecimal.ZERO;
+        BigDecimal remainingAmount = totalAmount.subtract(depositAmount);
+
+        if ("PAID_IN_FULL".equalsIgnoreCase(currentStatus)) {
+            throw new RuntimeException("Đơn gia công #" + orderCode + " đã được tất toán toàn bộ trước đó.");
+        }
+
+        // 2. Cập nhật trạng thái đơn sang hoàn tất thanh toán
+        String nextStatus = "PAID_IN_FULL";
+        String nextStage = "Đã tất toán 100% - Bàn giao";
+        String updateOrderSql = "UPDATE production_orders SET status = ?, current_stage = ?, updated_at = NOW() WHERE id = ?";
+        jdbcTemplate.update(updateOrderSql, nextStatus, nextStage, req.productionOrderId());
+
+        // 3. Ghi nhận nhật ký tiến độ vào production_progress_updates
+        String insertProgressSql = "INSERT INTO production_progress_updates (production_order_id, stage, note, created_by, created_at) " +
+                "VALUES (?, ?, ?, ?, NOW())";
+        jdbcTemplate.update(insertProgressSql,
+                req.productionOrderId(),
+                "Tất toán hoàn tất",
+                "Khách hàng đã thanh toán 50% còn lại thành công qua " + (req.paymentMethod() != null ? req.paymentMethod() : "Cổng thanh toán") + ". Đơn hàng hoàn tất.",
+                actualUserId
+        );
+
+        return new PayRemainingResponse(
+                req.productionOrderId(),
+                orderCode,
+                remainingAmount,
+                nextStatus,
+                "Tất toán đơn gia công thành công! Xưởng may sẽ tiến hành bàn giao hàng."
+        );
     }
 }

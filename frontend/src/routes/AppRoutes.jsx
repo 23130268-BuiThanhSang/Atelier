@@ -32,6 +32,8 @@ import PublicDesigns from '../pages/DesignStudio/PublicDesigns.jsx';
 import OrderDetail from "../pages/MyOrders/OrderDetail.jsx";
 import ProducerRequests from "../pages/Producer/ProducerRequests.jsx";
 import MyProductionRequests from '../pages/DesignStudio/MyProductionRequests';
+import MyProductionOrders from '../pages/DesignStudio/MyProductionOrders';
+import ProtectedRoute from '../routes/ProtectedRoute';
 
 export default function AppRoutes() {
     return (
@@ -41,10 +43,8 @@ export default function AppRoutes() {
                 <Route path="/catalog" element={<Catalog />} />
                 <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/design-studio" element={<DesignStudio />} />
-                <Route path="/my-designs" element={<MyDesigns />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
-                <Route path="/my-orders" element={<MyOrders />} />
                 <Route path="/privacy_policy" element={<PrivacyPolicy />} />
                 <Route path="/term_service" element={<TermOfService />} />
                 <Route path="/security_complience" element={<SecurityCompliance />} />
@@ -52,11 +52,16 @@ export default function AppRoutes() {
                 <Route path="/producer_dashboard" element={<ProducerDashboard />} />
                 <Route path="/orders/:id/resolution" element={<OrderResolutionCenter />} />
                 <Route path="/design-studio/:id/proposals" element={<DesignProposals />} />
-                <Route path="/my_profile" element={<MyProfile />} />
                 <Route path="/community-designs" element={<PublicDesigns />} />
-                <Route path="/order_detail/:id" element={<OrderDetail />} />
                 <Route path="/producer-requests" element={<ProducerRequests />} />
                 <Route path="/my-production-requests" element={<MyProductionRequests />} />
+                <Route path="/my-production-orders" element={<MyProductionOrders />} />
+                <Route element={<ProtectedRoute />}>
+                    <Route path="/my_profile" element={<MyProfile />} />
+                    <Route path="/my-orders" element={<MyOrders />} />
+                    <Route path="/order_detail/:id" element={<OrderDetail />} />
+                    <Route path="/my-designs" element={<MyDesigns />} />
+                </Route>
             </Route>
 
             <Route element={<AuthLayout />}>
@@ -67,13 +72,15 @@ export default function AppRoutes() {
             </Route>
 
             <Route element={<AdminLayout />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/products" element={<AdminProducts />} />
-                <Route path="/admin/products/new" element={<AdminProductForm />} />
-                <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />
-                <Route path="/admin/orders" element={<AdminOrders />} />
-                <Route path="/admin/reviews" element={<AdminReviews />} />
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ROLE_ADMIN']} />}>
+                    <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/admin/users" element={<AdminUsers />} />
+                    <Route path="/admin/products" element={<AdminProducts />} />
+                    <Route path="/admin/products/new" element={<AdminProductForm />} />
+                    <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />
+                    <Route path="/admin/orders" element={<AdminOrders />} />
+                    <Route path="/admin/reviews" element={<AdminReviews />} />
+                </Route>
             </Route>
         </Routes>
     )
