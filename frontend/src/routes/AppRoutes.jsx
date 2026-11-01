@@ -16,6 +16,7 @@ import AdminUsers from '../pages/admin/AdminUsers';
 import AdminProducts from '../pages/admin/AdminProducts';
 import AdminProductForm from '../pages/admin/AdminProductForm';
 import AdminOrders from '../pages/admin/AdminOrders';
+import AdminReviews from '../pages/admin/AdminReviews';
 import ForgotPassword from "../pages/Login/ForgotPassword.jsx";
 import EmailVerification from "../pages/Login/EmailVerification";
 import MyProfile from "../pages/Login/MyProfile";
@@ -33,6 +34,7 @@ import ProducerRequests from "../pages/Producer/ProducerRequests.jsx";
 import MyProductionRequests from '../pages/DesignStudio/MyProductionRequests';
 import MyProductionOrders from '../pages/DesignStudio/MyProductionOrders';
 import ProtectedRoute from '../routes/ProtectedRoute';
+import OrderSuccess from '../pages/Checkout/OrderSuccess.jsx';
 
 export default function AppRoutes() {
     return (
@@ -60,6 +62,7 @@ export default function AppRoutes() {
                     <Route path="/my-orders" element={<MyOrders />} />
                     <Route path="/order_detail/:id" element={<OrderDetail />} />
                     <Route path="/my-designs" element={<MyDesigns />} />
+                    <Route path="/order-success" element={<OrderSuccess />} />
                 </Route>
             </Route>
 
@@ -71,13 +74,14 @@ export default function AppRoutes() {
             </Route>
 
             <Route element={<AdminLayout />}>
-                <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ROLE_ADMIN']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/admin/users" element={<AdminUsers />} />
                     <Route path="/admin/products" element={<AdminProducts />} />
                     <Route path="/admin/products/new" element={<AdminProductForm />} />
                     <Route path="/admin/products/:id/edit" element={<AdminProductForm />} />
                     <Route path="/admin/orders" element={<AdminOrders />} />
+                    <Route path="/admin/reviews" element={<AdminReviews />} />
                 </Route>
             </Route>
         </Routes>

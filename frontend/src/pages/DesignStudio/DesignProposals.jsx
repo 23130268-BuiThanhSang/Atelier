@@ -408,7 +408,7 @@ export default function DesignProposals() {
                                                     </span>
                                                 </div>
                                                 <p className="text-[11px] text-zinc-500 mt-0.5">
-                                                    ★ {q.rating} • {q.completedOrders} đơn hoàn tất • {q.location}
+                                                    {q.location}
                                                 </p>
                                             </div>
                                         </div>

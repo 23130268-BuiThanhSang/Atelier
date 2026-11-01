@@ -9,6 +9,7 @@ import { productApi } from '../../api/productApi'
 import { cartApi } from '../../api/cartApi'
 import Toast from '../../components/ui/Toast'
 import { useCartStore } from '../../store/cartStore'
+import ProductReviews from './ProductReviews'
 
 function formatPrice(value) {
   return new Intl.NumberFormat('vi-VN', {
@@ -315,12 +316,10 @@ export default function ProductDetail() {
                 {selectedVariant && (
                     <div className="rounded-xl bg-[#faf7ee] p-4 text-sm">
                       <p className="font-semibold text-zinc-950">SKU: {selectedVariant.sku}</p>
-                      <p className={`mt-1 font-medium ${Number(selectedVariant.stockQuantity) <= 0 ? 'text-red-600' : Number(selectedVariant.stockQuantity) < 5 ? 'text-amber-700' : 'text-emerald-700'}`}>
-                        {Number(selectedVariant.stockQuantity) <= 0
-                            ? 'Hết hàng'
-                            : Number(selectedVariant.stockQuantity) < 5
-                                ? 'Sắp hết hàng'
-                                : 'Còn hàng'}
+                      <p className="mt-1 text-zinc-600">
+                        {selectedVariant.stockQuantity > 0
+                            ? `Còn ${selectedVariant.stockQuantity} sản phẩm`
+                            : 'Hết hàng'}
                       </p>
                     </div>
                 )}
@@ -370,72 +369,26 @@ export default function ProductDetail() {
             </section>
           </div>
 
-          <section id="product-reviews" className="mt-14 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-8">
-            <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#f0592a]">Phản hồi khách hàng</p>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-zinc-950">Đánh giá sản phẩm</h2>
-                <div className="mt-5 rounded-2xl bg-[#faf7ee] p-5">
-                  {reviewCount > 0 ? (
-                      <>
-                        <p className="text-4xl font-black tracking-tight text-zinc-950">{(Number(product.averageRating) || 0).toFixed(1)}<span className="ml-1 text-base font-semibold text-zinc-500">/ 5</span></p>
-                        <div className="mt-3"><DetailRating averageRating={product.averageRating} reviewCount={reviewCount} /></div>
-                        <p className="mt-3 text-sm text-zinc-600">Tổng hợp từ {reviewCount.toLocaleString('vi-VN')} đánh giá được hiển thị.</p>
-                        <p className="mt-2 text-xs leading-5 text-zinc-500">Danh sách nội dung nhận xét chi tiết chưa được tải trong phiên bản này.</p>
-                      </>
-                  ) : (
-                      <>
-                        <p className="text-2xl font-black text-zinc-950">Chưa có đánh giá</p>
-                        <div className="mt-3"><DetailRating averageRating={0} reviewCount={0} /></div>
-                        <p className="mt-3 text-sm leading-6 text-zinc-600">Sản phẩm chưa có đánh giá nào được hiển thị. Hãy là người đầu tiên chia sẻ trải nghiệm khi chức năng đánh giá được mở.</p>
-                      </>
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-200 p-5 sm:p-6">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-bold text-zinc-950">Chia sẻ đánh giá của bạn</h3>
-                    <p className="mt-1 text-sm text-zinc-600">Giao diện xem trước — chưa gửi hoặc lưu dữ liệu.</p>
-                  </div>
-                  <span className="rounded-full bg-[#fff1ea] px-3 py-1 text-xs font-bold text-[#c94a1f]">Sắp ra mắt</span>
-                </div>
-
-                <fieldset disabled className="mt-5 space-y-4 disabled:opacity-70">
-                  <div>
-                    <label htmlFor="review-rating" className="mb-2 block text-sm font-semibold text-zinc-800">Mức đánh giá</label>
-                    <select id="review-rating" defaultValue="5" className="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-600">
-                      <option value="5">★★★★★ — Rất hài lòng</option>
-                      <option value="4">★★★★☆ — Hài lòng</option>
-                      <option value="3">★★★☆☆ — Bình thường</option>
-                      <option value="2">★★☆☆☆ — Chưa hài lòng</option>
-                      <option value="1">★☆☆☆☆ — Không hài lòng</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="review-comment" className="mb-2 block text-sm font-semibold text-zinc-800">Nội dung đánh giá</label>
-                    <textarea id="review-comment" rows={4} placeholder="Chất liệu, kích thước và trải nghiệm sử dụng..." className="w-full resize-y rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm text-zinc-700 placeholder:text-zinc-400" />
-                  </div>
-                  <Button disabled className="w-full sm:w-auto">Gửi đánh giá (sắp ra mắt)</Button>
-                </fieldset>
-              </div>
-            </div>
-          </section>
+          <ProductReviews productId={product.id} />
 
           <section className="mt-14 border-t border-zinc-200 pt-10">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#f0592a]">Tiếp tục khám phá</p>
-                <h2 className="mt-2 text-2xl font-bold text-zinc-950">Khám phá sản phẩm khác</h2>
-                <p className="mt-1 text-sm text-zinc-600">Những sản phẩm được khách hàng lựa chọn nhiều nhất.</p>
+                <h2 className="mt-2 text-2xl font-bold text-zinc-950">Các sản phẩm liên quan</h2>
+                <p className="mt-1 text-sm text-zinc-600">
+                  Khám phá thêm sản phẩm thuộc danh mục {product.categoryName || 'hiện tại'}.
+                </p>
               </div>
               <Link to="/catalog" className="text-sm font-semibold text-[#f0592a] hover:underline">
                 Xem tất cả
               </Link>
             </div>
 
-            <BestSellingProducts currentId={product.id} />
+            <RelatedProductsByCategory
+                currentId={product.id}
+                categoryId={product.categoryId}
+            />
           </section>
 
           <Toast
@@ -449,12 +402,17 @@ export default function ProductDetail() {
   )
 }
 
-function BestSellingProducts({ currentId }) {
+function RelatedProductsByCategory({ currentId, categoryId }) {
   const relatedQuery = useQuery({
-    queryKey: ['products', 'best-selling'],
+    queryKey: ['products', 'catalog'],
     queryFn: productApi.getAll,
+    enabled: categoryId !== null && categoryId !== undefined,
     staleTime: 60 * 1000,
   })
+
+  if (categoryId === null || categoryId === undefined) {
+    return <p role="status" className="mt-5 text-sm text-zinc-500">Chưa xác định được danh mục sản phẩm.</p>
+  }
 
   if (relatedQuery.isLoading) {
     return (
@@ -471,16 +429,20 @@ function BestSellingProducts({ currentId }) {
   }
 
   if (relatedQuery.isError) {
-    return <p role="status" className="mt-5 text-sm text-zinc-500">Chưa thể tải danh sách sản phẩm bán chạy.</p>
+    return <p role="status" className="mt-5 text-sm text-zinc-500">Chưa thể tải sản phẩm cùng danh mục.</p>
   }
 
   const products = (Array.isArray(relatedQuery.data) ? relatedQuery.data : [])
-      .filter((item) => String(item.id) !== String(currentId))
+      .filter((item) => (
+          String(item.id) !== String(currentId)
+          && String(item.categoryId) === String(categoryId)
+      ))
+      // Ưu tiên sản phẩm bán chạy hơn trong cùng danh mục.
       .sort((a, b) => (Number(b.soldCount) || 0) - (Number(a.soldCount) || 0))
       .slice(0, 4)
 
   if (!products.length) {
-    return <p className="mt-5 text-sm text-zinc-500">Chưa có dữ liệu sản phẩm bán chạy.</p>
+    return <p className="mt-5 text-sm text-zinc-500">Chưa có sản phẩm khác trong cùng danh mục.</p>
   }
 
   return (
