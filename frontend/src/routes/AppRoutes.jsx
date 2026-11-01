@@ -34,6 +34,7 @@ import ProducerRequests from "../pages/Producer/ProducerRequests.jsx";
 import MyProductionRequests from '../pages/DesignStudio/MyProductionRequests';
 import MyProductionOrders from '../pages/DesignStudio/MyProductionOrders';
 import ProtectedRoute from '../routes/ProtectedRoute';
+import OrderSuccess from '../pages/Checkout/OrderSuccess.jsx';
 
 export default function AppRoutes() {
     return (
@@ -61,6 +62,7 @@ export default function AppRoutes() {
                     <Route path="/my-orders" element={<MyOrders />} />
                     <Route path="/order_detail/:id" element={<OrderDetail />} />
                     <Route path="/my-designs" element={<MyDesigns />} />
+                    <Route path="/order-success" element={<OrderSuccess />} />
                 </Route>
             </Route>
 
@@ -72,7 +74,7 @@ export default function AppRoutes() {
             </Route>
 
             <Route element={<AdminLayout />}>
-                <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ROLE_ADMIN']} />}>
+                <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/admin/users" element={<AdminUsers />} />
                     <Route path="/admin/products" element={<AdminProducts />} />

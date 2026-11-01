@@ -167,16 +167,41 @@ export default function Checkout() {
       const remainingCount = Math.max(0, (cart?.itemCount || 0) - totalQuantity)
       setItemCount(remainingCount)
 
-      showToast('Đặt hàng thành công! Đang chuyển hướng...', 'success')
+        if (paymentMethod === 'VNPAY') {
+            showToast('Đang chuyển hướng sang cổng thanh toán VNPay...', 'success')
 
-      setTimeout(() => {
-        if (res?.id) {
-          navigate(`/order_detail/${res.id}`)
-        } else {
-          navigate('/my-orders')
-        }
-      }, 1000)
-    } catch (err) {
+            try {
+                // Gọi API lấy link VNPay bằng ID đơn hàng vừa tạo xong
+                const vnpayRes = await fetch(`http://localhost:8080/api/payment/create-url/${res.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const vnpayData = await vnpayRes.json();
+
+                if (vnpayRes.ok && vnpayData.paymentUrl) {
+                    // Đẩy trình duyệt sang trang VNPay
+                    window.location.href = vnpayData.paymentUrl;
+                } else {
+                    // Nếu lấy link thất bại, vẫn đưa về trang chi tiết đơn hàng để họ ấn thanh toán lại sau
+                    showToast('Không thể kết nối VNPay lúc này, vui lòng thử lại ở trang chi tiết!', 'error');
+                    setTimeout(() => navigate(`/order_detail/${res.id}`), 2000);
+                }
+            } catch (err) {
+                showToast('Lỗi kết nối cổng thanh toán', 'error');
+                setTimeout(() => navigate(`/order_detail/${res.id}`), 2000);
+            }
+
+        }else {
+          // Thanh toán cod
+          showToast('Đặt hàng thành công! Đang chuyển hướng...', 'success')
+          setTimeout(() => {
+              if (res?.id) {
+                  navigate(`/order-success?orderId=${res.id}`)
+              } else {
+                  navigate('/my-orders')
+              }
+          }, 1000)}
+      } catch (err) {
       const errMsg =
         err.response?.data?.message || err.message || 'Đặt hàng thất bại. Vui lòng thử lại!'
       showToast(errMsg, 'error')
@@ -442,46 +467,49 @@ export default function Checkout() {
                     </div>
                   </label>
 
-                  {/* Chuyển khoản ngân hàng */}
-                  <label
-                    className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                      paymentMethod === 'BANK_TRANSFER'
-                        ? 'border-[#f0592a] bg-[#fdfbf4] ring-2 ring-[#f0592a]/10'
-                        : 'border-zinc-200 bg-white hover:border-zinc-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="BANK_TRANSFER"
-                      checked={paymentMethod === 'BANK_TRANSFER'}
-                      onChange={() => setPaymentMethod('BANK_TRANSFER')}
-                      className="mt-1 w-4 h-4 text-[#f0592a] accent-[#f0592a] cursor-pointer"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
+                    {/* Thanh toán qua VNPay */}
+                    <label
+                        className={`flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+                            paymentMethod === 'VNPAY'
+                                ? 'border-[#f0592a] bg-[#fdfbf4] ring-2 ring-[#f0592a]/10'
+                                : 'border-zinc-200 bg-white hover:border-zinc-300'
+                        }`}
+                    >
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="VNPAY"
+                            checked={paymentMethod === 'VNPAY'}
+                            onChange={() => setPaymentMethod('VNPAY')}
+                            className="mt-1 w-4 h-4 text-[#f0592a] accent-[#f0592a] cursor-pointer"
+                        />
+                        <div className="flex-1">
+                            <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold text-zinc-950">
-                          Chuyển khoản ngân hàng (VietQR)
+                          Thanh toán qua VNPAY
                         </span>
-                        <Building2 className="w-4 h-4 text-zinc-400" />
-                      </div>
-                      <p className="text-xs text-zinc-500 mt-0.5">
-                        Thanh toán nhanh chóng bằng cách quét mã QR qua ứng dụng ngân hàng hoặc ví điện tử.
-                      </p>
+                                <div className="flex gap-1">
+                                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">ATM</span>
+                                    <span className="text-[10px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">Visa/Master</span>
+                                </div>
+                            </div>
+                            <p className="text-xs text-zinc-500 mt-0.5">
+                                Thanh toán an toàn qua cổng VNPAY bằng thẻ ngân hàng, thẻ quốc tế hoặc quét mã QR.
+                            </p>
 
-                      {paymentMethod === 'BANK_TRANSFER' && (
-                        <div className="mt-3 p-3 bg-white rounded-lg border border-amber-200 text-xs text-zinc-700 space-y-1">
-                          <p className="font-semibold text-zinc-900">Thông tin chuyển khoản Atelier:</p>
-                          <p>• Ngân hàng: <strong>MB Bank (Quân Đội)</strong></p>
-                          <p>• Số tài khoản: <strong>9999 8888 6666</strong></p>
-                          <p>• Chủ tài khoản: <strong>ATELIER PLATFORM</strong></p>
-                          <p className="text-amber-700 italic">
-                            * Nội dung chuyển khoản: Mã đơn hàng (sẽ xuất hiện ở trang xác nhận tiếp theo).
-                          </p>
+                            {paymentMethod === 'VNPAY' && (
+                                <div className="mt-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100 text-xs text-zinc-700 space-y-1">
+                                    <p className="font-semibold text-zinc-900 flex items-center gap-1.5">
+                                        <ShieldCheck className="w-4 h-4 text-blue-600" />
+                                        Giao dịch được bảo mật tuyệt đối
+                                    </p>
+                                    <p className="text-zinc-600">
+                                        Hệ thống sẽ tự động chuyển hướng sang cổng thanh toán VNPAY sau khi bạn bấm xác nhận đặt hàng.
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                      )}
-                    </div>
-                  </label>
+                    </label>
                 </div>
               </div>
             </div>
