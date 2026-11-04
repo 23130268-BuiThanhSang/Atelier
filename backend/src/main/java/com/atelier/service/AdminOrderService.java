@@ -26,11 +26,11 @@ public class AdminOrderService {
     @Transactional(readOnly = true)
     public AdminOrderDto.KpiResponse getOrderKpis() {
         long total = orderRepository.count();
-        long inProd = orderRepository.countInProduction();
+        long pendingConf = orderRepository.countPendingConfirmation();
         long pendingDel = orderRepository.countPendingDelivery();
         long disputed = orderRepository.countByStatus("DISPUTED");
 
-        return new AdminOrderDto.KpiResponse(total, inProd, pendingDel, disputed);
+        return new AdminOrderDto.KpiResponse(total, pendingConf, pendingDel, disputed);
     }
 
     @Transactional(readOnly = true)
