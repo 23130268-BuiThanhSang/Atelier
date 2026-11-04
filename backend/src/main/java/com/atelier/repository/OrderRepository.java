@@ -26,8 +26,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByStatus(String status);
 
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.status IN ('IN_PRODUCTION', 'QC_INSPECTION')")
-    long countInProduction();
+    // Đếm số đơn chờ xác nhận (PENDING)
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.status = 'PENDING'")
+    long countPendingConfirmation();
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status IN ('CONFIRMED', 'PENDING', 'SHIPPED')")
     long countPendingDelivery();
