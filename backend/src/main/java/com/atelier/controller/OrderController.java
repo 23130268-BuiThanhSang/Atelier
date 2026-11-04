@@ -1,8 +1,12 @@
 package com.atelier.controller;
 
 import com.atelier.order.dto.CreateOrderRequest;
+import com.atelier.order.entity.Order;
+import com.atelier.repository.OrderRepository;
 import com.atelier.service.OrderService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +20,8 @@ import java.util.Map;
 public class OrderController {
 
     private final OrderService orderService;
+    @Autowired
+    private OrderRepository orderRepository;
 
     public OrderController(OrderService orderService) {
         this.orderService = orderService;
@@ -60,5 +66,19 @@ public class OrderController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
+    }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+        if (!"PENDING".equalsIgnoreCase(order.getStatus())) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Chỉ có thể hủy đơn hàng đang chờ xác nhận"));
+        }
+
+        order.setStatus("CANCELLED");
+        orderRepository.save(order);
+
+        return ResponseEntity.ok(Map.of("message", "Hủy đơn hàng thành công"));
     }
 }
