@@ -3,27 +3,31 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft, Package, Truck, CheckCircle,
     Clock, AlertCircle, MapPin, Phone, User,
-    Receipt, CreditCard, ExternalLink
+    Receipt, CreditCard, ExternalLink,
+    ClipboardCheck, X // <--- Thêm icon X cho Modal
 } from 'lucide-react';
 
 export default function OrderDetail() {
-    const { id } = useParams(); // Lấy mã đơn hàng từ URL, vd: /orders/ORD-261020-001
+    const { id } = useParams();
     const navigate = useNavigate();
 
     const [order, setOrder] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // --- STATE QUẢN LÝ MODAL HỦY ĐƠN ---
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [isCanceling, setIsCanceling] = useState(false);
+
     useEffect(() => {
         if (!id) return;
 
-        // GỌI API THẬT LẤY CHI TIẾT
         fetch(`http://localhost:8080/api/orders/${id}`)
             .then(res => {
                 if (!res.ok) throw new Error("Không tìm thấy đơn hàng");
                 return res.json();
             })
             .then(data => {
-                setOrder(data); // Đưa Object JSON thật vào State
+                setOrder(data);
                 setIsLoading(false);
             })
             .catch(err => {
@@ -42,28 +46,51 @@ export default function OrderDetail() {
         }).format(new Date(dateString));
     };
 
-    // Hàm render Tiến trình (Stepper) dựa vào Status
+    // --- HÀM GỌI API HỦY ĐƠN TRONG MODAL ---
+    const handleConfirmCancel = async () => {
+        setIsCanceling(true);
+        try {
+            const res = await fetch(`http://localhost:8080/api/orders/${id}/cancel`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (res.ok) {
+                window.location.reload();
+            } else {
+                const errorData = await res.json();
+                alert(errorData.message || 'Hủy đơn hàng thất bại!');
+                setIsCanceling(false);
+                setIsCancelModalOpen(false);
+            }
+        } catch (error) {
+            console.error('Lỗi khi hủy đơn:', error);
+            alert('Lỗi kết nối máy chủ!');
+            setIsCanceling(false);
+            setIsCancelModalOpen(false);
+        }
+    };
+
     const renderStepper = (currentStatus) => {
         const steps = [
             { id: 'PENDING', label: 'Chờ xác nhận', icon: Clock },
+            { id: 'CONFIRMED', label: 'Đã xác nhận', icon: ClipboardCheck },
             { id: 'IN_PROGRESS', label: 'Đang sản xuất', icon: Package },
             { id: 'DELIVERING', label: 'Đang giao hàng', icon: Truck },
-            { id: 'COMPLETED', label: 'Hoàn thành', icon: CheckCircle }
+            { id: 'DELIVERED', label: 'Đã giao hàng', icon: CheckCircle }
         ];
 
         let activeIndex = steps.findIndex(s => s.id === currentStatus);
-        if (currentStatus === 'CANCELLED') activeIndex = -1; // Hủy thì tắt hết tiến trình
+        if (currentStatus === 'CANCELLED') activeIndex = -1;
 
         return (
             <div className="relative flex justify-between w-full mt-8 mb-4">
-                {/* Đường chỉ chạy ngầm (Thanh progress bar) */}
                 <div className="absolute top-5 left-0 w-full h-1 bg-zinc-200 rounded-full z-0"></div>
                 <div
                     className="absolute top-5 left-0 h-1 bg-[#f0592a] rounded-full z-0 transition-all duration-500"
                     style={{ width: activeIndex >= 0 ? `${(activeIndex / (steps.length - 1)) * 100}%` : '0%' }}
                 ></div>
 
-                {/* Các điểm (Nút tiến trình) */}
                 {steps.map((step, index) => {
                     const StepIcon = step.icon;
                     const isCompleted = index <= activeIndex;
@@ -76,7 +103,7 @@ export default function OrderDetail() {
                             } ${isCurrent ? 'ring-4 ring-[#f0592a]/20' : ''}`}>
                                 <StepIcon className="w-4 h-4" />
                             </div>
-                            <span className={`text-xs font-bold ${isCompleted ? 'text-zinc-900' : 'text-zinc-400'}`}>
+                            <span className={`text-xs font-bold whitespace-nowrap ${isCompleted ? 'text-zinc-900' : 'text-zinc-400'}`}>
                                 {step.label}
                             </span>
                         </div>
@@ -92,7 +119,6 @@ export default function OrderDetail() {
         <div className="w-full min-h-[calc(100vh-80px)] bg-[#fdfbf4] py-8 px-4 font-sans">
             <div className="max-w-6xl mx-auto space-y-6">
 
-                {/* --- HEADER BACK & TITLE --- */}
                 <div className="flex items-center gap-4">
                     <button onClick={() => navigate(-1)} className="w-10 h-10 bg-white border border-zinc-200 rounded-full flex items-center justify-center text-zinc-600 hover:text-[#f0592a] hover:border-[#f0592a] transition-colors shadow-sm">
                         <ArrowLeft className="w-5 h-5" />
@@ -106,13 +132,8 @@ export default function OrderDetail() {
                     </div>
                 </div>
 
-                {/* --- MAIN GRID --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                    {/* CỘT TRÁI (LỚN): TIẾN TRÌNH & SẢN PHẨM */}
                     <div className="lg:col-span-2 space-y-6">
-
-                        {/* Box 1: Tiến trình đơn hàng */}
                         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 p-6 md:p-8">
                             <h2 className="text-lg font-bold text-zinc-900 mb-2">Trạng thái đơn hàng</h2>
                             {order.status === 'CANCELLED' ? (
@@ -120,7 +141,7 @@ export default function OrderDetail() {
                                     <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
                                     <div>
                                         <h3 className="font-bold text-red-700">Đơn hàng đã bị hủy</h3>
-                                        <p className="text-sm text-red-600 mt-1">Lý do: Khách hàng yêu cầu hủy đơn do thay đổi kế hoạch sản xuất.</p>
+                                        <p className="text-sm text-red-600 mt-1">Khách hàng yêu cầu hủy đơn do thay đổi kế hoạch.</p>
                                     </div>
                                 </div>
                             ) : (
@@ -128,7 +149,6 @@ export default function OrderDetail() {
                             )}
                         </div>
 
-                        {/* Box 2: Danh sách Sản phẩm */}
                         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 p-6 md:p-8">
                             <h2 className="text-lg font-bold text-zinc-900 mb-6 flex items-center gap-2">
                                 <Package className="w-5 h-5 text-[#f0592a]" /> Sản phẩm / Dịch vụ
@@ -149,13 +169,9 @@ export default function OrderDetail() {
                                 ))}
                             </div>
                         </div>
-
                     </div>
 
-                    {/* CỘT PHẢI (NHỎ): THÔNG TIN KHÁCH HÀNG & THANH TOÁN */}
                     <div className="lg:col-span-1 space-y-6">
-
-                        {/* Box 3: Thông tin giao hàng */}
                         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 p-6">
                             <h2 className="text-base font-bold text-zinc-900 mb-4 flex items-center gap-2">
                                 <MapPin className="w-4 h-4 text-[#f0592a]" /> Địa chỉ nhận hàng
@@ -183,7 +199,6 @@ export default function OrderDetail() {
                             </div>
                         </div>
 
-                        {/* Box 4: Tóm tắt thanh toán */}
                         <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 p-6">
                             <h2 className="text-base font-bold text-zinc-900 mb-4 flex items-center gap-2">
                                 <Receipt className="w-4 h-4 text-[#f0592a]" /> Chi tiết thanh toán
@@ -203,22 +218,68 @@ export default function OrderDetail() {
                                 </div>
                             </div>
 
-                            {/* Nút Hành động */}
                             <div className="mt-6 space-y-3">
-                                {order.status === 'PENDING' && (
-                                    <button className="w-full bg-red-50 text-red-600 hover:bg-red-100 font-bold py-3 rounded-xl transition-colors">
-                                        Hủy đơn hàng
-                                    </button>
-                                )}
-                                <button className="w-full flex justify-center items-center gap-2 bg-zinc-900 text-white hover:bg-zinc-800 font-bold py-3 rounded-xl transition-colors">
-                                    <CreditCard className="w-4 h-4" /> Thanh toán / Đặt cọc
+                                {/* Mở modal thay vì gọi window.confirm */}
+                                <button
+                                    disabled={order.status !== 'PENDING'}
+                                    onClick={() => setIsCancelModalOpen(true)}
+                                    className={`w-full font-bold py-3 rounded-xl transition-colors ${
+                                        order.status === 'PENDING'
+                                            ? 'bg-red-50 text-red-600 hover:bg-red-100 cursor-pointer'
+                                            : 'bg-zinc-100 text-zinc-400 cursor-not-allowed opacity-60'
+                                    }`}
+                                >
+                                    {order.status === 'CANCELLED' ? 'Đơn hàng đã hủy' : 'Hủy đơn hàng'}
                                 </button>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
+
+            {/* --- MODAL XÁC NHẬN HỦY ĐƠN --- */}
+            {isCancelModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl transition-all">
+                        <div className="flex items-center justify-between mb-5">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                                    <AlertCircle className="w-5 h-5" />
+                                </div>
+                                <h2 className="text-lg font-bold text-zinc-900">Xác nhận hủy đơn</h2>
+                            </div>
+                            <button
+                                onClick={() => setIsCancelModalOpen(false)}
+                                disabled={isCanceling}
+                                className="text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 p-1.5 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <p className="text-zinc-600 mb-6 text-sm">
+                            Bạn có chắc chắn muốn hủy đơn hàng <strong className="text-zinc-900">#{order.orderCode}</strong> không? Hành động này không thể hoàn tác.
+                        </p>
+
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setIsCancelModalOpen(false)}
+                                disabled={isCanceling}
+                                className="px-5 py-2.5 rounded-xl border border-zinc-200 text-zinc-700 text-sm font-semibold hover:bg-zinc-50 transition-colors disabled:opacity-50"
+                            >
+                                Đóng
+                            </button>
+                            <button
+                                onClick={handleConfirmCancel}
+                                disabled={isCanceling}
+                                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold flex items-center gap-2 transition-colors disabled:opacity-50"
+                            >
+                                {isCanceling ? 'Đang xử lý...' : 'Xác nhận hủy'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

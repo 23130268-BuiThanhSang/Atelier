@@ -124,6 +124,9 @@ public class AuthService {
             throw new RuntimeException("Tài khoản không tồn tại!");
         }
         User user = userOptional.get();
+        if ("SUSPENDED".equalsIgnoreCase(user.getStatus())) {
+            throw new RuntimeException("Tài khoản của bạn đã bị đình chỉ hoạt động. Vui lòng liên hệ Admin!");
+        }
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new RuntimeException("Sai mật khẩu!");
         }
@@ -244,6 +247,10 @@ public class AuthService {
                 user.getRoles().add(defaultRole);
 
                 userRepository.save(user);
+            }else {
+                if ("SUSPENDED".equalsIgnoreCase(user.getStatus())) {
+                    throw new RuntimeException("Tài khoản của bạn đã bị đình chỉ hoạt động. Vui lòng liên hệ Admin!");
+                }
             }
 
             // 5. Trả về thông tin đăng nhập thành công

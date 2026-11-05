@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
@@ -34,6 +35,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     long countPendingDelivery();
 
     List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
+    Optional<Order> findByOrderCode(String orderCode);
 
     boolean existsByOrderCode(String orderCode);
 }
