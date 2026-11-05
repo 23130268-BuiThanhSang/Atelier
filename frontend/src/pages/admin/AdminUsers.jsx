@@ -158,7 +158,7 @@ export default function AdminUsers() {
         }
         return (
             <span className="px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-700 text-[11px] font-medium">
-                Khách hàng
+                Người thiết kế
             </span>
         );
     };

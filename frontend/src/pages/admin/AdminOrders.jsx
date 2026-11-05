@@ -19,8 +19,8 @@ import {
 } from 'lucide-react';
 
 const STATUS_MAP = {
+    PENDING: { label: 'Chờ xác nhận', color: 'bg-amber-50 text-amber-800 border border-amber-200' },
     CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-50 text-blue-700' },
-    IN_PRODUCTION: { label: 'Đang sản xuất', color: 'bg-emerald-50 text-emerald-700' },
     SHIPPED: { label: 'Đang vận chuyển', color: 'bg-indigo-50 text-indigo-700' },
     COMPLETED: { label: 'Đã giao hàng', color: 'bg-emerald-50 text-emerald-700' },
     DELIVERED: { label: 'Đã giao hàng', color: 'bg-emerald-50 text-emerald-700' },
@@ -205,14 +205,16 @@ export default function AdminOrders() {
 
                 <div className="p-5 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
-                        <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">Đang sản xuất</span>
-                        <div className="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center">
-                            <Factory className="w-4 h-4 text-zinc-800" />
+                        <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">Chờ xác nhận</span>
+                        <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                            <Clock className="w-4 h-4" />
                         </div>
                     </div>
                     <div className="mt-4 flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold tracking-tight text-zinc-950">{kpis.inProductionOrders}</span>
-                        <span className="text-xs text-zinc-500">lô hàng</span>
+                        <span className="text-2xl font-bold tracking-tight text-zinc-950">
+                            {kpis.inProductionOrders ?? 0}
+                        </span>
+                        <span className="text-xs text-zinc-500">đơn chờ duyệt</span>
                     </div>
                 </div>
 
@@ -254,6 +256,7 @@ export default function AdminOrders() {
                             className="w-full sm:w-48 h-11 pl-3.5 pr-8 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-700 appearance-none cursor-pointer focus:outline-none focus:border-[#f0592a]"
                         >
                             <option value="ALL">Tất cả trạng thái</option>
+                            <option value="PENDING">Chờ xác nhận</option>
                             <option value="CONFIRMED">Đã xác nhận</option>
                             <option value="IN_PRODUCTION">Đang sản xuất</option>
                             <option value="SHIPPED">Đang vận chuyển</option>
@@ -460,6 +463,7 @@ export default function AdminOrders() {
                                     onChange={(e) => setUpdatingStatus(e.target.value)}
                                     className="w-full h-11 pl-3.5 pr-8 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-800 appearance-none focus:outline-none focus:border-[#f0592a]"
                                 >
+                                    <option value="PENDING">Chờ xác nhận</option>
                                     <option value="CONFIRMED">Đã xác nhận</option>
                                     <option value="IN_PRODUCTION">Đang sản xuất</option>
                                     <option value="SHIPPED">Đang vận chuyển</option>

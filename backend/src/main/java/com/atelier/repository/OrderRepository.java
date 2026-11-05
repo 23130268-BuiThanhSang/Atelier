@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
@@ -26,13 +27,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByStatus(String status);
 
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.status IN ('IN_PRODUCTION', 'QC_INSPECTION')")
-    long countInProduction();
+    // Đếm số đơn chờ xác nhận (PENDING)
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.status = 'PENDING'")
+    long countPendingConfirmation();
 
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status IN ('CONFIRMED', 'PENDING', 'SHIPPED')")
     long countPendingDelivery();
 
     List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
+    Optional<Order> findByOrderCode(String orderCode);
 
     boolean existsByOrderCode(String orderCode);
 }

@@ -47,11 +47,20 @@ export default function MyOrder() {
     // UI render Status
     const renderOrderStatus = (status) => {
         switch (status) {
-            case 'COMPLETED': return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-green-50 text-green-700 border border-green-200"><CheckCircle className="w-3.5 h-3.5" /> Hoàn thành</span>;
-            case 'IN_PROGRESS': return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200"><Package className="w-3.5 h-3.5" /> Đang sản xuất</span>;
-            case 'DELIVERING': return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200"><Truck className="w-3.5 h-3.5" /> Đang giao hàng</span>;
-            case 'CANCELLED': return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-zinc-100 text-zinc-600 border border-zinc-200"><XCircle className="w-3.5 h-3.5" /> Đã hủy</span>;
-            default: return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200"><Clock className="w-3.5 h-3.5" /> Chờ xác nhận</span>;
+            case 'PENDING':
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200"><Clock className="w-3.5 h-3.5" /> Chờ xác nhận</span>;
+            case 'CONFIRMED':
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200"><CheckCircle className="w-3.5 h-3.5" /> Đã xác nhận</span>;
+            case 'IN_PROGRESS':
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200"><Package className="w-3.5 h-3.5" /> Đang sản xuất</span>;
+            case 'DELIVERING':
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200"><Truck className="w-3.5 h-3.5" /> Đang vận chuyển</span>;
+            case 'DELIVERED':
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-green-50 text-green-700 border border-green-200"><CheckCircle className="w-3.5 h-3.5" /> Đã giao hàng</span>;
+            case 'CANCELLED':
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-zinc-100 text-zinc-600 border border-zinc-200"><XCircle className="w-3.5 h-3.5" /> Đã hủy</span>;
+            default:
+                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200"><Clock className="w-3.5 h-3.5" /> Chờ xác nhận</span>;
         }
     };
 
@@ -66,8 +75,10 @@ export default function MyOrder() {
     const TABS = [
         { id: 'ALL', label: 'Tất cả' },
         { id: 'PENDING', label: 'Chờ xác nhận' },
-        { id: 'IN_PROGRESS', label: 'Đang xử lý' },
-        { id: 'COMPLETED', label: 'Hoàn thành' },
+        { id: 'CONFIRMED', label: 'Đã xác nhận' },
+        { id: 'IN_PROGRESS', label: 'Đang sản xuất' },
+        { id: 'DELIVERING', label: 'Đang vận chuyển' },
+        { id: 'DELIVERED', label: 'Đã giao hàng' },
         { id: 'CANCELLED', label: 'Đã hủy' }
     ];
 
