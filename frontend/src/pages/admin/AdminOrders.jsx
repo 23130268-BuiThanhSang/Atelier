@@ -15,16 +15,18 @@ import {
     Loader2,
     X,
     Eye,
-    Save
+    Save,
+    Package,
+    CheckCircle,
+    XCircle
 } from 'lucide-react';
 
 const STATUS_MAP = {
-    PENDING: { label: 'Chờ xác nhận', color: 'bg-amber-50 text-amber-800 border border-amber-200' },
-    CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-50 text-blue-700' },
-    SHIPPED: { label: 'Đang vận chuyển', color: 'bg-indigo-50 text-indigo-700' },
-    COMPLETED: { label: 'Đã giao hàng', color: 'bg-emerald-50 text-emerald-700' },
-    DELIVERED: { label: 'Đã giao hàng', color: 'bg-emerald-50 text-emerald-700' },
-    CANCELLED: { label: 'Đã hủy', color: 'bg-zinc-100 text-zinc-500' }
+    PENDING: { label: 'Chờ xác nhận', color: 'bg-orange-50 text-orange-700 border border-orange-200' },
+    CONFIRMED: { label: 'Đã xác nhận', color: 'bg-teal-50 text-teal-700 border border-teal-200' },
+    DELIVERING: { label: 'Đang vận chuyển', color: 'bg-purple-50 text-purple-700 border border-purple-200' },
+    DELIVERED: { label: 'Đã giao hàng', color: 'bg-green-50 text-green-700 border border-green-200' },
+    CANCELLED: { label: 'Đã hủy', color: 'bg-zinc-100 text-zinc-600 border border-zinc-200' }
 };
 
 export default function AdminOrders() {
@@ -153,7 +155,7 @@ export default function AdminOrders() {
         }
     };
 
-    // Format tiền tệ
+// Format tiền tệ
     const formatVND = (val) => {
         if (!val) return '0 ₫';
         return new Intl.NumberFormat('vi-VN').format(val) + ' ₫';
@@ -166,14 +168,18 @@ export default function AdminOrders() {
         return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString('vi-VN');
     };
 
-    // Badge trạng thái
+    // Badge trạng thái đồng bộ với UI User
     const renderStatusBadge = (status) => {
         const conf = STATUS_MAP[status] || { label: status, color: 'bg-zinc-100 text-zinc-700' };
+
+        let IconComponent = Clock; // Default
+        if (status === 'CONFIRMED' || status === 'DELIVERED') IconComponent = CheckCircle;
+        if (status === 'DELIVERING') IconComponent = Truck;
+        if (status === 'CANCELLED') IconComponent = XCircle;
+
         return (
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${conf.color}`}>
-                {status === 'COMPLETED' || status === 'DELIVERED' ? <Check className="w-3.5 h-3.5" /> : null}
-                {status === 'PENDING' ? <Clock className="w-3.5 h-3.5" /> : null}
-                {status === 'CANCELLED' ? <Ban className="w-3.5 h-3.5" /> : null}
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold ${conf.color}`}>
+                <IconComponent className="w-3.5 h-3.5" />
                 {conf.label}
             </span>
         );
@@ -191,7 +197,7 @@ export default function AdminOrders() {
 
             {/* 2. Dải 4 Card KPI */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-5 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
+                <div className="p-5 rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">Tổng đơn hàng</span>
                         <div className="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center">
@@ -203,22 +209,22 @@ export default function AdminOrders() {
                     </div>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
+                <div className="p-5 rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">Chờ xác nhận</span>
-                        <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-xl bg-orange-50 text-orange-700 flex items-center justify-center">
                             <Clock className="w-4 h-4" />
                         </div>
                     </div>
                     <div className="mt-4 flex items-baseline gap-1.5">
                         <span className="text-2xl font-bold tracking-tight text-zinc-950">
-                            {kpis.inProductionOrders ?? 0}
+        {kpis.inProductionOrders ?? 0}
                         </span>
                         <span className="text-xs text-zinc-500">đơn chờ duyệt</span>
                     </div>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-white shadow-xs border border-zinc-200/70 flex flex-col justify-between">
+                <div className="p-5 rounded-2xl bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                         <span className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">Chờ giao hàng</span>
                         <div className="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center">
@@ -232,7 +238,7 @@ export default function AdminOrders() {
             </div>
 
             {/* 3. Toolbar & Table */}
-            <div className="bg-white rounded-2xl shadow-xs border border-zinc-200/70 overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-zinc-200/60 overflow-hidden flex flex-col">
                 <div className="p-4 md:p-6 bg-white flex flex-col sm:flex-row gap-3 items-center justify-between">
                     <div className="relative flex-1 w-full sm:max-w-md">
                         <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -241,7 +247,7 @@ export default function AdminOrders() {
                             value={searchKeyword}
                             onChange={(e) => setSearchKeyword(e.target.value)}
                             onKeyDown={handleSearchKeyDown}
-                            placeholder="Tìm theo mã đơn (#AT-), tên khách, SĐT... (Nhấn Enter)"
+                            placeholder="Tìm theo mã đơn (#ORD-), tên khách, SĐT... (Nhấn Enter)"
                             className="w-full h-11 pl-10 pr-4 bg-zinc-50 border border-zinc-200 rounded-xl text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#f0592a] font-medium"
                         />
                     </div>
@@ -258,9 +264,8 @@ export default function AdminOrders() {
                             <option value="ALL">Tất cả trạng thái</option>
                             <option value="PENDING">Chờ xác nhận</option>
                             <option value="CONFIRMED">Đã xác nhận</option>
-                            <option value="IN_PRODUCTION">Đang sản xuất</option>
-                            <option value="SHIPPED">Đang vận chuyển</option>
-                            <option value="COMPLETED">Đã giao hàng</option>
+                            <option value="DELIVERING">Đang vận chuyển</option>
+                            <option value="DELIVERED">Đã giao hàng</option>
                             <option value="CANCELLED">Đã hủy</option>
                         </select>
                         <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
@@ -271,7 +276,7 @@ export default function AdminOrders() {
                 <div className="overflow-x-auto w-full">
                     <table className="w-full text-left border-collapse min-w-[950px]">
                         <thead>
-                        <tr className="bg-[#faf8e4]/60 text-zinc-400 font-semibold text-[11px] uppercase tracking-wider border-y border-zinc-100">
+                        <tr className="bg-zinc-50/75 text-zinc-400 font-semibold text-[11px] uppercase tracking-wider border-y border-zinc-100">
                             <th className="py-3.5 pl-6 pr-3">Mã đơn</th>
                             <th className="py-3.5 px-4">Người nhận hàng</th>
                             <th className="py-3.5 px-4">Sản phẩm</th>
@@ -348,7 +353,7 @@ export default function AdminOrders() {
                             <ChevronLeft className="w-4 h-4" />
                         </button>
                         <span className="px-3 py-1 bg-[#f0592a] text-white rounded-lg">
-                            {currentPage + 1} / {totalPages}
+        {currentPage + 1} / {totalPages}
                         </span>
                         <button
                             disabled={currentPage >= totalPages - 1}
@@ -365,13 +370,13 @@ export default function AdminOrders() {
             {isModalOpen && selectedOrder && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
                     <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between border-b pb-3">
+                        <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                             <h2 className="text-base font-bold text-zinc-950">
                                 Chi tiết đơn hàng: <span className="text-[#f0592a] font-mono">{selectedOrder.orderCode}</span>
                             </h2>
                             <button
                                 onClick={() => setIsModalOpen(false)}
-                                className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
+                                className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -448,7 +453,7 @@ export default function AdminOrders() {
                                 <span className="text-zinc-500">Giảm giá:</span>
                                 <span className="text-red-500 font-medium">-{formatVND(selectedOrder.discountAmount)}</span>
                             </div>
-                            <div className="flex justify-between font-bold text-sm pt-2 border-t border-zinc-200/60">
+                            <div className="flex justify-between font-bold text-sm pt-2 border-t border-zinc-200/60 mt-1">
                                 <span className="text-zinc-900">Tổng thanh toán:</span>
                                 <span className="text-[#f0592a]">{formatVND(selectedOrder.totalAmount)}</span>
                             </div>
@@ -461,13 +466,13 @@ export default function AdminOrders() {
                                 <select
                                     value={updatingStatus}
                                     onChange={(e) => setUpdatingStatus(e.target.value)}
-                                    className="w-full h-11 pl-3.5 pr-8 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-800 appearance-none focus:outline-none focus:border-[#f0592a]"
+                                    className="w-full h-11 pl-3.5 pr-8 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-semibold text-zinc-800 appearance-none focus:outline-none focus:border-[#f0592a] cursor-pointer"
                                 >
+                                    {/* Select Box Option cũng được đồng bộ */}
                                     <option value="PENDING">Chờ xác nhận</option>
                                     <option value="CONFIRMED">Đã xác nhận</option>
-                                    <option value="IN_PRODUCTION">Đang sản xuất</option>
-                                    <option value="SHIPPED">Đang vận chuyển</option>
-                                    <option value="COMPLETED">Đã giao hàng</option>
+                                    <option value="DELIVERING">Đang vận chuyển</option>
+                                    <option value="DELIVERED">Đã giao hàng</option>
                                     <option value="CANCELLED">Đã hủy</option>
                                 </select>
                                 <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
@@ -475,11 +480,11 @@ export default function AdminOrders() {
                         </div>
 
                         {/* Nút hành động */}
-                        <div className="flex justify-end gap-2 pt-2">
+                        <div className="flex justify-end gap-2 pt-2 border-t border-zinc-100 mt-2">
                             <button
                                 type="button"
                                 onClick={() => setIsModalOpen(false)}
-                                className="px-4 py-2.5 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 transition-colors"
+                                className="px-4 py-2.5 rounded-xl border border-zinc-200 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 transition-colors cursor-pointer"
                             >
                                 Đóng
                             </button>
@@ -487,7 +492,7 @@ export default function AdminOrders() {
                                 type="button"
                                 disabled={isSavingStatus}
                                 onClick={handleUpdateStatus}
-                                className="px-5 py-2.5 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors"
+                                className="px-5 py-2.5 rounded-xl bg-[#f0592a] hover:bg-[#d94a1f] disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-colors cursor-pointer"
                             >
                                 {isSavingStatus ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 <span>Lưu trạng thái</span>
