@@ -51,8 +51,6 @@ export default function MyOrder() {
                 return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200"><Clock className="w-3.5 h-3.5" /> Chờ xác nhận</span>;
             case 'CONFIRMED':
                 return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200"><CheckCircle className="w-3.5 h-3.5" /> Đã xác nhận</span>;
-            case 'IN_PROGRESS':
-                return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200"><Package className="w-3.5 h-3.5" /> Đang sản xuất</span>;
             case 'DELIVERING':
                 return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200"><Truck className="w-3.5 h-3.5" /> Đang vận chuyển</span>;
             case 'DELIVERED':
@@ -76,7 +74,6 @@ export default function MyOrder() {
         { id: 'ALL', label: 'Tất cả' },
         { id: 'PENDING', label: 'Chờ xác nhận' },
         { id: 'CONFIRMED', label: 'Đã xác nhận' },
-        { id: 'IN_PROGRESS', label: 'Đang sản xuất' },
         { id: 'DELIVERING', label: 'Đang vận chuyển' },
         { id: 'DELIVERED', label: 'Đã giao hàng' },
         { id: 'CANCELLED', label: 'Đã hủy' }
@@ -155,22 +152,22 @@ export default function MyOrder() {
                                         {/* Trái: Thông tin Đơn */}
                                         <div className="mb-4 md:mb-0 flex-1">
                                             <div className="flex items-center gap-3 mb-2">
-                                                <span className="font-bold text-zinc-900 bg-zinc-100 px-2.5 py-1 rounded-md text-sm border border-zinc-200 tracking-wide">
+            <span className="font-bold text-zinc-900 bg-zinc-100 px-2.5 py-1 rounded-md text-sm border border-zinc-200 tracking-wide">
                                                     #{order.orderCode}
                                                 </span>
                                                 <span className="text-sm font-medium text-zinc-500 flex items-center gap-1.5">
-                                                    <Clock className="w-4 h-4" /> {formatDate(order.date)}
-                                                </span>
+            <Clock className="w-4 h-4" /> {formatDate(order.date)}
+            </span>
                                             </div>
                                             <div className="text-sm text-zinc-700 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-3">
+            <span className="flex items-center gap-1.5">
+            <span className="text-xs uppercase font-bold text-zinc-400">ĐỐI TÁC:</span>
+            <span className="font-semibold">{order.partnerName}</span>
+            </span>
                                                 <span className="flex items-center gap-1.5">
-                                                    <span className="text-xs uppercase font-bold text-zinc-400">ĐỐI TÁC:</span> 
-                                                    <span className="font-semibold">{order.partnerName}</span>
-                                                </span>
-                                                <span className="flex items-center gap-1.5">
-                                                    <span className="text-xs uppercase font-bold text-zinc-400">SỐ LƯỢNG SP:</span> 
-                                                    <span className="font-semibold">{order.itemsCount}</span>
-                                                </span>
+            <span className="text-xs uppercase font-bold text-zinc-400">SỐ LƯỢNG SP:</span>
+            <span className="font-semibold">{order.itemsCount}</span>
+            </span>
                                             </div>
                                         </div>
 
