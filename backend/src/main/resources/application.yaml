@@ -13,3 +13,11 @@ cloudinary:
   api-key: ${CLOUDINARY_API_KEY:}
   api-secret: ${CLOUDINARY_API_SECRET:}
   default-folder: ${CLOUDINARY_DEFAULT_FOLDER:atelier}
+
+ai:
+  sentiment:
+    base-url: ${AI_SENTIMENT_BASE_URL:}
+    path: ${AI_SENTIMENT_PATH:/predict}
+    api-key: ${AI_SENTIMENT_API_KEY:}
+    connect-timeout-ms: ${AI_SENTIMENT_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${AI_SENTIMENT_READ_TIMEOUT_MS:20000}

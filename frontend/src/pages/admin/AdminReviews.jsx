@@ -16,6 +16,7 @@ import Modal from '../../components/ui/Modal'
 import StarRating from '../../components/ui/StarRating'
 import Toast from '../../components/ui/Toast'
 import { reviewApi } from '../../api/reviewApi'
+import { getSentimentMeta } from '../../utils/reviewSentiment'
 
 const PAGE_SIZE = 10
 
@@ -185,6 +186,7 @@ export default function AdminReviews() {
                                 <th className="py-3.5 px-4">Sản phẩm</th>
                                 <th className="py-3.5 px-4">Đánh giá</th>
                                 <th className="py-3.5 px-4">Nội dung</th>
+                                <th className="py-3.5 px-4">Cảm xúc</th>
                                 <th className="py-3.5 px-4">Thời gian</th>
                                 <th className="py-3.5 px-4">Trạng thái</th>
                                 <th className="py-3.5 pl-4 pr-6 text-right">Thao tác</th>
@@ -193,7 +195,7 @@ export default function AdminReviews() {
                         <tbody className="divide-y divide-zinc-100 text-xs">
                             {isLoading && (
                                 <tr>
-                                    <td colSpan={7} className="py-14 text-center text-zinc-500">
+                                    <td colSpan={8} className="py-14 text-center text-zinc-500">
                                         <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin text-[#f0592a]" />
                                         Đang tải danh sách đánh giá...
                                     </td>
@@ -202,7 +204,7 @@ export default function AdminReviews() {
 
                             {!isLoading && reviewsQuery.isError && (
                                 <tr>
-                                    <td colSpan={7} className="py-14 text-center">
+                                    <td colSpan={8} className="py-14 text-center">
                                         <p className="text-sm font-semibold text-red-600">Không thể tải danh sách đánh giá.</p>
                                         <Button size="sm" variant="outline" className="mt-3" onClick={() => reviewsQuery.refetch()}>
                                             Thử lại
@@ -213,7 +215,7 @@ export default function AdminReviews() {
 
                             {!isLoading && !reviewsQuery.isError && items.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} className="py-14 text-center">
+                                    <td colSpan={8} className="py-14 text-center">
                                         <MessageSquareText className="mx-auto mb-2 h-6 w-6 text-zinc-300" />
                                         <p className="text-sm font-semibold text-zinc-600">Không có đánh giá nào phù hợp bộ lọc.</p>
                                     </td>
@@ -222,6 +224,7 @@ export default function AdminReviews() {
 
                             {!isLoading && items.map((review) => {
                                 const hidden = String(review.status).toUpperCase() === 'HIDDEN'
+                                const sentiment = getSentimentMeta(review.sentiment)
                                 return (
                                     <tr key={review.id} className="hover:bg-zinc-50/70 transition-colors">
                                         <td className="py-4 pl-6 pr-4 align-top">
@@ -248,6 +251,15 @@ export default function AdminReviews() {
                                             <p className={`max-w-[280px] whitespace-pre-line ${hidden ? 'text-zinc-400' : 'text-zinc-700'}`}>
                                                 {review.comment || <span className="italic text-zinc-400">Không có nội dung</span>}
                                             </p>
+                                        </td>
+                                        <td className="py-4 px-4 align-top">
+                                            {sentiment ? (
+                                                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${sentiment.className}`}>
+                                                    {sentiment.label}
+                                                </span>
+                                            ) : (
+                                                <span className="text-zinc-400">—</span>
+                                            )}
                                         </td>
                                         <td className="py-4 px-4 align-top text-zinc-500">{formatDateTime(review.createdAt)}</td>
                                         <td className="py-4 px-4 align-top"><StatusBadge status={review.status} /></td>
