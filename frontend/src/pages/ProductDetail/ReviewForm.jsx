@@ -12,27 +12,32 @@ export default function ReviewForm({ productId, review = null, onSuccess, onCanc
     const [comment, setComment] = useState(review?.comment || '')
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
+    const [errorCode, setErrorCode] = useState('')
 
     const handleSubmit = async (event) => {
         event.preventDefault()
 
         if (!rating) {
             setError('Vui lòng chọn số sao trước khi gửi.')
+            setErrorCode('')
             return
         }
         if (comment.length > MAX_COMMENT) {
             setError(`Nội dung đánh giá tối đa ${MAX_COMMENT} ký tự.`)
+            setErrorCode('')
             return
         }
 
         const userId = getUserId()
         if (!userId) {
             setError('Vui lòng đăng nhập để đánh giá sản phẩm.')
+            setErrorCode('')
             return
         }
 
         setSubmitting(true)
         setError('')
+        setErrorCode('')
 
         try {
             const payload = { rating, comment: comment.trim() || null }
@@ -50,6 +55,7 @@ export default function ReviewForm({ productId, review = null, onSuccess, onCanc
             onSuccess?.()
         } catch (err) {
             setError(err.response?.data?.message || 'Không thể gửi đánh giá. Vui lòng thử lại.')
+            setErrorCode(err.response?.data?.code || '')
         } finally {
             setSubmitting(false)
         }
@@ -63,7 +69,8 @@ export default function ReviewForm({ productId, review = null, onSuccess, onCanc
                         {editing ? 'Sửa đánh giá của bạn' : 'Chia sẻ đánh giá của bạn'}
                     </h3>
                     <p className="mt-1 text-sm text-zinc-600">
-                        Chọn số sao và chia sẻ cảm nhận về sản phẩm.
+                        Chọn số sao và chia sẻ cảm nhận về sản phẩm. Nội dung sẽ được phân tích tự động
+                        để đảm bảo liên quan đến sản phẩm.
                     </p>
                 </div>
             </div>
@@ -98,7 +105,14 @@ export default function ReviewForm({ productId, review = null, onSuccess, onCanc
             </div>
 
             {error && (
-                <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p
+                    role="alert"
+                    className={`mt-3 rounded-lg px-3 py-2 text-sm ${
+                        errorCode === 'REVIEW_IRRELEVANT'
+                            ? 'bg-amber-50 text-amber-800'
+                            : 'bg-red-50 text-red-700'
+                    }`}
+                >
                     {error}
                 </p>
             )}

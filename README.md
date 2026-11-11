@@ -737,11 +737,18 @@ Giai đoạn hiện tại xác định người dùng qua header `X-User-ID` (gi
 - `rating` (bộ lọc): số nguyên 1–5, bỏ trống để lấy tất cả.
 - `reason` của `reviews/me`: `CAN_REVIEW`, `NOT_LOGGED_IN`, `NOT_PURCHASED`, `ALREADY_REVIEWED`.
 - `comment` tối đa **1200 ký tự**, được phép để trống.
+- `sentiment`: `POSITIVE`, `NEGATIVE`, `NEUTRAL` hoặc `null` (đánh giá cũ chưa phân tích).
+  - Có `comment`: backend gửi sang AI server (`POST {ai.sentiment.base-url}/predict`, header `X-API-Key`).
+    AI trả `relevant = 0` → trả lỗi `400 REVIEW_IRRELEVANT` và **không lưu** đánh giá.
+    AI trả `relevant = 1` → lưu kèm `POSITIVE`/`NEGATIVE` theo `sentiment_label`.
+  - Comment rỗng, AI lỗi/timeout hoặc chưa cấu hình → lưu với `NEUTRAL`.
+  - Sửa đánh giá (`PUT`) cũng chạy lại bước phân tích này.
 - Chỉ đánh giá `VISIBLE` xuất hiện trong danh sách công khai và được tính vào điểm trung bình.
   Đánh giá `HIDDEN` vẫn trả về cho chính tác giả ở `reviews/me` nhưng tác giả không sửa/xóa được.
 - Lỗi trả về theo dạng chung `{ "code", "message" }`, ví dụ:
   `401 LOGIN_REQUIRED`, `404 REVIEW_NOT_FOUND`, `403 REVIEW_NOT_OWNED`,
-  `403 REVIEW_NOT_ELIGIBLE` (chưa mua sản phẩm), `409 REVIEW_ALREADY_EXISTS`, `409 REVIEW_NOT_EDITABLE`.
+  `403 REVIEW_NOT_ELIGIBLE` (chưa mua sản phẩm), `409 REVIEW_ALREADY_EXISTS`, `409 REVIEW_NOT_EDITABLE`,
+  `400 REVIEW_IRRELEVANT` (bình luận không liên quan đến sản phẩm).
 
 Dạng dữ liệu:
 
@@ -757,6 +764,7 @@ Dạng dữ liệu:
       "id": 10,
       "rating": 5,
       "comment": "Chất vải đẹp, form chuẩn.",
+      "sentiment": "POSITIVE",
       "authorName": "Nguyễn A",
       "authorAvatarUrl": null,
       "status": "VISIBLE",
@@ -776,7 +784,10 @@ Dạng dữ liệu:
 Catalog/ProductDetail, nên chỉ cần làm mới dữ liệu ở frontend sau khi thêm/sửa/xóa/ẩn.
 
 > Migration của bảng `product_reviews` (cho `order_id` rỗng + unique theo `user_id, product_id`) được ghi lại trong
-> `backend/db/product_reviews.sql`.
+> `backend/db/product_reviews.sql`. Migration thêm cột `sentiment` nằm trong `backend/db/product_review_sentiment.sql`.
+>
+> Cấu hình AI server đặt trong `backend/src/main/resources/application-local.properties` (file đã gitignore):
+> `ai.sentiment.base-url` và `ai.sentiment.api-key`. Mỗi lần restart Colab, cập nhật lại `base-url` do ngrok đổi địa chỉ.
 
 ---
 

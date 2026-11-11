@@ -11,6 +11,7 @@ public record AdminReviewResponse(
         String authorEmail,
         Integer rating,
         String comment,
+        String sentiment,
         String status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt

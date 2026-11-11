@@ -1,5 +1,8 @@
 package com.atelier.service;
 
+import com.atelier.ai.AiSentimentClient;
+import com.atelier.ai.AiUnavailableException;
+import com.atelier.ai.dto.AiPredictResponse;
 import com.atelier.catalog.dto.AdminReviewPageResponse;
 import com.atelier.catalog.dto.AdminReviewResponse;
 import com.atelier.catalog.dto.CreateReviewRequest;
@@ -25,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Nghiệp vụ đánh giá sản phẩm (bảng product_reviews). Chỉ người đã mua sản phẩm mới được đánh giá. */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -42,6 +47,9 @@ public class ReviewService {
     private static final String ACTIVE = "ACTIVE";
     private static final String VISIBLE = "VISIBLE";
     private static final String HIDDEN = "HIDDEN";
+    private static final String POSITIVE = "POSITIVE";
+    private static final String NEGATIVE = "NEGATIVE";
+    private static final String NEUTRAL = "NEUTRAL";
     private static final Set<String> ALLOWED_STATUSES = Set.of(VISIBLE, HIDDEN);
     private static final String DEFAULT_AUTHOR_NAME = "Người dùng Atelier";
     private static final int DEFAULT_PAGE_SIZE = 5;
@@ -51,6 +59,7 @@ public class ReviewService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final OrderItemRepository orderItemRepository;
+    private final AiSentimentClient aiSentimentClient;
 
     /** Danh sách đánh giá công khai kèm điểm tổng hợp và phân bố số sao. */
     public ReviewPageResponse getProductReviews(
@@ -110,6 +119,14 @@ public class ReviewService {
     /** Tạo đánh giá mới; mỗi người dùng chỉ được một đánh giá cho mỗi sản phẩm và phải đã mua sản phẩm đó. */
     @Transactional
     public ReviewResponse createReview(Long productId, Long userId, CreateReviewRequest request) {
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.LOGIN_REQUIRED);
+        }
+
+        // Gọi AI trước các truy vấn DB để không giữ connection trong lúc chờ server Colab.
+        String comment = normalizeComment(request.comment());
+        String sentiment = resolveSentiment(comment);
+
         User user = requireUser(userId);
         Product product = requireActiveProduct(productId);
 
@@ -124,7 +141,8 @@ public class ReviewService {
         review.setProduct(product);
         review.setUser(user);
         review.setRating(request.rating());
-        review.setComment(normalizeComment(request.comment()));
+        review.setComment(comment);
+        review.setSentiment(sentiment);
         review.setStatus(VISIBLE);
 
         try {
@@ -149,8 +167,12 @@ public class ReviewService {
             throw new BusinessException(ErrorCode.REVIEW_NOT_EDITABLE);
         }
 
+        String comment = normalizeComment(request.comment());
+        String sentiment = resolveSentiment(comment);
+
         review.setRating(request.rating());
-        review.setComment(normalizeComment(request.comment()));
+        review.setComment(comment);
+        review.setSentiment(sentiment);
         return toResponse(reviewRepository.save(review), userId);
     }
 
@@ -252,6 +274,7 @@ public class ReviewService {
                 review.getId(),
                 review.getRating(),
                 review.getComment(),
+                review.getSentiment(),
                 displayName(review.getUser()),
                 review.getUser() == null ? null : review.getUser().getAvatarUrl(),
                 review.getStatus(),
@@ -272,10 +295,54 @@ public class ReviewService {
                 user == null ? null : user.getEmail(),
                 review.getRating(),
                 review.getComment(),
+                review.getSentiment(),
                 review.getStatus(),
                 review.getCreatedAt(),
                 review.getUpdatedAt()
         );
+    }
+
+    /**
+     * Xác định nhãn cảm xúc của một bình luận.
+     *
+     * <p>- Bình luận rỗng: NEUTRAL, không gọi AI.<br>
+     * - AI báo không liên quan: ném REVIEW_IRRELEVANT để không lưu đánh giá.<br>
+     * - AI lỗi/timeout: lưu tạm NEUTRAL (fail-open) và ghi log cảnh báo.
+     */
+    private String resolveSentiment(String comment) {
+        if (comment == null || comment.isBlank()) {
+            return NEUTRAL;
+        }
+
+        try {
+            AiPredictResponse result = aiSentimentClient.analyze(comment);
+
+            if (result.relevant() == null || result.relevant() != 1) {
+                throw new BusinessException(ErrorCode.REVIEW_IRRELEVANT);
+            }
+
+            String label = result.sentimentLabel();
+            if (label != null) {
+                String normalized = label.trim().toUpperCase(Locale.ROOT);
+                if (POSITIVE.equals(normalized)) {
+                    return POSITIVE;
+                }
+                if (NEGATIVE.equals(normalized)) {
+                    return NEGATIVE;
+                }
+            }
+
+            // Dự phòng khi server không trả sentimentLabel: 1 = positive, 0 = negative.
+            if (result.sentiment() != null) {
+                return result.sentiment() == 1 ? POSITIVE : NEGATIVE;
+            }
+            return NEUTRAL;
+        } catch (BusinessException ex) {
+            throw ex;
+        } catch (AiUnavailableException ex) {
+            log.warn("Không phân tích được cảm xúc đánh giá, tạm lưu NEUTRAL: {}", ex.getMessage());
+            return NEUTRAL;
+        }
     }
 
     private String displayName(User user) {

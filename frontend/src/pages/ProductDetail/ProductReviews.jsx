@@ -226,7 +226,7 @@ export default function ProductReviews({ productId }) {
                         </div>
                     )}
 
-                    {!reviewsQuery.isLoading && !reviewsQuery.isError && visibleItems.length === 0 && (
+                    {!reviewsQuery.isLoading && !reviewsQuery.isError && !myReview && visibleItems.length === 0 && (
                         <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
                             <p className="text-sm font-semibold text-zinc-700">
                                 Chưa có đánh giá nào được hiển thị.

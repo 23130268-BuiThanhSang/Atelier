@@ -36,6 +36,10 @@ public class ProductReview {
     @Column(name = "comment", columnDefinition = "text")
     private String comment;
 
+    /** POSITIVE, NEGATIVE hoặc NEUTRAL; null với đánh giá cũ chưa được phân tích. */
+    @Column(name = "sentiment", length = 20)
+    private String sentiment;
+
     @Column(name = "status", nullable = false, length = 30)
     private String status = "VISIBLE";
 
