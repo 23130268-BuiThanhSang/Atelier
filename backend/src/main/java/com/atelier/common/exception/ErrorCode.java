@@ -20,6 +20,8 @@ public enum ErrorCode {
     REVIEW_NOT_OWNED(HttpStatus.FORBIDDEN, "Bạn không có quyền thay đổi đánh giá này"),
     REVIEW_NOT_EDITABLE(HttpStatus.CONFLICT, "Đánh giá đang bị ẩn nên không thể chỉnh sửa"),
     REVIEW_NOT_ELIGIBLE(HttpStatus.FORBIDDEN, "Bạn cần mua và nhận sản phẩm này trước khi đánh giá"),
+    REVIEW_IRRELEVANT(HttpStatus.BAD_REQUEST,
+            "Nội dung đánh giá không liên quan đến sản phẩm. Vui lòng chia sẻ cảm nhận về sản phẩm."),
     INVALID_REVIEW_STATUS(HttpStatus.BAD_REQUEST, "Trạng thái đánh giá không hợp lệ");
 
     private final HttpStatus status;

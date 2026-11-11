@@ -7,6 +7,7 @@ public record ReviewResponse(
         Long id,
         Integer rating,
         String comment,
+        String sentiment,
         String authorName,
         String authorAvatarUrl,
         String status,

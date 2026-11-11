@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import StarRating from '../../components/ui/StarRating'
 import { getUserId, reviewApi } from '../../api/reviewApi'
+import { getSentimentMeta } from '../../utils/reviewSentiment'
 
 function formatDate(value) {
     if (!value) return ''
@@ -20,6 +21,7 @@ export default function ReviewItem({ review, onEdit, onChanged, notify, highligh
     const hidden = String(review.status || '').toUpperCase() === 'HIDDEN'
     const canEdit = mine && !hidden && typeof onEdit === 'function'
     const initial = (review.authorName || 'A').trim().charAt(0).toUpperCase()
+    const sentiment = getSentimentMeta(review.sentiment)
 
     const handleDelete = async () => {
         const userId = getUserId()
@@ -67,6 +69,11 @@ export default function ReviewItem({ review, onEdit, onChanged, notify, highligh
                         {hidden && (
                             <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-600">
                                 Đang bị ẩn
+                            </span>
+                        )}
+                        {sentiment && (
+                            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${sentiment.className}`}>
+                                {sentiment.label}
                             </span>
                         )}
                     </div>
