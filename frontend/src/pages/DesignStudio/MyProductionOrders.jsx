@@ -40,7 +40,7 @@ export default function MyProductionOrders() {
     const [payModal, setPayModal] = useState({
         isOpen: false,
         order: null,
-        paymentMethod: 'VNPAY'
+        paymentMethod: 'VNPAY' // Mặc định chọn VNPAY
     });
     const [isPaying, setIsPaying] = useState(false);
 
@@ -130,6 +130,7 @@ export default function MyProductionOrders() {
         });
     };
 
+    // ĐÃ TÍCH HỢP LUỒNG CHUYỂN HƯỚNG VNPAY
     const handleConfirmPayment = async () => {
         if (!payModal.order) return;
 
@@ -137,6 +138,35 @@ export default function MyProductionOrders() {
         setIsPaying(true);
 
         try {
+            // NẾU CHỌN VNPAY -> GỌI API TẠO LINK THANH TOÁN TẤT TOÁN
+            if (payModal.paymentMethod === 'VNPAY') {
+                try {
+                    const vnpayRes = await fetch(`http://localhost:8080/api/payment/production-final/create-url/${payModal.order.id}`, {
+                        method: 'POST'
+                    });
+                    const vnpayData = await vnpayRes.json();
+
+                    if (vnpayRes.ok && vnpayData.paymentUrl) {
+                        window.location.href = vnpayData.paymentUrl; // Chuyển sang VNPay
+                        return;
+                    } else {
+                        throw new Error('Lỗi khởi tạo link VNPay');
+                    }
+                } catch (vnpayErr) {
+                    console.error('Lỗi VNPay:', vnpayErr);
+                    setPayModal({ isOpen: false, order: null, paymentMethod: 'VNPAY' });
+                    setAlertModal({
+                        isOpen: true,
+                        type: 'error',
+                        title: 'Lỗi thanh toán!',
+                        orderCode: payModal.order.orderCode || '',
+                        message: 'Không thể kết nối đến cổng VNPay lúc này. Vui lòng thử lại sau.'
+                    });
+                    return;
+                }
+            }
+
+            // NẾU LÀ CÁC PHƯƠNG THỨC KHÁC (MOMO, TIỀN MẶT,...)
             const payload = {
                 productionOrderId: payModal.order.id,
                 userId: currentUserId,
@@ -146,7 +176,6 @@ export default function MyProductionOrders() {
             const res = await proposalApi.payRemaining(payload, currentUserId);
 
             setPayModal({ isOpen: false, order: null, paymentMethod: 'VNPAY' });
-
             setAlertModal({
                 isOpen: true,
                 type: 'success',
@@ -182,7 +211,7 @@ export default function MyProductionOrders() {
                                 <ArrowLeft className="w-3.5 h-3.5" />
                                 <span>Thiết kế của tôi</span>
                             </Link>
-                            <span>&gt;</span>
+                            <span>&gt</span>
                             <span className="text-zinc-800">Đơn đặt may gia công</span>
                         </div>
                         <h1 className="text-2xl font-bold text-zinc-950">
@@ -227,16 +256,11 @@ export default function MyProductionOrders() {
                         const isExpanded = expandedOrderId === ord.id;
 
                         // Kiểm tra đơn đã hoàn tất tất toán chưa:
-                        // 1. Trạng thái là PAID_IN_FULL
-                        // 2. Hoặc đơn đã sang bước SHIPPED / DELIVERED
-                        // 3. Hoặc tiền còn lại <= 0
                         const isPaidInFull = rawStatus === 'PAID_IN_FULL' ||
                             currentStageIdx >= 3 ||
                             (Number(ord.remainingAmount || 0) <= 0);
 
                         // CHỈ HIỂN THỊ NÚT THANH TOÁN KHI:
-                        // - Trạng thái chính xác là "WAITING_PAYMENT" (hoặc stage index == 2)
-                        // - VÀ CHƯA THANH TOÁN 100%
                         const canPayRemaining = !isPaidInFull && (rawStatus === 'WAITING_PAYMENT' || currentStageIdx === 2);
 
                         return (
@@ -250,7 +274,9 @@ export default function MyProductionOrders() {
                                         <span className="text-sm font-extrabold text-[#f0592a] bg-[#fefccf] px-2.5 py-1 rounded-lg border border-[#f0592a]/20 font-mono">
                                             #{ord.orderCode}
                                         </span>
-                                        <span className="text-xs text-zinc-600 font-semibold">• Xưởng may: <strong className="text-zinc-900">{ord.producerName}</strong></span>
+                                        <span className="text-xs text-zinc-600 font-semibold">Xưởng may:
+                                            <strong className="text-zinc-900 ml-1">{ord.producerName}</strong>
+                                         </span>
                                     </div>
 
                                     <div className="flex items-center gap-2">
@@ -348,7 +374,6 @@ export default function MyProductionOrders() {
                                             </span>
                                         </div>
 
-                                        {/* HIỂN THỊ MÃ VẬN ĐƠN KHI ĐƠN Ở BƯỚC ĐANG VẬN CHUYỂN HOẶC ĐÃ GIAO HÀNG */}
                                         {(currentStageIdx >= 3 || rawStatus === 'SHIPPED' || rawStatus === 'DELIVERED') && (
                                             <div className="flex items-center justify-between">
                                                 <span className="text-zinc-500">Mã vận đơn:</span>
@@ -391,7 +416,7 @@ export default function MyProductionOrders() {
                                         ) : (
                                             <>
                                                 <div className="flex justify-between text-[#f0592a] font-bold bg-[#fefccf] p-2 rounded-xl border border-[#f0592a]/20">
-                                                    <span>Còn lại cần thanh toán (50%):</span>
+                                                    <span>Còn lại cần thanh toán:</span>
                                                     <span>{formatCurrency(ord.remainingAmount)}</span>
                                                 </div>
 
@@ -400,13 +425,13 @@ export default function MyProductionOrders() {
                                                     <button
                                                         type="button"
                                                         onClick={() => handleOpenPayModal(ord)}
-                                                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] bg-[#f0592a] hover:bg-[#d94a1f] text-white cursor-pointer ring-2 ring-[#f0592a]/20"
+                                                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition-all active:scale-[0.98] bg-[#f0592a] hover:bg-[#d94a1f] text-white cursor-pointer ring-2 ring-[#f0592a]/20 mt-1"
                                                     >
                                                         <CreditCard className="w-4 h-4" />
                                                         <span>Thanh toán 50% còn lại</span>
                                                     </button>
                                                 ) : (
-                                                    <div className="py-2.5 px-3 rounded-xl bg-zinc-100 text-zinc-500 text-center text-[11px] font-medium border border-zinc-200/60">
+                                                    <div className="py-2.5 px-3 rounded-xl bg-zinc-100 text-zinc-500 text-center text-[11px] font-medium border border-zinc-200/60 mt-1">
                                                         <span>Chờ xưởng hoàn tất để thanh toán</span>
                                                     </div>
                                                 )}
@@ -481,7 +506,7 @@ export default function MyProductionOrders() {
                                 </div>
                                 <div>
                                     <h3 className="text-base font-bold text-zinc-950">Tất toán đơn gia công (50% còn lại)</h3>
-                                    <p className="text-xs text-zinc-500">Mã đơn: #{payModal.order.orderCode}</p>
+                                    <p className="text-xs text-zinc-500 font-mono">Mã đơn: #{payModal.order.orderCode}</p>
                                 </div>
                             </div>
 
@@ -505,8 +530,8 @@ export default function MyProductionOrders() {
                             <div className="space-y-2 pt-1">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs font-bold text-zinc-700">Phương thức thanh toán</span>
-                                    <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                                        Thử nghiệm
+                                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                        An toàn & Bảo mật
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -570,7 +595,7 @@ export default function MyProductionOrders() {
                                     ) : (
                                         <>
                                             <CheckCircle2 className="w-4 h-4" />
-                                            <span>Xác nhận tất toán</span>
+                                            <span>Thanh toán VNPay</span>
                                         </>
                                     )}
                                 </button>

@@ -107,9 +107,6 @@ export default function MyOrder() {
                                 className="pl-9 pr-4 py-2 rounded-xl border border-zinc-200 focus:outline-none focus:ring-2 focus:ring-[#f0592a]/20 focus:border-[#f0592a] text-sm w-full md:w-64 transition-all"
                             />
                         </div>
-                        <button className="flex items-center gap-2 bg-white border border-zinc-200 text-zinc-600 px-4 py-2 rounded-xl text-sm font-medium hover:text-[#f0592a] hover:border-[#f0592a] transition-colors shadow-sm">
-                            <Filter className="w-4 h-4" /> Bộ lọc
-                        </button>
                     </div>
                 </div>
 
