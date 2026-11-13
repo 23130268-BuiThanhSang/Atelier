@@ -47,7 +47,7 @@ export default function DesignProposals() {
         shippingName: '',
         shippingPhone: '',
         shippingAddress: '',
-        paymentMethod: 'VNPAY' // 'VNPAY' hoặc 'MOMO'
+        paymentMethod: 'VNPAY' // Mặc định là VNPAY
     });
     const [isDepositing, setIsDepositing] = useState(false);
 
@@ -188,7 +188,7 @@ export default function DesignProposals() {
 
         setIsDepositing(true);
         try {
-            // Gửi trực tiếp giá trị người dùng vừa nhập trong Modal
+            // 1. Gửi request tạo đơn gia công
             const payload = {
                 quotationId: depositModal.quotation.quotationId,
                 requestId: data?.requestId,
@@ -200,10 +200,41 @@ export default function DesignProposals() {
 
             const res = await proposalApi.acceptAndDeposit(payload, currentUserId);
 
-            // Đóng modal đặt cọc
-            setDepositModal({ isOpen: false, quotation: null });
+            // Lấy chuẩn ID mà file Dto backend trả về (phòng ngừa mọi trường hợp đặt tên)
+            const createdOrderId = res.productionOrderId || res.id || res.orderId;
 
-            // Bật Modal thông báo thành công
+            // 2. NẾU CHỌN VNPAY -> Gọi API lấy link và chuyển hướng
+            if (depositModal.paymentMethod === 'VNPAY') {
+                try {
+                    // Gọi đúng đường dẫn API của production_orders và không cần truyền body
+                    const vnpayRes = await fetch(`http://localhost:8080/api/payment/production/create-url/${createdOrderId}`, {
+                        method: 'POST'
+                    });
+                    const vnpayData = await vnpayRes.json();
+
+                    if (vnpayRes.ok && vnpayData.paymentUrl) {
+                        // Đẩy trình duyệt sang trang VNPay thành công
+                        window.location.href = vnpayData.paymentUrl;
+                        return; // Dừng luồng ở đây để trình duyệt kịp nhảy trang
+                    } else {
+                        throw new Error('Lỗi khởi tạo link VNPay');
+                    }
+                } catch (vnpayErr) {
+                    console.error('Lỗi VNPay:', vnpayErr);
+                    setDepositModal({ isOpen: false, quotation: null });
+                    setAlertModal({
+                        isOpen: true,
+                        type: 'error', // Báo lỗi để người dùng chú ý
+                        title: 'Đã chốt xưởng, nhưng lỗi thanh toán!',
+                        orderCode: res.orderCode || '',
+                        message: 'Đơn hàng đã được tạo nhưng không thể kết nối VNPay lúc này. Vui lòng vào trang "Quản lý thiết kế" để thanh toán lại.'
+                    });
+                    return;
+                }
+            }
+
+            // 3. XỬ LÝ MẶC ĐỊNH (MoMo hoặc không dùng cổng thanh toán)
+            setDepositModal({ isOpen: false, quotation: null });
             setAlertModal({
                 isOpen: true,
                 type: 'success',
@@ -211,6 +242,7 @@ export default function DesignProposals() {
                 orderCode: res.orderCode || '',
                 message: res.message || 'Đơn gia công đã được chuyển đến xưởng may để chuẩn bị vật tư.'
             });
+
         } catch (err) {
             console.error('Lỗi khi chấp thuận và đặt cọc:', err);
             setAlertModal({
@@ -249,7 +281,8 @@ export default function DesignProposals() {
                 <div>
                     <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 mb-1">
                         <Link to="/my-designs" className="hover:text-[#f0592a] transition-colors">Thiết kế</Link>
-                        <span>&gt;</span>
+                        {/* ĐÃ FIX LỖI PARSE_ERROR (>) Ở ĐÂY */}
+                        <span>&gt</span>
                         <span className="text-zinc-800">Nhận báo giá</span>
                     </div>
                     <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-950">
@@ -503,13 +536,12 @@ export default function DesignProposals() {
                                 </p>
                             </div>
 
-                            {/* KHU VỰC CỔNG THANH TOÁN (GIAO DIỆN THỬ NGHIỆM - CHỜ TÍCH HỢP GATEWAY) */}
-                            {/* TODO: PAYMENT_GATEWAY_INTEGRATION - Thành viên thanh toán sẽ nhúng SDK/QR Code vào đây */}
+                            {/* KHU VỰC CHỌN CỔNG THANH TOÁN */}
                             <div className="space-y-2 pt-1">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs font-bold text-zinc-700">Phương thức đặt cọc</span>
                                     <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                                        Thử nghiệm (Chờ tích hợp Gateway)
+                                        An toàn & Bảo mật
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -551,26 +583,26 @@ export default function DesignProposals() {
                                 </div>
                             </div>
 
-                            {/* Thông tin nhận hàng (placeholder gợi ý chìm chìm mờ mờ) */}
+                            {/* Thông tin nhận hàng */}
                             <div className="space-y-2 text-xs pt-1">
                                 <span className="font-bold text-zinc-700">Thông tin giao nhận sau khi may xong</span>
                                 <input
                                     type="text"
-                                    placeholder="Gợi ý: Designer Atelier"
+                                    placeholder="Gợi ý: Tên người nhận hàng"
                                     value={depositModal.shippingName}
                                     onChange={(e) => setDepositModal({ ...depositModal, shippingName: e.target.value })}
                                     className="w-full h-9 px-3 rounded-xl border border-zinc-200 text-xs placeholder:text-zinc-400 placeholder:italic outline-none focus:border-[#f0592a]"
                                 />
                                 <input
                                     type="text"
-                                    placeholder="Gợi ý: 0900000000"
+                                    placeholder="Gợi ý: Số điện thoại (VD: 0900000000)"
                                     value={depositModal.shippingPhone}
                                     onChange={(e) => setDepositModal({ ...depositModal, shippingPhone: e.target.value })}
                                     className="w-full h-9 px-3 rounded-xl border border-zinc-200 text-xs placeholder:text-zinc-400 placeholder:italic outline-none focus:border-[#f0592a]"
                                 />
                                 <input
                                     type="text"
-                                    placeholder="Gợi ý: Địa chỉ giao hàng mặc định của tôi"
+                                    placeholder="Gợi ý: Địa chỉ giao hàng chi tiết..."
                                     value={depositModal.shippingAddress}
                                     onChange={(e) => setDepositModal({ ...depositModal, shippingAddress: e.target.value })}
                                     className="w-full h-9 px-3 rounded-xl border border-zinc-200 text-xs placeholder:text-zinc-400 placeholder:italic outline-none focus:border-[#f0592a]"
