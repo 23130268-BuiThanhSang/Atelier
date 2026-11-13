@@ -177,7 +177,14 @@ export default function ProductDetail() {
       : product.imageUrl ? [product.imageUrl] : []
   const currentImage = imageUrls[selectedImage] || imageUrls[0]
   const reviewCount = Number(product.reviewCount) || 0
-
+  const rawDescription = typeof product.description === 'string'
+      ? product.description.trim()
+      : ''
+  const productDescription =
+      !rawDescription ||
+      rawDescription.toLowerCase() === 'this row should not appear because status is inactive.'
+          ? 'Không thể có từ ngữ nào để miêu tả vẻ đẹp của chiếc áo này'
+          : rawDescription
   return (
       <div className="min-h-screen bg-[#fefccf]">
         <Container className="py-8 sm:py-10">
@@ -359,13 +366,6 @@ export default function ProductDetail() {
                 </Button>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-[#e6d68e] bg-[#fefccf] p-5">
-                <p className="text-sm font-bold text-zinc-950">Dữ liệu sản phẩm đã sẵn sàng cho các bước sau</p>
-                <p className="mt-2 text-sm leading-6 text-zinc-600">
-                  Sản phẩm này có cấu trúc variant, hình ảnh, tồn kho và thông tin cơ bản để sau này nối với
-                  cart, order và Design Studio.
-                </p>
-              </div>
             </section>
           </div>
 
